@@ -1,3 +1,5 @@
 rootProject.name = 'platform'
 
 include 'mc-1.21.11'
+
+include 'mc-1.21.10'
