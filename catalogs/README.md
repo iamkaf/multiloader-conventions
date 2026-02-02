@@ -4,10 +4,7 @@ Gradle multi-project repo containing Kaf's shared Version Catalogs.
 
 ## Maven repository
 
-Use **maven.kaf.sh** for consuming these catalogs:
-
-- Releases: https://maven.kaf.sh/releases
-- Snapshots: https://maven.kaf.sh/snapshots
+https://maven.kaf.sh
 
 ## Available catalogs
 
@@ -21,7 +18,7 @@ In `settings.gradle(.kts)`:
 ```kotlin
 dependencyResolutionManagement {
   repositories {
-    maven("https://maven.kaf.sh/snapshots")
+    maven("https://maven.kaf.sh")
     mavenCentral()
   }
 
@@ -30,13 +27,5 @@ dependencyResolutionManagement {
       from("com.iamkaf.platform:mc-1.21.10:1.21.10-SNAPSHOT")
     }
   }
-}
-```
-
-Then in `build.gradle(.kts)`:
-
-```kotlin
-dependencies {
-  implementation(libs.gson)
 }
 ```
