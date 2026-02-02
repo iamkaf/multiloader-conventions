@@ -1,0 +1,6 @@
+// Root project for platform version catalogs
+// Individual platform versions are defined in subdirectories
+
+tasks.register('publishAll') {
+    dependsOn(subprojects.tasks.matching { it.name == 'publish' })
+}

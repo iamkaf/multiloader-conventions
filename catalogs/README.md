@@ -1,6 +1,5 @@
 # version-catalog
 
-Central Gradle Version Catalog for Kaf's Minecraft mod projects.
+Gradle project containing Kaf's shared Version Catalog.
 
-- Source format: `libs.versions.toml`
-- Intended usage: include as a Git submodule or fetch as needed.
+Primary file: `mc-1.21.11/gradle/libs.versions.toml`
