@@ -4,15 +4,10 @@ Gradle multi-project repo containing Kaf's shared Version Catalogs.
 
 ## Maven repository
 
-**Browsing (web UI):**
-- Base: https://z.kaf.sh/
-- Group index: https://z.kaf.sh/group/com.iamkaf.platform
+Use **maven.kaf.sh** for consuming these catalogs:
 
-**Actual Maven repository (for Gradle/Maven consumption):**
 - Releases: https://maven.kaf.sh/releases
 - Snapshots: https://maven.kaf.sh/snapshots
-
-*(Note: `z.kaf.sh/{releases|snapshots}` is used for publishing; `z.kaf.sh` is for browsing.)*
 
 ## Available catalogs
 
