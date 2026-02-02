@@ -28,7 +28,7 @@ gson = "2.10.1"
 amber = "9.0.0+1.21.11"
 
 # Gradle Plugins
-fabric-loom-plugin = "1.14-SNAPSHOT"
+fabric-loom-plugin = "1.11-SNAPSHOT"
 neoforge-moddev-plugin = "2.0.115"
 modpublisher-plugin = "2.1.6"
 forgegradle-plugin = "[6.0.46,6.2)"
