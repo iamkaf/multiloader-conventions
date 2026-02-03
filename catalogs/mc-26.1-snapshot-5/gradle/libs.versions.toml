@@ -1,0 +1,45 @@
+[versions]
+# Core Versions
+minecraft = "26.1-snapshot-5"
+java = "21"
+neoform = "26.1-snapshot-5-1"
+
+# Parchment (not available for this snapshot via Echo)
+
+# Fabric
+fabric-loader = "0.18.4"
+fabric-api = "0.143.1+26.1"
+modmenu = "18.0.0-alpha.5"
+
+# Libraries
+mixin = "0.8.5"
+mixinextras = "0.4.1"
+gson = "2.10.1"
+
+# Gradle Plugins
+fabric-loom-plugin = "1.15-SNAPSHOT"
+neoforge-moddev-plugin = "2.0.140"
+modpublisher-plugin = "2.1.6"
+forgegradle-plugin = "[6.0.47,6.2)"
+mixin-plugin = "0.7-SNAPSHOT"
+
+[libraries]
+# Core Dependencies
+minecraft = { group = "com.mojang", name = "minecraft", version.ref = "minecraft" }
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+
+# Mixin
+mixin = { group = "org.spongepowered", name = "mixin", version.ref = "mixin" }
+mixin-extras = { group = "io.github.llamalad7", name = "mixinextras-common", version.ref = "mixinextras" }
+
+# Fabric
+fabric-loader = { group = "net.fabricmc", name = "fabric-loader", version.ref = "fabric-loader" }
+fabric-api = { group = "net.fabricmc.fabric-api", name = "fabric-api", version.ref = "fabric-api" }
+modmenu = { group = "com.terraformersmc", name = "modmenu", version.ref = "modmenu" }
+
+[plugins]
+fabric-loom = { id = "fabric-loom", version.ref = "fabric-loom-plugin" }
+neoforge-moddev = { id = "net.neoforged.moddev", version.ref = "neoforge-moddev-plugin" }
+modpublisher = { id = "com.hypherionmc.modutils.modpublisher", version.ref = "modpublisher-plugin" }
+forgegradle = { id = "net.minecraftforge.gradle", version.ref = "forgegradle-plugin" }
+mixin = { id = "org.spongepowered.mixin", version.ref = "mixin-plugin" }
