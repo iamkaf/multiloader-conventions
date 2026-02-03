@@ -19,7 +19,7 @@ neoforge-moddev-plugin = "2.0.140"
 
 # Forge (fallback via Echo @ 1.21.11)
 forge = "61.0.8"
-forgegradle-plugin = "[6.0.47,6.2)"
+forgegradle-plugin = "[7.0,8.0)"
 
 # Libraries
 mixin = "0.8.5"
