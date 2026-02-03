@@ -20,7 +20,6 @@ neoforge = "21.10.64"
 forge = "60.1.0"
 
 # Libraries
-# NOTE: these were not present in happy-ghast-improvements/gradle.properties; confirm if you want different values.
 mixin = "0.8.5"
 mixinextras = "0.4.1"
 gson = "2.10.1"
