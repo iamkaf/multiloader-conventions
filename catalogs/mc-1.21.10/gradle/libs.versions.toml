@@ -31,7 +31,7 @@ amber = "8.2.0+1.21.10"
 fabric-loom-plugin = "1.11-SNAPSHOT"
 neoforge-moddev-plugin = "2.0.126"
 modpublisher-plugin = "2.1.6"
-forgegradle-plugin = "[7.0,8.0)"
+forgegradle-plugin = "[6.0.24,6.2)"
 mixin-plugin = "0.7-SNAPSHOT"
 
 [libraries]

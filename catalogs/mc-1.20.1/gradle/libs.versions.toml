@@ -26,7 +26,7 @@ amber = "3.0.0+1.20.1"
 # Gradle Plugins
 fabric-loom-plugin = "1.15-SNAPSHOT"
 modpublisher-plugin = "2.1.6"
-forgegradle-plugin = "[7.0,8.0)"
+forgegradle-plugin = "[6.0.47,6.2)"
 mixin-plugin = "0.7-SNAPSHOT"
 
 [libraries]
