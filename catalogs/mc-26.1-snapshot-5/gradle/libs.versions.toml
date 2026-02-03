@@ -4,12 +4,20 @@ minecraft = "26.1-snapshot-5"
 java = "21"
 neoform = "26.1-snapshot-5-1"
 
-# Parchment (not available for this snapshot via Echo)
+# Parchment
+parchment-minecraft = "1.21.11"
+parchment = "2025.12.20"
 
 # Fabric
 fabric-loader = "0.18.4"
 fabric-api = "0.143.1+26.1"
 modmenu = "18.0.0-alpha.5"
+
+# NeoForge
+neoforge = "26.1.0.0-alpha.8+snapshot-4"
+
+# Forge
+forge = "61.0.8"
 
 # Libraries
 mixin = "0.8.5"
@@ -20,7 +28,7 @@ gson = "2.10.1"
 fabric-loom-plugin = "1.15-SNAPSHOT"
 neoforge-moddev-plugin = "2.0.140"
 modpublisher-plugin = "2.1.6"
-forgegradle-plugin = "[6.0.47,6.2)"
+forgegradle-plugin = "[7.0,8.0)"
 mixin-plugin = "0.7-SNAPSHOT"
 
 [libraries]
@@ -36,6 +44,15 @@ mixin-extras = { group = "io.github.llamalad7", name = "mixinextras-common", ver
 fabric-loader = { group = "net.fabricmc", name = "fabric-loader", version.ref = "fabric-loader" }
 fabric-api = { group = "net.fabricmc.fabric-api", name = "fabric-api", version.ref = "fabric-api" }
 modmenu = { group = "com.terraformersmc", name = "modmenu", version.ref = "modmenu" }
+
+# NeoForge
+neoforge = { group = "net.neoforged", name = "neoforge", version.ref = "neoforge" }
+
+# Forge
+forge = { group = "net.minecraftforge", name = "forge", version.ref = "forge" }
+
+# Parchment
+parchment = { group = "org.parchmentmc.data", name = "parchment-1.21.11", version.ref = "parchment" }
 
 [plugins]
 fabric-loom = { id = "fabric-loom", version.ref = "fabric-loom-plugin" }
