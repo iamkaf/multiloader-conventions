@@ -1,0 +1,38 @@
+plugins {
+    id("version-catalog")
+    id("java-platform")
+    id("maven-publish")
+}
+
+group = "com.iamkaf.platform"
+version = "1.21.7-SNAPSHOT"
+
+javaPlatform {
+    allowDependencies()
+}
+
+catalog {
+    versionCatalog {
+        from(files("gradle/libs.versions.toml"))
+    }
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.versionCatalog
+        }
+    }
+    repositories {
+        maven {
+            name = 'KafMaven'
+            url = project.version.endsWith('-SNAPSHOT')
+                ? 'https://z.kaf.sh/snapshots'
+                : 'https://z.kaf.sh/releases'
+            credentials {
+                username = project.findProperty('maven.kaf.username') ?: System.getenv('MAVEN_PUBLISH_USERNAME')
+                password = project.findProperty('maven.kaf.password') ?: System.getenv('MAVEN_PUBLISH_PASSWORD')
+            }
+        }
+    }
+}

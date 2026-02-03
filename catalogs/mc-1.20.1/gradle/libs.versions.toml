@@ -1,0 +1,61 @@
+[versions]
+# Core Versions
+minecraft = "1.20.1"
+java = "17"
+
+# Parchment
+parchment-minecraft = "1.20.1"
+parchment = "2023.09.03"
+
+# Fabric
+fabric-loader = "0.16.9"
+fabric-api = "0.92.2+1.20.1"
+modmenu = "7.2.2"
+
+# Forge
+forge = "47.3.3"
+
+# Libraries
+mixin = "0.8.5"
+mixinextras = "0.4.1"
+gson = "2.10.1"
+
+# Amber
+amber = "3.0.0+1.20.1"
+
+# Gradle Plugins
+fabric-loom-plugin = "1.15-SNAPSHOT"
+modpublisher-plugin = "2.1.6"
+forgegradle-plugin = "[6.0.47,6.2)"
+mixin-plugin = "0.7-SNAPSHOT"
+
+[libraries]
+# Core Dependencies
+minecraft = { group = "com.mojang", name = "minecraft", version.ref = "minecraft" }
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+
+# Mixin
+mixin = { group = "org.spongepowered", name = "mixin", version.ref = "mixin" }
+mixin-extras = { group = "io.github.llamalad7", name = "mixinextras-common", version.ref = "mixinextras" }
+
+# Fabric
+fabric-loader = { group = "net.fabricmc", name = "fabric-loader", version.ref = "fabric-loader" }
+fabric-api = { group = "net.fabricmc.fabric-api", name = "fabric-api", version.ref = "fabric-api" }
+modmenu = { group = "com.terraformersmc", name = "modmenu", version.ref = "modmenu" }
+
+# Forge
+forge = { group = "net.minecraftforge", name = "forge", version.ref = "forge" }
+
+# Parchment
+parchment = { group = "org.parchmentmc.data", name = "parchment-1.20.1", version.ref = "parchment" }
+
+# Amber (all platforms)
+amber = { group = "com.iamkaf.amber", name = "amber-common", version.ref = "amber" }
+amber-fabric = { group = "com.iamkaf.amber", name = "amber-fabric", version.ref = "amber" }
+amber-forge = { group = "com.iamkaf.amber", name = "amber-forge", version.ref = "amber" }
+
+[plugins]
+fabric-loom = { id = "fabric-loom", version.ref = "fabric-loom-plugin" }
+modpublisher = { id = "com.hypherionmc.modutils.modpublisher", version.ref = "modpublisher-plugin" }
+forgegradle = { id = "net.minecraftforge.gradle", version.ref = "forgegradle-plugin" }
+mixin = { id = "org.spongepowered.mixin", version.ref = "mixin-plugin" }
