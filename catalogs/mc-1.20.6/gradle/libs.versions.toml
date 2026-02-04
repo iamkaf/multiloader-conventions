@@ -56,6 +56,12 @@ forge = { group = "net.minecraftforge", name = "forge", version.ref = "forge" }
 parchment = { group = "org.parchmentmc.data", name = "parchment-1.20.6", version.ref = "parchment" }
 
 
+
+# Forge Config API Port (template-style aliases)
+forge-config-api-port-fabric = { group = "fuzs.forgeconfigapiport", name = "forgeconfigapiport-fabric", version.ref = "forge-config-api-port" }
+forge-config-api-port-neoforge = { group = "fuzs.forgeconfigapiport", name = "forgeconfigapiport-neoforge", version.ref = "forge-config-api-port" }
+forge-config-api-port-common-neoforgeapi = { group = "fuzs.forgeconfigapiport", name = "forgeconfigapiport-common-neoforgeapi", version.ref = "forge-config-api-port" }
+forge-config-api-port-forge = { group = "fuzs.forgeconfigapiport", name = "forgeconfigapiport-forge", version.ref = "forge-config-api-port" }
 [plugins]
 fabric-loom = { id = "fabric-loom", version.ref = "fabric-loom-plugin" }
 neoforge-moddev = { id = "net.neoforged.moddev", version.ref = "neoforge-moddev-plugin" }

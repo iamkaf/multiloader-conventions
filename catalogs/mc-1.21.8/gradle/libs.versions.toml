@@ -65,6 +65,12 @@ forgeconfigapiport-neoforge = { group = "fuzs.forgeconfigapiport", name = "forge
 forgeconfigapiport-common-neoforgeapi = { group = "fuzs.forgeconfigapiport", name = "forgeconfigapiport-common-neoforgeapi", version.ref = "forge-config-api-port" }
 forgeconfigapiport-forge = { group = "fuzs.forgeconfigapiport", name = "forgeconfigapiport-forge", version.ref = "forge-config-api-port" }
 
+# Forge Config API Port (template-style aliases)
+forge-config-api-port-fabric = { group = "fuzs.forgeconfigapiport", name = "forgeconfigapiport-fabric", version.ref = "forge-config-api-port" }
+forge-config-api-port-neoforge = { group = "fuzs.forgeconfigapiport", name = "forgeconfigapiport-neoforge", version.ref = "forge-config-api-port" }
+forge-config-api-port-common-neoforgeapi = { group = "fuzs.forgeconfigapiport", name = "forgeconfigapiport-common-neoforgeapi", version.ref = "forge-config-api-port" }
+forge-config-api-port-forge = { group = "fuzs.forgeconfigapiport", name = "forgeconfigapiport-forge", version.ref = "forge-config-api-port" }
+
 # Amber (all platforms)
 amber = { group = "com.iamkaf.amber", name = "amber-common", version.ref = "amber" }
 amber-fabric = { group = "com.iamkaf.amber", name = "amber-fabric", version.ref = "amber" }
