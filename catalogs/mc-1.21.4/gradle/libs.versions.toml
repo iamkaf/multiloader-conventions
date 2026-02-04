@@ -25,7 +25,6 @@ mixinextras = "0.4.1"
 gson = "2.10.1"
 forge-config-api-port = "21.4.3"
 
-
 # Amber
 amber = "3.0.0+1.21.4"
 
@@ -64,12 +63,6 @@ forgeconfigapiport-fabric = { group = "fuzs.forgeconfigapiport", name = "forgeco
 forgeconfigapiport-neoforge = { group = "fuzs.forgeconfigapiport", name = "forgeconfigapiport-neoforge", version.ref = "forge-config-api-port" }
 forgeconfigapiport-common-neoforgeapi = { group = "fuzs.forgeconfigapiport", name = "forgeconfigapiport-common-neoforgeapi", version.ref = "forge-config-api-port" }
 forgeconfigapiport-forge = { group = "fuzs.forgeconfigapiport", name = "forgeconfigapiport-forge", version.ref = "forge-config-api-port" }
-
-# Forge Config API Port (template-style aliases)
-forge-config-api-port-fabric = { group = "fuzs.forgeconfigapiport", name = "forgeconfigapiport-fabric", version.ref = "forge-config-api-port" }
-forge-config-api-port-neoforge = { group = "fuzs.forgeconfigapiport", name = "forgeconfigapiport-neoforge", version.ref = "forge-config-api-port" }
-forge-config-api-port-common-neoforgeapi = { group = "fuzs.forgeconfigapiport", name = "forgeconfigapiport-common-neoforgeapi", version.ref = "forge-config-api-port" }
-forge-config-api-port-forge = { group = "fuzs.forgeconfigapiport", name = "forgeconfigapiport-forge", version.ref = "forge-config-api-port" }
 
 # Amber (all platforms)
 amber = { group = "com.iamkaf.amber", name = "amber-common", version.ref = "amber" }
