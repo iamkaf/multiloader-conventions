@@ -19,6 +19,8 @@ forge = "47.3.3"
 mixin = "0.8.5"
 mixinextras = "0.4.1"
 gson = "2.10.1"
+forge-config-api-port = "8.0.3"
+
 
 # Amber
 amber = "3.0.0+1.20.1"
@@ -48,6 +50,9 @@ forge = { group = "net.minecraftforge", name = "forge", version.ref = "forge" }
 
 # Parchment
 parchment = { group = "org.parchmentmc.data", name = "parchment-1.20.1", version.ref = "parchment" }
+
+# Forge Config API Port
+forgeconfigapiport-fabric = { group = "fuzs.forgeconfigapiport", name = "forgeconfigapiport-fabric", version.ref = "forge-config-api-port" }
 
 # Amber (all platforms)
 amber = { group = "com.iamkaf.amber", name = "amber-common", version.ref = "amber" }
