@@ -29,7 +29,7 @@ forge-config-api-port = "21.8.2"
 amber = "6.0.12+1.21.8"
 
 # Gradle Plugins
-fabric-loom-plugin = "1.15-SNAPSHOT"
+fabric-loom-plugin = "1.10-SNAPSHOT"
 neoforge-moddev-plugin = "2.0.140"
 modpublisher-plugin = "2.1.6"
 forgegradle-plugin = "[6.0.47,6.2)"

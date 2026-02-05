@@ -25,7 +25,7 @@ forge-config-api-port = "8.0.3"
 amber = "3.0.0+1.20.1"
 
 # Gradle Plugins
-fabric-loom-plugin = "1.15-SNAPSHOT"
+fabric-loom-plugin = "1.7-SNAPSHOT"
 modpublisher-plugin = "2.1.6"
 forgegradle-plugin = "[6.0.47,6.2)"
 mixin-plugin = "0.7-SNAPSHOT"
