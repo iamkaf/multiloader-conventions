@@ -55,7 +55,7 @@ forge = { group = "net.minecraftforge", name = "forge", version.ref = "forge" }
 parchment = { group = "org.parchmentmc.data", name = "parchment-1.21.11", version.ref = "parchment" }
 
 [plugins]
-fabric-loom = { id = "fabric-loom", version.ref = "fabric-loom-plugin" }
+fabric-loom = { id = "net.fabricmc.fabric-loom", version.ref = "fabric-loom-plugin" }
 neoforge-moddev = { id = "net.neoforged.moddev", version.ref = "neoforge-moddev-plugin" }
 modpublisher = { id = "com.hypherionmc.modutils.modpublisher", version.ref = "modpublisher-plugin" }
 forgegradle = { id = "net.minecraftforge.gradle", version.ref = "forgegradle-plugin" }
