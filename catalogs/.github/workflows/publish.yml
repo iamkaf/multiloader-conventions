@@ -18,6 +18,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -26,9 +28,51 @@ jobs:
           java-version: '21'
           cache: gradle
 
-      - name: Publish all catalogs to KafMaven
+      - name: Detect changed catalogs
+        id: changed
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Figure out a base commit for diffing.
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="${{ github.event.pull_request.base.sha }}"
+          else
+            base="${{ github.event.before }}"
+          fi
+
+          # If this is the first push on a branch, 'before' can be all zeros.
+          if [ "$base" = "0000000000000000000000000000000000000000" ]; then
+            base=$(git rev-list --max-parents=0 HEAD)
+          fi
+
+          echo "Diff base: $base"
+
+          # Collect changed mc-* directories.
+          mapfile -t projects < <(
+            git diff --name-only "$base"...HEAD \
+              | awk -F/ '/^mc-[^/]+\// {print $1}' \
+              | sort -u
+          )
+
+          if [ ${#projects[@]} -eq 0 ]; then
+            echo "No mc-* catalogs changed; skipping publish."
+            echo "projects=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Changed catalogs: ${projects[*]}"
+          echo "projects=${projects[*]}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish changed catalogs to KafMaven
+        if: steps.changed.outputs.projects != ''
         env:
           MAVEN_PUBLISH_USERNAME: ${{ secrets.MAVEN_PUBLISH_USERNAME }}
           MAVEN_PUBLISH_PASSWORD: ${{ secrets.MAVEN_PUBLISH_PASSWORD }}
+        shell: bash
         run: |
-          ./gradlew --no-daemon --stacktrace publishAllToKafMaven
+          set -euo pipefail
+          for p in ${{ steps.changed.outputs.projects }}; do
+            echo "Publishing $p..."
+            ./gradlew --no-daemon --stacktrace ":${p}:publishAllPublicationsToKafMavenRepository"
+          done
