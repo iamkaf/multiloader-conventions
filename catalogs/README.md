@@ -69,7 +69,7 @@ dependencyResolutionManagement {
 ## Available catalogs
 
 This repo currently contains:
-- `mc-1.20.1` → `mc-1.21.11`
+- `mc-1.16.5` → `mc-1.21.11`
 
 ## Publishing (maintainers)
 

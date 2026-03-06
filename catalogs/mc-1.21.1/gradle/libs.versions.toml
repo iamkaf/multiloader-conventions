@@ -17,7 +17,7 @@ modmenu = "11.0.3"
 neoforge = "21.1.62"
 
 # Forge
-forge = "52.1.0"
+forge = "52.1.10"
 
 # Libraries
 mixin = "0.8.5"
@@ -29,10 +29,10 @@ forge-config-api-port = "21.1.6"
 amber = "3.0.0+1.21.1"
 
 # Gradle Plugins
-fabric-loom-plugin = "1.8.13"
+fabric-loom-plugin = "1.11-SNAPSHOT"
 neoforge-moddev-plugin = "2.0.140"
 modpublisher-plugin = "2.1.6"
-forgegradle-plugin = "[6.0.47,6.2)"
+forgegradle-plugin = "[7.0.11,8.0)"
 mixin-plugin = "0.7-SNAPSHOT"
 
 [libraries]

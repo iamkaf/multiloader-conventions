@@ -1,25 +1,25 @@
 [versions]
 # Core Versions
-minecraft = "1.20.1"
+minecraft = "1.19.2"
 java = "17"
 
 # Parchment
-parchment-minecraft = "1.20.1"
-parchment = "2023.09.03"
+parchment-minecraft = "1.19.2"
+parchment = "2022.11.27"
 
 # Fabric
-fabric-loader = "0.16.9"
-fabric-api = "0.92.2+1.20.1"
-modmenu = "7.2.2"
+fabric-loader = "0.14.9"
+fabric-api = "0.77.0+1.19.2"
+modmenu = "4.2.0-beta.2"
 
 # Forge
-forge = "47.4.16"
+forge = "43.5.2"
 
 # Libraries
 mixin = "0.8.5"
 mixinextras = "0.4.1"
 gson = "2.10.1"
-forge-config-api-port = "8.0.3"
+forge-config-api-port = "4.2.11"
 
 # Amber
 amber = "3.0.0+1.20.1"
@@ -49,7 +49,7 @@ modmenu = { group = "com.terraformersmc", name = "modmenu", version.ref = "modme
 forge = { group = "net.minecraftforge", name = "forge", version.ref = "forge" }
 
 # Parchment
-parchment = { group = "org.parchmentmc.data", name = "parchment-1.20.1", version.ref = "parchment" }
+parchment = { group = "org.parchmentmc.data", name = "parchment-1.19.2", version.ref = "parchment" }
 
 # Forge Config API Port
 forgeconfigapiport-fabric = { group = "fuzs.forgeconfigapiport", name = "forgeconfigapiport-fabric", version.ref = "forge-config-api-port" }
