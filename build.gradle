@@ -56,10 +56,10 @@ tasks.register('checkAll') {
 
 tasks.register('checkMinimalSample', Exec) {
     group = 'verification'
-    description = 'Builds the minimal sample and validates the extracted loader wiring.'
+    description = 'Builds the minimal sample, validates the extracted loader wiring, and dry-runs publishing.'
     workingDir = rootDir
     commandLine './gradlew', '-p', 'samples/minimal', '--no-daemon', '--stacktrace',
-        'validateConventionProperties', 'validateSampleWiring', 'build'
+        'validateConventionProperties', 'validateSampleWiring', 'build', 'publishingRelease', '-Pdry_run=true'
 }
 
 tasks.register('checkDatagenSample', Exec) {

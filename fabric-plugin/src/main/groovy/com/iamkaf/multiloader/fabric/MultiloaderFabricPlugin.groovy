@@ -11,7 +11,6 @@ class MultiloaderFabricPlugin implements Plugin<Project> {
     void apply(Project project) {
         project.pluginManager.apply(MultiloaderPlatformPlugin)
         project.pluginManager.apply('fabric-loom')
-        project.pluginManager.apply('com.hypherionmc.modutils.modpublisher')
 
         project.pluginManager.withPlugin('fabric-loom') {
             ConventionSupport.configureFabricBaseDependencies(project)
@@ -43,7 +42,5 @@ class MultiloaderFabricPlugin implements Plugin<Project> {
                 }
             }
         }
-
-        ConventionSupport.configurePublisherForLoader(project, 'fabric')
     }
 }

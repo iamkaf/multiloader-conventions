@@ -11,7 +11,6 @@ class MultiloaderNeoForgePlugin implements Plugin<Project> {
     void apply(Project project) {
         project.pluginManager.apply(MultiloaderPlatformPlugin)
         project.pluginManager.apply('net.neoforged.moddev')
-        project.pluginManager.apply('com.hypherionmc.modutils.modpublisher')
 
         project.extensions.configure('neoForge') { neoForge ->
             neoForge.version = ConventionSupport.versionAlias(project, 'neoforge')
@@ -48,7 +47,5 @@ class MultiloaderNeoForgePlugin implements Plugin<Project> {
                 }
             }
         }
-
-        ConventionSupport.configurePublisherForLoader(project, 'neoforge')
     }
 }

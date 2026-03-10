@@ -288,23 +288,6 @@ class ConventionSupport {
         }
     }
 
-    static void configurePublisherForLoader(Project project, String loaderName) {
-        def extra = project.extensions.extraProperties
-        if (!extra.has('configureCommonPublisher') || !extra.has('publisherJavaVersionsFor')) {
-            return
-        }
-
-        def publisherExtension = project.extensions.findByName('publisher')
-        if (publisherExtension == null) {
-            return
-        }
-
-        def publisherJavaVersionsFor = extra.get('publisherJavaVersionsFor')
-        def configureCommonPublisher = extra.get('configureCommonPublisher')
-        def javaVersions = publisherJavaVersionsFor.call(requiredProperty(project, 'java_version'))
-        configureCommonPublisher.call(publisherExtension, loaderName, javaVersions)
-    }
-
     static File commonFile(Project project, String relativePath) {
         def commonProject = project.rootProject.findProject(':common')
         if (commonProject == null) {

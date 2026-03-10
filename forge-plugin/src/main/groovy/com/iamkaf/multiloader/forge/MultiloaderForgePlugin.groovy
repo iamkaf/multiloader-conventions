@@ -13,7 +13,6 @@ class MultiloaderForgePlugin implements Plugin<Project> {
     void apply(Project project) {
         project.pluginManager.apply(MultiloaderPlatformPlugin)
         project.pluginManager.apply('net.minecraftforge.gradle')
-        project.pluginManager.apply('com.hypherionmc.modutils.modpublisher')
 
         def mixinConfigs = ConventionSupport.collectMixinConfigs(project, 'forge')
         project.tasks.named('jar', Jar).configure { task ->
@@ -70,7 +69,5 @@ class MultiloaderForgePlugin implements Plugin<Project> {
             sourceSet.output.resourcesDir = dir
             sourceSet.java.destinationDirectory = dir
         }
-
-        ConventionSupport.configurePublisherForLoader(project, 'forge')
     }
 }

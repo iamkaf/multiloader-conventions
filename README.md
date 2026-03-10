@@ -13,12 +13,7 @@ This repo now provides the first real plugin family:
 - `com.iamkaf.multiloader.fabric`
 - `com.iamkaf.multiloader.forge`
 - `com.iamkaf.multiloader.neoforge`
-
-Compatibility plugin:
-
-- `com.iamkaf.multiloader.core`
-
-`core` is deprecated. It exists only as a temporary alias that applies `common`, and `platform` on loader projects.
+- `com.iamkaf.multiloader.publishing`
 
 ## Intended Boundary
 
@@ -30,7 +25,6 @@ Compatibility plugin:
 - `root`
   - register aggregate tasks
   - validate required root properties
-  - expose shared changelog and publisher helpers
 - `common`
   - configure Java, publishing, resource expansion, manifest metadata, capabilities, and shared repositories
   - expose `commonJava` and `commonResources` from the `common` project
@@ -42,6 +36,9 @@ Compatibility plugin:
   - apply invariant Forge loader wiring
 - `neoforge`
   - apply invariant NeoForge loader wiring
+- `publishing`
+  - aggregate loader jars from the version root
+  - dry-run and publish Modrinth / CurseForge releases
 
 `flight` stays separate until the publish boundary is mature enough to adopt.
 
@@ -75,5 +72,6 @@ Use:
 
 - `./gradlew build`
 - `./gradlew -p samples/minimal validateConventionProperties validateSampleWiring build`
+- `./gradlew -p samples/minimal publishingRelease -Pdry_run=true`
 - `./gradlew -p samples/datagen validateConventionProperties validateSampleWiring :fabric:runDatagen verifyDatagenOutput`
 - `./gradlew checkSamples`
