@@ -1,6 +1,7 @@
 package com.iamkaf.multiloader.root
 
 import org.gradle.api.GradleException
+import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 
@@ -37,9 +38,51 @@ class MultiloaderRootPlugin implements Plugin<Project> {
 
             header + latest + footer
         }
+        def publisherJavaVersionsFor = { Object javaVersionValue ->
+            def javaVersion = javaVersionValue.toString().toInteger()
+            javaVersion >= 21
+                ? [JavaVersion.VERSION_21, JavaVersion.VERSION_22]
+                : [JavaVersion.toVersion(javaVersion)]
+        }
 
         project.allprojects { candidate ->
             candidate.ext.set('extractHeaderLatestFooterFromChangelog', extractHeaderLatestFooterFromChangelog)
+            candidate.ext.set('publisherJavaVersionsFor', publisherJavaVersionsFor)
+            candidate.ext.set('configureCommonPublisher', { publisherExtension, String loaderName, Iterable<JavaVersion> javaVersions ->
+                publisherExtension.apiKeys {
+                    modrinth System.getenv('MODRINTH_TOKEN')
+                    curseforge System.getenv('CURSEFORGE_TOKEN')
+                }
+
+                publisherExtension.setDebug(Boolean.valueOf(candidate.findProperty('dry_run')))
+                publisherExtension.setCurseID(candidate.findProperty('curse_id'))
+                publisherExtension.setModrinthID(candidate.findProperty('modrinth_id'))
+                publisherExtension.setVersionType(candidate.findProperty('release_type'))
+                publisherExtension.setChangelog(candidate.extractHeaderLatestFooterFromChangelog(candidate.rootProject.file('../changelog.md').text))
+                publisherExtension.setProjectVersion(candidate.rootProject.version)
+                publisherExtension.setDisplayName("${candidate.findProperty('mod_id')}-${candidate.name}-${candidate.version}")
+                publisherExtension.setGameVersions(candidate.findProperty('game_versions').toString().split(','))
+                publisherExtension.setLoaders(loaderName)
+                publisherExtension.setCurseEnvironment(candidate.findProperty('mod_environment'))
+                publisherExtension.setIsManualRelease(false)
+                publisherExtension.setArtifact("build/libs/${candidate.findProperty('mod_id')}-${candidate.name}-${candidate.version}.jar")
+                publisherExtension.setDisableEmptyJarCheck(false)
+                publisherExtension.setJavaVersions(javaVersions)
+
+                def modrinthDepends = candidate.findProperty('mod_modrinth_depends')?.toString()?.trim()
+                if (modrinthDepends) {
+                    publisherExtension.modrinthDepends {
+                        required(modrinthDepends.split(','))
+                    }
+                }
+
+                def curseDepends = candidate.findProperty('mod_curse_depends')?.toString()?.trim()
+                if (curseDepends) {
+                    publisherExtension.curseDepends {
+                        required(curseDepends.split(','))
+                    }
+                }
+            })
         }
     }
 
