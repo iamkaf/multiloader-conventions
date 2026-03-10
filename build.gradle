@@ -6,12 +6,29 @@ group = providers.gradleProperty('group').get()
 version = providers.gradleProperty('version').get()
 
 subprojects {
+    apply plugin: 'maven-publish'
+
     group = rootProject.group
     version = rootProject.version
 
     repositories {
         gradlePluginPortal()
         mavenCentral()
+    }
+
+    publishing {
+        repositories {
+            maven {
+                name = 'KafMaven'
+                url = uri(version.toString().endsWith('-SNAPSHOT')
+                    ? 'https://z.kaf.sh/snapshots'
+                    : 'https://z.kaf.sh/releases')
+                credentials {
+                    username = System.getenv('MAVEN_PUBLISH_USERNAME')
+                    password = System.getenv('MAVEN_PUBLISH_PASSWORD')
+                }
+            }
+        }
     }
 }
 
@@ -20,4 +37,3 @@ tasks.register('checkAll') {
     description = 'Runs check in every plugin project.'
     dependsOn(subprojects.collect { "${it.path}:check" })
 }
-
