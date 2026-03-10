@@ -2,22 +2,17 @@ plugins {
     id 'com.iamkaf.multiloader.root'
     id 'com.iamkaf.multiloader.common' apply false
     id 'com.iamkaf.multiloader.fabric' apply false
-    id 'com.iamkaf.multiloader.forge' apply false
-    id 'com.iamkaf.multiloader.neoforge' apply false
     alias(libs.plugins.fabric.loom) apply false
     alias(libs.plugins.neoforge.moddev) apply false
-    alias(libs.plugins.forgegradle) apply false
     alias(libs.plugins.modpublisher) apply false
 }
 
 tasks.register('validateSampleWiring') {
     group = 'verification'
-    description = 'Checks that the minimal sample gets the expected loader defaults from the convention plugins.'
+    description = 'Checks that the datagen sample gets the expected Fabric defaults.'
     dependsOn 'validateConventionProperties'
     doLast {
         def fabricProject = project(':fabric')
-        def forgeProject = project(':forge')
-        def neoForgeProject = project(':neoforge')
 
         assert fabricProject.configurations.modImplementation.allDependencies.any {
             it.group == 'net.fabricmc' && it.name == 'fabric-loader'
@@ -27,8 +22,17 @@ tasks.register('validateSampleWiring') {
             it.group == 'com.mojang' && it.name == 'minecraft'
         } : 'Fabric plugin must provide the Minecraft dependency'
 
-        assert fabricProject.tasks.findByName('runClient') != null : 'Fabric runClient task is missing'
-        assert forgeProject.tasks.findByName('runClient') != null : 'Forge runClient task is missing'
-        assert neoForgeProject.tasks.findByName('runClient') != null : 'NeoForge runClient task is missing'
+        assert fabricProject.tasks.findByName('runDatagen') != null : 'Fabric runDatagen task is missing'
+    }
+}
+
+tasks.register('verifyDatagenOutput') {
+    group = 'verification'
+    description = 'Verifies that Fabric datagen writes into common/src/main/generated.'
+    dependsOn ':fabric:runDatagen'
+    doLast {
+        def generatedLang = file('common/src/main/generated/assets/exampledatagen/lang/en_us.json')
+        assert generatedLang.isFile() : "Expected generated language file at ${generatedLang}"
+        assert generatedLang.text.contains('"itemGroup.exampledatagen": "Example Datagen"')
     }
 }

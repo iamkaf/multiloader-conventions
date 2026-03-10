@@ -8,4 +8,4 @@ It is intentionally small:
 - `common` applies `common`
 - loader projects apply `fabric`, `forge`, and `neoforge`
 
-The sample is for plugin-resolution and project-shape validation, not full Minecraft runtime validation.
+The sample is for plugin-resolution and loader-default validation, not full Minecraft runtime validation.

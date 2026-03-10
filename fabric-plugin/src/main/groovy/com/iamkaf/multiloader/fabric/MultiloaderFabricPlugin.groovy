@@ -13,28 +13,33 @@ class MultiloaderFabricPlugin implements Plugin<Project> {
         project.pluginManager.apply('fabric-loom')
         project.pluginManager.apply('com.hypherionmc.modutils.modpublisher')
 
-        project.extensions.configure('loom') { loom ->
-            def accessWidener = ConventionSupport.commonFile(project, "src/main/resources/${ConventionSupport.requiredProperty(project, 'mod_id')}.accesswidener")
-            if (accessWidener.exists()) {
-                loom.accessWidenerPath.set(accessWidener)
-            }
+        project.pluginManager.withPlugin('fabric-loom') {
+            ConventionSupport.configureFabricBaseDependencies(project)
+            ConventionSupport.registerFabricDatagenHelper(project)
 
-            loom.mixin {
-                defaultRefmapName.set("${ConventionSupport.requiredProperty(project, 'mod_id')}.refmap.json")
-            }
-
-            loom.runs {
-                client {
-                    client()
-                    setConfigName('Fabric Client')
-                    ideConfigGenerated(true)
-                    runDir('runs/client')
+            project.extensions.configure('loom') { loom ->
+                def accessWidener = ConventionSupport.commonFile(project, "src/main/resources/${ConventionSupport.requiredProperty(project, 'mod_id')}.accesswidener")
+                if (accessWidener.exists()) {
+                    loom.accessWidenerPath.set(accessWidener)
                 }
-                server {
-                    server()
-                    setConfigName('Fabric Server')
-                    ideConfigGenerated(true)
-                    runDir('runs/server')
+
+                loom.mixin {
+                    defaultRefmapName.set("${ConventionSupport.requiredProperty(project, 'mod_id')}.refmap.json")
+                }
+
+                loom.runs {
+                    client {
+                        client()
+                        setConfigName('Fabric Client')
+                        ideConfigGenerated(true)
+                        runDir('runs/client')
+                    }
+                    server {
+                        server()
+                        setConfigName('Fabric Server')
+                        ideConfigGenerated(true)
+                        runDir('runs/server')
+                    }
                 }
             }
         }

@@ -86,6 +86,27 @@ class ConventionSupport {
         }
     }
 
+    static void configureFabricBaseDependencies(Project project) {
+        project.dependencies.add('minecraft', requiredLibrary(project, 'minecraft'))
+        def loom = project.extensions.getByName('loom')
+        project.dependencies.add('mappings', loom.layered {
+            officialMojangMappings()
+            parchment(requiredLibrary(project, 'parchment'))
+        })
+        project.dependencies.add('modImplementation', requiredLibrary(project, 'fabric-loader'))
+    }
+
+    static void registerFabricDatagenHelper(Project project) {
+        project.extensions.extraProperties.set('enableCommonFabricDatagen', {
+            project.extensions.configure('fabricApi') { fabricApi ->
+                fabricApi.configureDataGeneration {
+                    client = true
+                    outputDirectory = commonFile(project, 'src/main/generated')
+                }
+            }
+        })
+    }
+
     static void configureRepositories(Project project) {
         project.repositories.mavenLocal()
         project.repositories.mavenCentral()

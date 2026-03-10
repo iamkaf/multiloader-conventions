@@ -65,14 +65,15 @@ If `enabled_loaders` is omitted, the settings plugin defaults to `fabric,forge,n
 
 ## Sample Consumer
 
-See [samples/minimal](samples/minimal) for the current consumer shape.
+See [samples/minimal](samples/minimal) for the current consumer shape and [samples/datagen](samples/datagen) for the current Fabric datagen shape.
 
-The sample uses `includeBuild("../../")` so the convention repo can be tested locally before any publication step exists.
+The samples use `includeBuild("../../")` so the convention repo can be tested locally before any publication step exists.
 
 ## Validation
 
 Use:
 
 - `./gradlew build`
-- `./gradlew -p samples/minimal validateConventionProperties`
-- `./gradlew -p samples/minimal help`
+- `./gradlew -p samples/minimal validateConventionProperties validateSampleWiring build`
+- `./gradlew -p samples/datagen validateConventionProperties validateSampleWiring :fabric:runDatagen verifyDatagenOutput`
+- `./gradlew checkSamples`

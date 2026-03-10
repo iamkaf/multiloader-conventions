@@ -2,6 +2,8 @@ plugins {
     id 'base'
 }
 
+import org.gradle.api.tasks.Exec
+
 group = providers.gradleProperty('group').get()
 version = providers.gradleProperty('version').get()
 
@@ -50,4 +52,26 @@ tasks.register('checkAll') {
     group = 'verification'
     description = 'Runs check in every plugin project.'
     dependsOn(subprojects.collect { "${it.path}:check" })
+}
+
+tasks.register('checkMinimalSample', Exec) {
+    group = 'verification'
+    description = 'Builds the minimal sample and validates the extracted loader wiring.'
+    workingDir = rootDir
+    commandLine './gradlew', '-p', 'samples/minimal', '--no-daemon', '--stacktrace',
+        'validateConventionProperties', 'validateSampleWiring', 'build'
+}
+
+tasks.register('checkDatagenSample', Exec) {
+    group = 'verification'
+    description = 'Runs the datagen sample and verifies generated resources land in common.'
+    workingDir = rootDir
+    commandLine './gradlew', '-p', 'samples/datagen', '--no-daemon', '--stacktrace',
+        'validateConventionProperties', 'validateSampleWiring', ':fabric:runDatagen', 'verifyDatagenOutput'
+}
+
+tasks.register('checkSamples') {
+    group = 'verification'
+    description = 'Runs all sample consumer validations.'
+    dependsOn 'checkMinimalSample', 'checkDatagenSample'
 }
