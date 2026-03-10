@@ -90,6 +90,11 @@ class MultiloaderSettingsPlugin implements Plugin<Settings> {
             return
         }
 
+        def buildFile = new File(projectDir, 'build.gradle')
+        if (!buildFile.isFile()) {
+            return
+        }
+
         settings.include(projectName)
     }
 }
