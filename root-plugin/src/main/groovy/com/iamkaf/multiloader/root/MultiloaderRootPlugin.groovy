@@ -20,12 +20,27 @@ class MultiloaderRootPlugin implements Plugin<Project> {
         }
 
         applyCoordinates(project)
+        registerSharedHelpers(project)
         registerValidationTask(project)
         registerAggregateTask(project, 'buildAllLoaders', 'build')
         registerAggregateTask(project, 'checkAllLoaders', 'check')
         registerRunClientTask(project, 'runClientFabric', 'fabric')
         registerRunClientTask(project, 'runClientForge', 'forge')
         registerRunClientTask(project, 'runClientNeoForge', 'neoforge')
+    }
+
+    private static void registerSharedHelpers(Project project) {
+        def extractHeaderLatestFooterFromChangelog = { String completeChangelog ->
+            def header = (completeChangelog =~ /(?ms)\A.*?(?=^## \d+\.\d+\.\d+)/)[0]
+            def latest = (completeChangelog =~ /(?ms)^## \d+\.\d+\.\d+[\s\S]*?(?=^## (?:\d+\.\d+\.\d+|[^0-9]|$))/)[0]
+            def footer = (completeChangelog =~ /(?ms)^## Types of changes[\s\S]*/)[0]
+
+            header + latest + footer
+        }
+
+        project.allprojects { candidate ->
+            candidate.ext.set('extractHeaderLatestFooterFromChangelog', extractHeaderLatestFooterFromChangelog)
+        }
     }
 
     private static void applyCoordinates(Project project) {
@@ -85,4 +100,3 @@ class MultiloaderRootPlugin implements Plugin<Project> {
         }
     }
 }
-
