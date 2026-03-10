@@ -30,6 +30,10 @@ class MultiloaderSettingsPlugin implements Plugin<Settings> {
             repo.name = 'Sponge'
             repo.url = settings.uri('https://repo.spongepowered.org/repository/maven-public')
         }
+        settings.pluginManagement.repositories.maven { repo ->
+            repo.name = 'FirstDark'
+            repo.url = settings.uri('https://maven.firstdark.dev/releases')
+        }
     }
 
     private static void configureDependencyResolution(Settings settings) {
@@ -89,4 +93,3 @@ class MultiloaderSettingsPlugin implements Plugin<Settings> {
         settings.include(projectName)
     }
 }
-

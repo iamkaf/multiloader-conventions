@@ -6,6 +6,7 @@ import org.gradle.api.plugins.JavaLibraryPlugin
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.jvm.tasks.Jar
+import org.gradle.jvm.toolchain.JavaLanguageVersion
 
 class MultiloaderCorePlugin implements Plugin<Project> {
 
@@ -60,4 +61,3 @@ class MultiloaderCorePlugin implements Plugin<Project> {
         }
     }
 }
-
