@@ -66,6 +66,9 @@ See [samples/minimal](samples/minimal) for the current consumer shape and [sampl
 
 The samples use `includeBuild("../../")` so the convention repo can be tested locally before any publication step exists.
 
+See [docs/version-capability-matrix.md](docs/version-capability-matrix.md) for
+the current policy on Minecraft-version and loader-version quirks.
+
 ## Validation
 
 Use:
