@@ -1,0 +1,21 @@
+plugins {
+    id 'groovy-gradle-plugin'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(providers.gradleProperty('java_version').get().toInteger())
+    }
+}
+
+gradlePlugin {
+    plugins {
+        multiloaderSettings {
+            id = 'com.iamkaf.multiloader.settings'
+            implementationClass = 'com.iamkaf.multiloader.settings.MultiloaderSettingsPlugin'
+            displayName = 'Multiloader Settings Plugin'
+            description = 'Configures repositories, version catalogs, and included projects for multiloader version directories.'
+        }
+    }
+}
+

@@ -1,0 +1,21 @@
+plugins {
+    id 'groovy-gradle-plugin'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(providers.gradleProperty('java_version').get().toInteger())
+    }
+}
+
+gradlePlugin {
+    plugins {
+        multiloaderRoot {
+            id = 'com.iamkaf.multiloader.root'
+            implementationClass = 'com.iamkaf.multiloader.root.MultiloaderRootPlugin'
+            displayName = 'Multiloader Root Plugin'
+            description = 'Registers aggregate tasks and validates required root properties for multiloader version directories.'
+        }
+    }
+}
+

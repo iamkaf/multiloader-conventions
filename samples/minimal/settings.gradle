@@ -1,0 +1,12 @@
+pluginManagement {
+    includeBuild('../../')
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+plugins {
+    id 'com.iamkaf.multiloader.settings'
+}
+

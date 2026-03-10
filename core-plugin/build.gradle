@@ -1,0 +1,21 @@
+plugins {
+    id 'groovy-gradle-plugin'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(providers.gradleProperty('java_version').get().toInteger())
+    }
+}
+
+gradlePlugin {
+    plugins {
+        multiloaderCore {
+            id = 'com.iamkaf.multiloader.core'
+            implementationClass = 'com.iamkaf.multiloader.core.MultiloaderCorePlugin'
+            displayName = 'Multiloader Core Plugin'
+            description = 'Applies shared repositories, Java toolchains, and basic manifest metadata for multiloader projects.'
+        }
+    }
+}
+

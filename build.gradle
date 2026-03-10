@@ -1,0 +1,23 @@
+plugins {
+    id 'base'
+}
+
+group = providers.gradleProperty('group').get()
+version = providers.gradleProperty('version').get()
+
+subprojects {
+    group = rootProject.group
+    version = rootProject.version
+
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+tasks.register('checkAll') {
+    group = 'verification'
+    description = 'Runs check in every plugin project.'
+    dependsOn(subprojects.collect { "${it.path}:check" })
+}
+

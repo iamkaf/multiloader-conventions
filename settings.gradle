@@ -1,0 +1,13 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+rootProject.name = 'multiloader-conventions'
+
+include('settings-plugin')
+include('root-plugin')
+include('core-plugin')
+
