@@ -8,14 +8,19 @@ java {
     }
 }
 
+dependencies {
+    implementation project(':conventions-support')
+    implementation project(':common-plugin')
+    implementation project(':platform-plugin')
+}
+
 gradlePlugin {
     plugins {
         multiloaderCore {
             id = 'com.iamkaf.multiloader.core'
             implementationClass = 'com.iamkaf.multiloader.core.MultiloaderCorePlugin'
             displayName = 'Multiloader Core Plugin'
-            description = 'Applies shared repositories, Java toolchains, and basic manifest metadata for multiloader projects.'
+            description = 'Deprecated compatibility alias for the new common and platform plugins.'
         }
     }
 }
-

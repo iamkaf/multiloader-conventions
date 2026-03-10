@@ -1,0 +1,25 @@
+plugins {
+    id 'groovy-gradle-plugin'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(providers.gradleProperty('java_version').get().toInteger())
+    }
+}
+
+dependencies {
+    implementation project(':conventions-support')
+    implementation project(':platform-plugin')
+}
+
+gradlePlugin {
+    plugins {
+        multiloaderNeoForge {
+            id = 'com.iamkaf.multiloader.neoforge'
+            implementationClass = 'com.iamkaf.multiloader.neoforge.MultiloaderNeoForgePlugin'
+            displayName = 'Multiloader NeoForge Plugin'
+            description = 'Applies invariant NeoForge loader wiring for multiloader projects.'
+        }
+    }
+}

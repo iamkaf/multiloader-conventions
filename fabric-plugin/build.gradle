@@ -1,0 +1,25 @@
+plugins {
+    id 'groovy-gradle-plugin'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(providers.gradleProperty('java_version').get().toInteger())
+    }
+}
+
+dependencies {
+    implementation project(':conventions-support')
+    implementation project(':platform-plugin')
+}
+
+gradlePlugin {
+    plugins {
+        multiloaderFabric {
+            id = 'com.iamkaf.multiloader.fabric'
+            implementationClass = 'com.iamkaf.multiloader.fabric.MultiloaderFabricPlugin'
+            displayName = 'Multiloader Fabric Plugin'
+            description = 'Applies invariant Fabric loader wiring for multiloader projects.'
+        }
+    }
+}

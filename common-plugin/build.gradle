@@ -1,0 +1,24 @@
+plugins {
+    id 'groovy-gradle-plugin'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(providers.gradleProperty('java_version').get().toInteger())
+    }
+}
+
+dependencies {
+    implementation project(':conventions-support')
+}
+
+gradlePlugin {
+    plugins {
+        multiloaderCommon {
+            id = 'com.iamkaf.multiloader.common'
+            implementationClass = 'com.iamkaf.multiloader.common.MultiloaderCommonPlugin'
+            displayName = 'Multiloader Common Plugin'
+            description = 'Applies shared Java, publishing, metadata, and artifact conventions for multiloader projects.'
+        }
+    }
+}

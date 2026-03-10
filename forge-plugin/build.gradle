@@ -1,0 +1,25 @@
+plugins {
+    id 'groovy-gradle-plugin'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(providers.gradleProperty('java_version').get().toInteger())
+    }
+}
+
+dependencies {
+    implementation project(':conventions-support')
+    implementation project(':platform-plugin')
+}
+
+gradlePlugin {
+    plugins {
+        multiloaderForge {
+            id = 'com.iamkaf.multiloader.forge'
+            implementationClass = 'com.iamkaf.multiloader.forge.MultiloaderForgePlugin'
+            displayName = 'Multiloader Forge Plugin'
+            description = 'Applies invariant Forge loader wiring for multiloader projects.'
+        }
+    }
+}

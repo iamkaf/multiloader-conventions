@@ -7,7 +7,12 @@ pluginManagement {
 
 rootProject.name = 'multiloader-conventions'
 
+include('conventions-support')
 include('settings-plugin')
 include('root-plugin')
+include('common-plugin')
+include('platform-plugin')
+include('fabric-plugin')
+include('forge-plugin')
+include('neoforge-plugin')
 include('core-plugin')
-

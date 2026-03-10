@@ -1,0 +1,25 @@
+plugins {
+    id 'groovy-gradle-plugin'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(providers.gradleProperty('java_version').get().toInteger())
+    }
+}
+
+dependencies {
+    implementation project(':conventions-support')
+    implementation project(':common-plugin')
+}
+
+gradlePlugin {
+    plugins {
+        multiloaderPlatform {
+            id = 'com.iamkaf.multiloader.platform'
+            implementationClass = 'com.iamkaf.multiloader.platform.MultiloaderPlatformPlugin'
+            displayName = 'Multiloader Platform Plugin'
+            description = 'Applies shared loader-side bridge wiring to consume common sources and resources.'
+        }
+    }
+}

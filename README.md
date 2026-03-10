@@ -4,13 +4,21 @@ Gradle convention plugins for the multiloader mod workspace.
 
 ## Scope
 
-This repo currently scaffolds the first three convention layers:
+This repo now provides the first real plugin family:
 
 - `com.iamkaf.multiloader.settings`
 - `com.iamkaf.multiloader.root`
+- `com.iamkaf.multiloader.common`
+- `com.iamkaf.multiloader.platform`
+- `com.iamkaf.multiloader.fabric`
+- `com.iamkaf.multiloader.forge`
+- `com.iamkaf.multiloader.neoforge`
+
+Compatibility plugin:
+
 - `com.iamkaf.multiloader.core`
 
-These are intentionally the non-publish, non-loader-specialized layers. `flight` stays separate until the publish boundary is mature enough to adopt.
+`core` is deprecated. It exists only as a temporary alias that applies `common`, and `platform` on loader projects.
 
 ## Intended Boundary
 
@@ -22,14 +30,24 @@ These are intentionally the non-publish, non-loader-specialized layers. `flight`
 - `root`
   - register aggregate tasks
   - validate required root properties
-- `core`
-  - configure repositories for project builds
-  - configure Java toolchains
-  - apply shared manifest metadata
+  - expose shared changelog and publisher helpers
+- `common`
+  - configure Java, publishing, resource expansion, manifest metadata, capabilities, and shared repositories
+  - expose `commonJava` and `commonResources` from the `common` project
+- `platform`
+  - bridge loader projects to `:common`
+- `fabric`
+  - apply invariant Fabric loader wiring
+- `forge`
+  - apply invariant Forge loader wiring
+- `neoforge`
+  - apply invariant NeoForge loader wiring
+
+`flight` stays separate until the publish boundary is mature enough to adopt.
 
 ## Required Properties
 
-The first plugin slice expects these Gradle properties in the consumer version directory:
+The convention plugins expect these Gradle properties in the consumer version directory:
 
 - `mod_name`
 - `mod_id`
@@ -47,14 +65,14 @@ If `enabled_loaders` is omitted, the settings plugin defaults to `fabric,forge,n
 
 ## Sample Consumer
 
-See [samples/minimal](samples/minimal) for the intended consumer shape during early development.
+See [samples/minimal](samples/minimal) for the current consumer shape.
 
 The sample uses `includeBuild("../../")` so the convention repo can be tested locally before any publication step exists.
 
-## Next Steps
+## Validation
 
-1. Wire these plugins into `multiloader-template`.
-2. Prove them in `mochila2`.
-3. Add audit automation around root files and version-directory policy.
-4. Add loader-specific plugins only after the shared core contract stabilizes.
+Use:
 
+- `./gradlew build`
+- `./gradlew -p samples/minimal validateConventionProperties`
+- `./gradlew -p samples/minimal help`

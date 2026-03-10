@@ -1,0 +1,12 @@
+plugins {
+    id 'com.iamkaf.multiloader.fabric'
+}
+
+dependencies {
+    minecraft libs.minecraft
+    mappings loom.layered {
+        officialMojangMappings()
+        parchment(libs.parchment)
+    }
+    modImplementation libs.fabric.loader
+}
