@@ -13,6 +13,7 @@ class MultiloaderForgePlugin implements Plugin<Project> {
     void apply(Project project) {
         project.pluginManager.apply(MultiloaderPlatformPlugin)
         project.pluginManager.apply('net.minecraftforge.gradle')
+        def usesLegacyUserdev = ConventionSupport.versionAlias(project, 'minecraft') == '1.16.5'
 
         def mixinConfigs = ConventionSupport.collectMixinConfigs(project, 'forge')
         project.tasks.named('jar', Jar).configure { task ->
@@ -24,42 +25,81 @@ class MultiloaderForgePlugin implements Plugin<Project> {
         project.extensions.configure('minecraft') { minecraft ->
             minecraft.mappings(channel: 'official', version: ConventionSupport.versionAlias(project, 'minecraft'))
 
-            def accessTransformerFile = project.file('src/main/resources/META-INF/accesstransformer.cfg')
-            if (!accessTransformerFile.exists()) {
-                accessTransformerFile = ConventionSupport.commonFile(project, 'src/main/resources/META-INF/accesstransformer.cfg')
+            if (usesLegacyUserdev) {
+                minecraft.copyIdeResources = true
+                minecraft.reobf = false
             }
+
+            def accessTransformerFile = project.file('src/main/resources/META-INF/accesstransformer.cfg')
             if (accessTransformerFile.exists()) {
                 minecraft.accessTransformer = accessTransformerFile
             }
 
             minecraft.runs {
-                configureEach {
-                    workingDir.convention(project.layout.projectDirectory.dir('run'))
-                    mixinConfigs.each { mixinConfig ->
-                        args '--mixin.config', mixinConfig
+                if (usesLegacyUserdev) {
+                    configureEach {
+                        property 'forge.logging.console.level', 'debug'
+                        mods {
+                            "${ConventionSupport.requiredProperty(project, 'mod.id')}" {
+                                source project.extensions.getByType(SourceSetContainer).named('main').get()
+                            }
+                        }
                     }
-                }
 
-                register('client') {
-                }
+                    client {
+                        workingDirectory project.file('runs/client')
+                        ideaModule "${project.rootProject.name}.${project.name}.main"
+                        taskName 'runClient'
+                    }
 
-                register('server') {
-                    args '--nogui'
+                    server {
+                        workingDirectory project.file('runs/server')
+                        ideaModule "${project.rootProject.name}.${project.name}.main"
+                        taskName 'runServer'
+                        args '--nogui'
+                    }
+                } else {
+                    configureEach {
+                        workingDir.convention(project.layout.projectDirectory.dir('run'))
+                        mixinConfigs.each { mixinConfig ->
+                            args '--mixin.config', mixinConfig
+                        }
+                    }
+
+                    register('client') {
+                    }
+
+                    register('server') {
+                        args '--nogui'
+                    }
                 }
             }
         }
 
-        project.repositories {
-            project.minecraft.mavenizer(it)
-            maven project.fg.forgeMaven
-            maven project.fg.minecraftLibsMaven
+        if (!usesLegacyUserdev) {
+            project.repositories {
+                project.minecraft.mavenizer(it)
+                maven project.fg.forgeMaven
+                maven project.fg.minecraftLibsMaven
+            }
         }
 
-        project.dependencies {
-            implementation project.minecraft.dependency("net.minecraftforge:forge:${ConventionSupport.versionAlias(project, 'minecraft')}-${ConventionSupport.versionAlias(project, 'forge')}")
-            implementation('net.sf.jopt-simple:jopt-simple:5.0.4') {
-                version {
-                    strictly '5.0.4'
+        if (usesLegacyUserdev) {
+            project.dependencies {
+                minecraft "net.minecraftforge:forge:${ConventionSupport.versionAlias(project, 'minecraft')}-${ConventionSupport.versionAlias(project, 'forge')}"
+                implementation('net.sf.jopt-simple:jopt-simple:5.0.4') {
+                    version {
+                        strictly '5.0.4'
+                    }
+                }
+            }
+        } else {
+            project.dependencies {
+                implementation project.minecraft.dependency("net.minecraftforge:forge:${ConventionSupport.versionAlias(project, 'minecraft')}-${ConventionSupport.versionAlias(project, 'forge')}")
+                implementation('net.sf.jopt-simple:jopt-simple:5.0.4') {
+                    version {
+                        strictly '5.0.4'
+                    }
                 }
             }
         }
