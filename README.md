@@ -46,19 +46,27 @@ This repo now provides the first real plugin family:
 
 The convention plugins expect these Gradle properties in the consumer version directory:
 
-- `mod_name`
-- `mod_id`
-- `platform_minecraft_version`
-- `java_version`
+- `project.group`
+- `project.version`
+- `project.minecraft`
+- `project.java`
+- `mod.name`
+- `mod.id`
 
 Optional properties:
 
-- `enabled_loaders`
+- `project.enabled-loaders`
   - comma-separated list such as `fabric,forge,neoforge`
-- `version_catalog_coordinate`
+- `project.catalog-coordinate`
   - overrides the default catalog coordinate
+- `project.build-java`
+  - separate build JVM when it differs from the runtime/toolchain JVM
+- `project.plugins`
+  - consumer convention plugin version
+- `publish.*`, `dependencies.*`, and `environments.*`
+  - used by the publishing plugin
 
-If `enabled_loaders` is omitted, the settings plugin defaults to `fabric,forge,neoforge`.
+If `project.enabled-loaders` is omitted, the settings plugin defaults to `fabric,forge,neoforge`.
 
 ## Sample Consumer
 
@@ -75,6 +83,6 @@ Use:
 
 - `./gradlew build`
 - `./gradlew -p samples/minimal validateConventionProperties validateSampleWiring build`
-- `./gradlew -p samples/minimal publishingRelease -Pdry_run=true`
+- `./gradlew -p samples/minimal publishingRelease`
 - `./gradlew -p samples/datagen validateConventionProperties validateSampleWiring :fabric:runDatagen verifyDatagenOutput`
 - `./gradlew checkSamples`

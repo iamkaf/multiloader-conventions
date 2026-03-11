@@ -4,8 +4,8 @@ plugins {
 
 import org.gradle.api.tasks.Exec
 
-group = providers.gradleProperty('group').get()
-version = providers.gradleProperty('version').get()
+group = providers.gradleProperty('project.group').get()
+version = providers.gradleProperty('project.version').get()
 
 subprojects {
     apply plugin: 'maven-publish'
@@ -59,7 +59,7 @@ tasks.register('checkMinimalSample', Exec) {
     description = 'Builds the minimal sample, validates the extracted loader wiring, and dry-runs publishing.'
     workingDir = rootDir
     commandLine './gradlew', '-p', 'samples/minimal', '--no-daemon', '--stacktrace',
-        'validateConventionProperties', 'validateSampleWiring', 'build', 'publishingRelease', '-Pdry_run=true'
+        'validateConventionProperties', 'validateSampleWiring', 'build', 'publishingRelease'
 }
 
 tasks.register('checkDatagenSample', Exec) {

@@ -9,6 +9,11 @@ import org.gradle.api.provider.Provider
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 
+import me.hypherionmc.curseupload.CurseUploadApi
+import me.hypherionmc.curseupload.constants.CurseChangelogType
+import me.hypherionmc.curseupload.constants.CurseReleaseType
+import me.hypherionmc.curseupload.requests.CurseArtifact
+
 class MultiloaderPublishingPlugin implements Plugin<Project> {
     static final String EXTENSION_NAME = 'multiloaderPublishing'
 
@@ -66,8 +71,8 @@ class MultiloaderPublishingPlugin implements Plugin<Project> {
                     throw new IllegalStateException("[Publishing] No artifacts directory found at ${artifactsDir}. Run publishingAssemble first.")
                 }
 
-                def gameVersions = requiredCsv(project, 'game_versions')
-                MultiloaderPublishRules.requireNonEmpty('game_versions', gameVersions)
+                def gameVersions = requiredCsv(project, 'publish.game-versions')
+                MultiloaderPublishRules.requireNonEmpty('publish.game-versions', gameVersions)
 
                 def jarFiles = (artifactsDir.listFiles({ File file -> file.name.endsWith('.jar') } as FileFilter) ?: [] as File[]).toList()
                 MultiloaderPublishRules.requireNonEmpty('assembled artifacts', jarFiles)
@@ -91,9 +96,7 @@ class MultiloaderPublishingPlugin implements Plugin<Project> {
                 }
 
                 def modrinthGameVersions = MultiloaderPublishRules.modrinthNormalizeGameVersions(gameVersions)
-                def modrinthLoaders = MultiloaderPublishRules.modrinthNormalizeLoaders(loaders)
                 def curseGameVersions = MultiloaderPublishRules.curseNormalizeGameVersions(gameVersions)
-                def curseLoaders = MultiloaderPublishRules.curseNormalizeLoaders(loaders)
                 def isDryRun = extension.config.dryRun.get()
 
                 def enabledDestinations = [] as List<String>
@@ -114,11 +117,11 @@ class MultiloaderPublishingPlugin implements Plugin<Project> {
                 project.logger.lifecycle("[Publishing] loaders=${loaders}")
                 project.logger.lifecycle("[Publishing] gameVersions=${gameVersions}")
 
-                if (enabledDestinations.contains('modrinth')) {
-                    publishModrinth(project, extension, resolvedDisplayName, resolvedChangelog, isDryRun, modrinthGameVersions, modrinthLoaders, jarFiles)
-                }
                 if (enabledDestinations.contains('curseforge')) {
-                    publishCurseForge(project, extension, resolvedDisplayName, resolvedChangelog, isDryRun, curseGameVersions, curseLoaders, jarFiles, jarLoaders)
+                    publishCurseForge(project, extension, resolvedDisplayName, resolvedChangelog, isDryRun, curseGameVersions, jarFiles, jarLoaders)
+                }
+                if (enabledDestinations.contains('modrinth')) {
+                    publishModrinth(project, extension, resolvedDisplayName, resolvedChangelog, isDryRun, modrinthGameVersions, jarFiles, jarLoaders)
                 }
 
                 if (isDryRun) {
@@ -175,17 +178,17 @@ class MultiloaderPublishingPlugin implements Plugin<Project> {
     }
 
     private static void configureDefaults(Project project, MultiloaderPublishingExtension extension) {
-        extension.config.dryRun.convention(booleanProperty(project, 'dry_run', false))
-        extension.config.releaseType.convention(optionalProperty(project, 'release_type') ?: 'release')
-        extension.publish.curseforge.environment.convention(optionalProperty(project, 'mod_environment') ?: 'both')
-        extension.publish.curseforge.javaVersions.convention(javaVersionsFor(requiredProperty(project, 'java_version')))
+        extension.config.dryRun.convention(booleanProperty(project, 'publish.dry-run', false))
+        extension.config.releaseType.convention(optionalProperty(project, 'publish.release-type') ?: 'release')
+        extension.publish.curseforge.environment.convention(curseEnvironment(project))
+        extension.publish.curseforge.javaVersions.convention([requiredProperty(project, 'project.java')])
 
-        def modrinthId = optionalProperty(project, 'modrinth_id')
+        def modrinthId = optionalProperty(project, 'publish.modrinth.id')
         if (modrinthId) {
             extension.publish.modrinth.id.convention(modrinthId)
         }
 
-        def curseId = optionalProperty(project, 'curse_id')
+        def curseId = optionalProperty(project, 'publish.curseforge.id')
         if (curseId) {
             extension.publish.curseforge.id.convention(curseId)
         }
@@ -200,10 +203,10 @@ class MultiloaderPublishingPlugin implements Plugin<Project> {
             extension.publish.curseforge.token.convention(curseToken)
         }
 
-        requiredCsv(project, 'mod_modrinth_depends').each { dependency ->
+        requiredCsv(project, 'dependencies.modrinth.required').each { dependency ->
             extension.publish.modrinth.dependencies.required(dependency)
         }
-        requiredCsv(project, 'mod_curse_depends').each { dependency ->
+        requiredCsv(project, 'dependencies.curseforge.required').each { dependency ->
             extension.publish.curseforge.dependencies.required(dependency)
         }
 
@@ -226,7 +229,7 @@ class MultiloaderPublishingPlugin implements Plugin<Project> {
         inferred
     }
 
-    private static void publishModrinth(Project project, MultiloaderPublishingExtension extension, String displayName, String changelog, boolean dryRun, List<String> gameVersions, List<String> loaders, List<File> jarFiles) {
+    private static void publishModrinth(Project project, MultiloaderPublishingExtension extension, String displayName, String changelog, boolean dryRun, List<String> gameVersions, List<File> jarFiles, Map<File, List<String>> jarLoaders) {
         def token = dryRun ? (extension.publish.modrinth.token.getOrNull() ?: '') : extension.publish.modrinth.token.get()
         def client = new ModrinthPublishingClient(token)
         def projectId = dryRun
@@ -248,41 +251,41 @@ class MultiloaderPublishingPlugin implements Plugin<Project> {
         addDependencies(extension.publish.modrinth.dependencies.incompatible.getOrElse([]), 'incompatible')
         addDependencies(extension.publish.modrinth.dependencies.embedded.getOrElse([]), 'embedded')
 
-        def body = [
-            project_id    : projectId,
-            file_parts    : jarFiles.collect { it.name },
-            version_number: project.version.toString(),
-            name          : displayName,
-            changelog     : changelog,
-            dependencies  : dependencies,
-            game_versions : gameVersions,
-            version_type  : extension.config.releaseType.get(),
-            loaders       : loaders,
-            featured      : true,
-            status        : extension.publish.isManualRelease.get() ? 'draft' : 'listed',
-        ]
+        jarFiles.each { file ->
+            def inferred = jarLoaders[file] ?: []
+            if (inferred.isEmpty()) {
+                throw new IllegalStateException("[Publishing] Could not infer Modrinth loaders for ${file.name}")
+            }
 
-        def parts = ModrinthPublishingClient.filePartsFrom(jarFiles)
-        if (dryRun) {
-            def info = client.createVersionMultipart(body, parts, true)
-            project.logger.lifecycle("[Publishing] Modrinth dryRun payload: ${groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(info))}")
-            return
+            def normalizedLoaders = MultiloaderPublishRules.modrinthNormalizeLoaders(inferred)
+            def suffix = inferred.first()
+            def fileDisplayName = publishedArtifactName(project, suffix)
+            def body = [
+                project_id    : projectId,
+                file_parts    : [file.name],
+                version_number: project.version.toString(),
+                name          : fileDisplayName,
+                changelog     : changelog,
+                dependencies  : dependencies,
+                game_versions : gameVersions,
+                version_type  : extension.config.releaseType.get(),
+                loaders       : normalizedLoaders,
+                featured      : true,
+                status        : extension.publish.isManualRelease.get() ? 'draft' : 'listed',
+            ]
+
+            def parts = ModrinthPublishingClient.filePartsFrom([file])
+            if (dryRun) {
+                def info = client.createVersionMultipart(body, parts, true)
+                project.logger.lifecycle("[Publishing] Modrinth dryRun payload (${file.name}): ${groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(info))}")
+            } else {
+                def response = client.createVersionMultipart(body, parts, false)
+                project.logger.lifecycle("[Publishing] Modrinth upload ok: version_id=${response.id}, version_number=${response.version_number} (${file.name})")
+            }
         }
-
-        def response = client.createVersionMultipart(body, parts, false)
-        project.logger.lifecycle("[Publishing] Modrinth upload ok: version_id=${response.id}, version_number=${response.version_number}")
     }
 
-    private static void publishCurseForge(Project project, MultiloaderPublishingExtension extension, String displayName, String changelog, boolean dryRun, List<String> gameVersions, List<String> loaders, List<File> jarFiles, Map<File, List<String>> jarLoaders) {
-        def curseTags = [] as List<String>
-        curseTags.addAll(gameVersions)
-        curseTags.addAll(environmentTags(extension.publish.curseforge.environment.get()))
-        curseTags.addAll(extension.publish.curseforge.javaVersions.getOrElse([]).collect { normalizeJavaTag(it) })
-        curseTags.addAll(loaders)
-
-        def client = dryRun ? null : new CurseForgePublishingClient(extension.publish.curseforge.token.get())
-        def gameVersionIds = dryRun ? curseTags : client.resolveGameVersionIds(curseTags)
-
+    private static void publishCurseForge(Project project, MultiloaderPublishingExtension extension, String displayName, String changelog, boolean dryRun, List<String> gameVersions, List<File> jarFiles, Map<File, List<String>> jarLoaders) {
         def relations = [] as List<Map>
         def addRelations = { List<String> slugs, String type ->
             slugs.each { slug ->
@@ -296,13 +299,23 @@ class MultiloaderPublishingPlugin implements Plugin<Project> {
 
         jarFiles.each { file ->
             def inferred = jarLoaders[file] ?: []
-            def suffix = inferred.isEmpty() ? null : inferred.first()
-            def fileDisplayName = suffix == null ? displayName : "${displayName} (${suffix})"
+            if (inferred.isEmpty()) {
+                throw new IllegalStateException("[Publishing] Could not infer CurseForge loader tags for ${file.name}")
+            }
+
+            def curseTags = [] as List<String>
+            curseTags.addAll(gameVersions)
+            curseTags.addAll(environmentTags(extension.publish.curseforge.environment.get()))
+            curseTags.addAll(extension.publish.curseforge.javaVersions.getOrElse([]).collect { normalizeJavaTag(it) })
+            curseTags.addAll(MultiloaderPublishRules.curseNormalizeLoaders(inferred))
+
+            def suffix = inferred.first()
+            def fileDisplayName = publishedArtifactName(project, suffix)
             def metadata = [
                 changelog              : changelog,
                 changelogType          : 'markdown',
                 displayName            : fileDisplayName,
-                gameVersions           : gameVersionIds,
+                gameVersions           : curseTags,
                 releaseType            : extension.config.releaseType.get(),
                 isMarkedForManualRelease: extension.publish.isManualRelease.get(),
             ]
@@ -311,10 +324,46 @@ class MultiloaderPublishingPlugin implements Plugin<Project> {
             }
 
             if (dryRun) {
-                project.logger.lifecycle("[Publishing] CurseForge dryRun payload (${file.name}): ${groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson([projectId: extension.publish.curseforge.id.get(), gameVersions: gameVersionIds, metadata: metadata]))}")
+                project.logger.lifecycle("[Publishing] CurseForge dryRun payload (${file.name}): ${groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson([projectId: extension.publish.curseforge.id.get(), gameVersions: curseTags, metadata: metadata]))}")
             } else {
-                def response = client.uploadFile(Long.parseLong(extension.publish.curseforge.id.get()), metadata, file)
-                project.logger.lifecycle("[Publishing] CurseForge upload ok: file_id=${response.id} (${file.name})")
+                def api = new CurseUploadApi(extension.publish.curseforge.token.get())
+                api.setDebug(false)
+
+                def artifact = new CurseArtifact(file, Long.parseLong(extension.publish.curseforge.id.get()))
+                    .changelog(changelog)
+                    .changelogType(CurseChangelogType.MARKDOWN)
+                    .displayName(fileDisplayName)
+                    .releaseType(CurseReleaseType.valueOf(extension.config.releaseType.get().toUpperCase(Locale.ROOT)))
+
+                curseTags.each { tag ->
+                    artifact.addGameVersion(tag)
+                }
+
+                relations.each { relation ->
+                    switch (relation.type) {
+                        case 'requiredDependency':
+                            artifact.requirement(relation.slug as String)
+                            break
+                        case 'optionalDependency':
+                            artifact.optional(relation.slug as String)
+                            break
+                        case 'incompatible':
+                            artifact.incompatibility(relation.slug as String)
+                            break
+                        case 'embeddedLibrary':
+                            artifact.embedded(relation.slug as String)
+                            break
+                        default:
+                            throw new IllegalStateException("[Publishing] Unsupported CurseForge relation type: ${relation.type}")
+                    }
+                }
+
+                if (extension.publish.isManualRelease.get()) {
+                    artifact.manualRelease()
+                }
+
+                api.upload(artifact)
+                project.logger.lifecycle("[Publishing] CurseForge upload ok: ${file.name}")
             }
         }
     }
@@ -362,7 +411,11 @@ class MultiloaderPublishingPlugin implements Plugin<Project> {
         if (extension.metadata.displayName.isPresent()) {
             return extension.metadata.displayName.get()
         }
-        "${requiredProperty(project, 'mod_name')} ${project.version}"
+        "${requiredProperty(project, 'mod.name')} ${project.version}"
+    }
+
+    private static String publishedArtifactName(Project project, String loader) {
+        "${requiredProperty(project, 'mod.id')}-${loader}-${project.version}"
     }
 
     private static String resolveChangelog(Project project, MultiloaderPublishingExtension extension) {
@@ -434,9 +487,20 @@ class MultiloaderPublishingPlugin implements Plugin<Project> {
         value.split(',').collect { it.trim() }.findAll { !it.isEmpty() }
     }
 
-    private static List<String> javaVersionsFor(String javaVersion) {
-        def version = Integer.parseInt(javaVersion)
-        version >= 21 ? ['21', '22'] : [javaVersion]
+    private static String curseEnvironment(Project project) {
+        def client = (optionalProperty(project, 'environments.client') ?: 'required').toLowerCase(Locale.ROOT)
+        def server = (optionalProperty(project, 'environments.server') ?: 'required').toLowerCase(Locale.ROOT)
+
+        if (client == 'required' && server == 'required') {
+            return 'both'
+        }
+        if (client == 'required' && server != 'required') {
+            return 'client'
+        }
+        if (server == 'required' && client != 'required') {
+            return 'server'
+        }
+        return 'both'
     }
 
     private static final class JarOutput {

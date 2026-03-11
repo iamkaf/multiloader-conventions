@@ -43,12 +43,12 @@ class MultiloaderSettingsPlugin implements Plugin<Settings> {
         }
         settings.dependencyResolutionManagement.repositories.mavenCentral()
 
-        def mcVersion = settings.providers.gradleProperty('platform_minecraft_version').orNull
+        def mcVersion = settings.providers.gradleProperty('project.minecraft').orNull
         if (mcVersion == null) {
             return
         }
 
-        def catalogCoordinate = settings.providers.gradleProperty('version_catalog_coordinate')
+        def catalogCoordinate = settings.providers.gradleProperty('project.catalog-coordinate')
             .orElse("com.iamkaf.platform:mc-${mcVersion}:${mcVersion}-SNAPSHOT")
             .get()
 
@@ -58,7 +58,7 @@ class MultiloaderSettingsPlugin implements Plugin<Settings> {
     }
 
     private static void configureRootName(Settings settings) {
-        def modName = settings.providers.gradleProperty('mod_name').orNull
+        def modName = settings.providers.gradleProperty('mod.name').orNull
         if (modName != null && !modName.isBlank()) {
             settings.rootProject.name = modName
         }
@@ -73,8 +73,7 @@ class MultiloaderSettingsPlugin implements Plugin<Settings> {
     }
 
     private static List<String> parseEnabledLoaders(Settings settings) {
-        def raw = settings.providers.gradleProperty('enabled_loaders')
-            .orElse(settings.providers.gradleProperty('enabled_platforms'))
+        def raw = settings.providers.gradleProperty('project.enabled-loaders')
             .orElse('fabric,forge,neoforge')
             .get()
 

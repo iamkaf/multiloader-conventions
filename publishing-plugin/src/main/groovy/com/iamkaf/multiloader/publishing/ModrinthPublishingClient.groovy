@@ -12,7 +12,7 @@ import java.nio.file.Files
 
 final class ModrinthPublishingClient {
 
-    static final URI API = URI.create('https://api.modrinth.com/v2')
+    static final URI API = URI.create('https://api.modrinth.com/v2/')
 
     private final HttpClient http
     private final String token
@@ -25,7 +25,7 @@ final class ModrinthPublishingClient {
     }
 
     String resolveProjectId(String idOrSlug) {
-        def request = HttpRequest.newBuilder(API.resolve("/project/${idOrSlug}"))
+        def request = HttpRequest.newBuilder(API.resolve("project/${idOrSlug}"))
             .header('User-Agent', 'multiloader-publishing/0.1 (https://github.com/iamkaf/multiloader-conventions)')
             .GET()
             .build()
@@ -71,7 +71,7 @@ final class ModrinthPublishingClient {
             ]
         }
 
-        def request = HttpRequest.newBuilder(API.resolve('/version'))
+        def request = HttpRequest.newBuilder(API.resolve('version'))
             .header('User-Agent', 'multiloader-publishing/0.1 (https://github.com/iamkaf/multiloader-conventions)')
             .header('Authorization', token)
             .header('Content-Type', "multipart/form-data; boundary=${boundary}")

@@ -27,7 +27,7 @@ class MultiloaderNeoForgePlugin implements Plugin<Project> {
 
             neoForge.runs {
                 configureEach {
-                    systemProperty('neoforge.enabledGameTestNamespaces', ConventionSupport.requiredProperty(project, 'mod_id'))
+                    systemProperty('neoforge.enabledGameTestNamespaces', ConventionSupport.requiredProperty(project, 'mod.id'))
                     ideName = "NeoForge ${it.name.capitalize()} (${project.path})"
                 }
                 client {
@@ -42,7 +42,7 @@ class MultiloaderNeoForgePlugin implements Plugin<Project> {
             }
 
             neoForge.mods {
-                "${ConventionSupport.requiredProperty(project, 'mod_id')}" {
+                "${ConventionSupport.requiredProperty(project, 'mod.id')}" {
                     sourceSet project.sourceSets.main
                 }
             }

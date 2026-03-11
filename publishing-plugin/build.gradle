@@ -4,12 +4,17 @@ plugins {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(providers.gradleProperty('java_version').get().toInteger())
+        languageVersion = JavaLanguageVersion.of(providers.gradleProperty('project.java').get().toInteger())
     }
+}
+
+repositories {
+    maven { url = uri('https://maven.firstdarkdev.xyz/releases') }
 }
 
 dependencies {
     implementation 'org.apache.maven:maven-artifact:3.9.9'
+    implementation 'me.hypherionmc.modutils:CurseUpload4j:1.0.13'
 
     testImplementation gradleTestKit()
     testImplementation 'org.spockframework:spock-core:2.4-M1-groovy-4.0'

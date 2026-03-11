@@ -35,11 +35,11 @@ separate:
 
 | Capability | State | Current Owner | Inputs | Notes |
 | --- | --- | --- | --- | --- |
-| Settings repo/catalog wiring | stable | `settings` | `enabled_loaders`, `version_catalog_coordinate` | Already centralized. |
+| Settings repo/catalog wiring | stable | `settings` | `project.enabled-loaders`, `project.catalog-coordinate` | Already centralized. |
 | Root aggregate tasks | stable | `root` | enabled subprojects | Already centralized. |
 | Common source/resource bridge | stable | `platform` | project layout | Already centralized. |
 | Resource expansion for metadata files | stable | `common` | root/version properties | Already centralized. |
-| Archive naming, manifests, capabilities, Maven publication | stable | `common` | `mod_id`, `mod_name`, `version` | Already centralized. |
+| Archive naming, manifests, capabilities, Maven publication | stable | `common` | `mod.id`, `mod.name`, `project.version` | Already centralized. |
 | Fabric base dependency wiring | stable | `fabric` | version catalog | Already centralized. |
 | Fabric run config shape | stable | `fabric` | Loom DSL | Current `client` / `server` run wiring is shared. |
 | Forge run config and mixin arg shape | versioned | `forge` | MC line, FG behavior | Works today, but is a likely future strategy point if FG behavior diverges again. |

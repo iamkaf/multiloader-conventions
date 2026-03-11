@@ -27,18 +27,17 @@ include('fabric', 'forge', 'neoforge')
 '''.stripIndent()
 
         new File(testProjectDir, 'gradle.properties').text = '''
-mod_name=Test Mod
-mod_id=testmod
-platform_minecraft_version=1.21.11
-java_version=21
-game_versions=1.21.11
-release_type=beta
-dry_run=true
-mod_environment=both
-modrinth_id=test-mod
-curse_id=123456
-mod_modrinth_depends=
-mod_curse_depends=
+project.minecraft=1.21.11
+project.java=21
+mod.name=Test Mod
+mod.id=testmod
+publish.game-versions=1.21.11
+publish.release-type=beta
+publish.dry-run=true
+publish.modrinth.id=test-mod
+publish.curseforge.id=123456
+environments.client=required
+environments.server=required
 '''.stripIndent()
 
         new File(testProjectDir, 'build.gradle').text = '''
@@ -60,15 +59,31 @@ version = '1.2.3'
         def result = GradleRunner.create()
             .withProjectDir(testProjectDir)
             .withPluginClasspath()
-            .withArguments('publishingRelease', '--stacktrace', '-Pdry_run=true')
+            .withArguments('publishingRelease', '--stacktrace')
             .build()
 
         then:
         result.task(':publishingAssemble').outcome == TaskOutcome.SUCCESS
         result.task(':publishingPublish').outcome == TaskOutcome.SUCCESS
         result.task(':publishingRelease').outcome == TaskOutcome.SUCCESS
-        result.output.contains('[Publishing] Modrinth dryRun payload')
-        result.output.contains('[Publishing] CurseForge dryRun payload')
+        result.output.contains('[Publishing] Modrinth dryRun payload (testmod-fabric-1.2.3.jar)')
+        result.output.contains('[Publishing] Modrinth dryRun payload (testmod-forge-1.2.3.jar)')
+        result.output.contains('[Publishing] Modrinth dryRun payload (testmod-neoforge-1.2.3.jar)')
+        result.output.contains('[Publishing] CurseForge dryRun payload (testmod-fabric-1.2.3.jar)')
+        result.output.contains('[Publishing] CurseForge dryRun payload (testmod-forge-1.2.3.jar)')
+        result.output.contains('[Publishing] CurseForge dryRun payload (testmod-neoforge-1.2.3.jar)')
+        result.output.contains('"displayName": "testmod-fabric-1.2.3"')
+        result.output.contains('"displayName": "testmod-forge-1.2.3"')
+        result.output.contains('"displayName": "testmod-neoforge-1.2.3"')
+        result.output.contains('"name": "testmod-fabric-1.2.3"')
+        result.output.contains('"name": "testmod-forge-1.2.3"')
+        result.output.contains('"name": "testmod-neoforge-1.2.3"')
+        result.output.contains('"loaders": [\n            "fabric"\n        ]')
+        result.output.contains('"loaders": [\n            "forge"\n        ]')
+        result.output.contains('"loaders": [\n            "neoforge"\n        ]')
+        result.output.contains('"gameVersions": [\n            "1.21.11",\n            "client",\n            "server",\n            "Java 21",\n            "fabric"\n        ]')
+        result.output.contains('"gameVersions": [\n            "1.21.11",\n            "client",\n            "server",\n            "Java 21",\n            "forge"\n        ]')
+        result.output.contains('"gameVersions": [\n            "1.21.11",\n            "client",\n            "server",\n            "Java 21",\n            "neoforge"\n        ]')
     }
 
     private void createLoaderProject(String name, String metadataContents, String metadataPath) {

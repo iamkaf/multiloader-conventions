@@ -7,10 +7,10 @@ import org.gradle.api.Project
 class MultiloaderRootPlugin implements Plugin<Project> {
 
     private static final List<String> REQUIRED_PROPERTIES = [
-        'mod_name',
-        'mod_id',
-        'platform_minecraft_version',
-        'java_version',
+        'mod.name',
+        'mod.id',
+        'project.minecraft',
+        'project.java',
     ]
 
     @Override
@@ -29,8 +29,8 @@ class MultiloaderRootPlugin implements Plugin<Project> {
     }
 
     private static void applyCoordinates(Project project) {
-        def groupValue = project.findProperty('group')
-        def versionValue = project.findProperty('version')
+        def groupValue = project.findProperty('project.group')
+        def versionValue = project.findProperty('project.version')
 
         if (groupValue != null) {
             project.group = groupValue.toString()

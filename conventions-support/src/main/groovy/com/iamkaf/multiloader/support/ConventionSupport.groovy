@@ -55,7 +55,7 @@ class ConventionSupport {
 
         project.dependencies.add('compileOnly', project.dependencies.project(path: ':common')) {
             capabilities {
-                requireCapability("${project.group}:${requiredProperty(project, 'mod_id')}")
+                requireCapability("${project.group}:${requiredProperty(project, 'mod.id')}")
             }
         }
         project.dependencies.add('commonJava', project.dependencies.project(path: ':common', configuration: 'commonJava'))
@@ -141,23 +141,23 @@ class ConventionSupport {
     }
 
     static void configureCoordinates(Project project) {
-        if (project.rootProject.findProperty('group') != null) {
-            project.group = project.rootProject.findProperty('group').toString()
+        if (project.rootProject.findProperty('project.group') != null) {
+            project.group = project.rootProject.findProperty('project.group').toString()
         }
 
-        if (project.rootProject.findProperty('version') != null) {
-            project.version = project.rootProject.findProperty('version').toString()
+        if (project.rootProject.findProperty('project.version') != null) {
+            project.version = project.rootProject.findProperty('project.version').toString()
         }
     }
 
     static void configureArchiveNaming(Project project) {
         project.extensions.configure(BasePluginExtension) { base ->
-            base.archivesName = "${requiredProperty(project, 'mod_id')}-${project.name}"
+            base.archivesName = "${requiredProperty(project, 'mod.id')}-${project.name}"
         }
     }
 
     static void configureJava(Project project) {
-        def javaVersion = project.findProperty('java_version')?.toString()?.toInteger()
+        def javaVersion = project.findProperty('project.java')?.toString()?.toInteger()
         project.extensions.configure(JavaPluginExtension) { java ->
             java.withSourcesJar()
             java.withJavadocJar()
@@ -201,12 +201,12 @@ class ConventionSupport {
     static void configureManifests(Project project) {
         project.tasks.named('jar', Jar).configure { task ->
             task.manifest.attributes([
-                'Specification-Title'   : requiredProperty(project, 'mod_name'),
-                'Specification-Vendor'  : optionalProperty(project, 'mod_author'),
+                'Specification-Title'   : requiredProperty(project, 'mod.name'),
+                'Specification-Vendor'  : optionalProperty(project, 'mod.authors'),
                 'Specification-Version' : project.version.toString(),
                 'Implementation-Title'  : project.name,
                 'Implementation-Version': project.version.toString(),
-                'Implementation-Vendor' : optionalProperty(project, 'mod_author'),
+                'Implementation-Vendor' : optionalProperty(project, 'mod.authors'),
                 'Built-On-Minecraft'    : versionAlias(project, 'minecraft'),
                 'Built-By'              : 'multiloader-conventions',
             ])
@@ -222,7 +222,7 @@ class ConventionSupport {
         ['jar', 'sourcesJar'].each { taskName ->
             project.tasks.named(taskName, Jar).configure { task ->
                 task.from(licenseFile) {
-                    rename { "${it}_${requiredProperty(project, 'mod_name')}" }
+                    rename { "${it}_${requiredProperty(project, 'mod.name')}" }
                 }
                 task.duplicatesStrategy = DuplicatesStrategy.EXCLUDE
             }
@@ -234,8 +234,8 @@ class ConventionSupport {
             project.configurations.named(variant).configure { configuration ->
                 configuration.outgoing.capability("${project.group}:${project.name}:${project.version}")
                 configuration.outgoing.capability("${project.group}:${project.extensions.getByType(BasePluginExtension).archivesName.get()}:${project.version}")
-                configuration.outgoing.capability("${project.group}:${requiredProperty(project, 'mod_id')}-${project.name}-${versionAlias(project, 'minecraft')}:${project.version}")
-                configuration.outgoing.capability("${project.group}:${requiredProperty(project, 'mod_id')}:${project.version}")
+                configuration.outgoing.capability("${project.group}:${requiredProperty(project, 'mod.id')}-${project.name}-${versionAlias(project, 'minecraft')}:${project.version}")
+                configuration.outgoing.capability("${project.group}:${requiredProperty(project, 'mod.id')}:${project.version}")
             }
 
             project.extensions.configure(PublishingExtension) { publishing ->
@@ -297,7 +297,7 @@ class ConventionSupport {
     }
 
     static List<String> collectMixinConfigs(Project project, String loaderName) {
-        def modId = requiredProperty(project, 'mod_id')
+        def modId = requiredProperty(project, 'mod.id')
         def mixinConfigs = []
         def commonMixin = commonFile(project, "src/main/resources/${modId}.mixins.json")
         if (commonMixin.exists()) {
@@ -322,25 +322,25 @@ class ConventionSupport {
             'version'                      : project.version.toString(),
             'group'                        : project.group.toString(),
             'minecraft_version'            : versionAlias(project, 'minecraft'),
-            'minecraft_version_range'      : requiredProperty(project, 'minecraft_version_range'),
-            'fabric_version_range'         : optionalProperty(project, 'fabric_version_range'),
+            'minecraft_version_range'      : requiredProperty(project, 'mod.minecraft-range'),
+            'fabric_version_range'         : optionalProperty(project, 'mod.fabric-range'),
             'fabric_version'               : optionalVersionAlias(project, 'fabric-api'),
             'fabric_loader_version'        : optionalVersionAlias(project, 'fabric-loader'),
             'mod_menu_version'             : optionalVersionAlias(project, 'modmenu'),
-            'mod_name'                     : requiredProperty(project, 'mod_name'),
-            'mod_author'                   : optionalProperty(project, 'mod_author'),
-            'mod_id'                       : requiredProperty(project, 'mod_id'),
-            'license'                      : optionalProperty(project, 'license'),
-            'description'                  : optionalProperty(project, 'description'),
+            'mod_name'                     : requiredProperty(project, 'mod.name'),
+            'mod_author'                   : optionalProperty(project, 'mod.authors'),
+            'mod_id'                       : requiredProperty(project, 'mod.id'),
+            'license'                      : optionalProperty(project, 'mod.license'),
+            'description'                  : optionalProperty(project, 'mod.description'),
             'neoforge_version'             : optionalVersionAlias(project, 'neoforge'),
-            'neoforge_loader_version_range': optionalProperty(project, 'neoforge_loader_version_range'),
+            'neoforge_loader_version_range': optionalProperty(project, 'mod.neoforge-loader-range'),
             'forge_version'                : optionalVersionAlias(project, 'forge'),
-            'forge_loader_version_range'   : optionalProperty(project, 'forge_loader_version_range'),
+            'forge_loader_version_range'   : optionalProperty(project, 'mod.forge-loader-range'),
             'amber_version'                : optionalVersionAlias(project, 'amber'),
             'parchment_minecraft'          : optionalVersionAlias(project, 'parchment-minecraft'),
             'parchment_version'            : optionalVersionAlias(project, 'parchment'),
-            'credits'                      : optionalProperty(project, 'credits'),
-            'java_version'                 : requiredProperty(project, 'java_version'),
+            'credits'                      : optionalProperty(project, 'mod.credits'),
+            'java_version'                 : requiredProperty(project, 'project.java'),
         ]
     }
 

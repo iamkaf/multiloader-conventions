@@ -17,13 +17,13 @@ class MultiloaderFabricPlugin implements Plugin<Project> {
             ConventionSupport.registerFabricDatagenHelper(project)
 
             project.extensions.configure('loom') { loom ->
-                def accessWidener = ConventionSupport.commonFile(project, "src/main/resources/${ConventionSupport.requiredProperty(project, 'mod_id')}.accesswidener")
+                def accessWidener = ConventionSupport.commonFile(project, "src/main/resources/${ConventionSupport.requiredProperty(project, 'mod.id')}.accesswidener")
                 if (accessWidener.exists()) {
                     loom.accessWidenerPath.set(accessWidener)
                 }
 
                 loom.mixin {
-                    defaultRefmapName.set("${ConventionSupport.requiredProperty(project, 'mod_id')}.refmap.json")
+                    defaultRefmapName.set("${ConventionSupport.requiredProperty(project, 'mod.id')}.refmap.json")
                 }
 
                 loom.runs {
