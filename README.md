@@ -39,6 +39,7 @@ This repo now provides the first real plugin family:
 - `publishing`
   - aggregate loader jars from the version root
   - dry-run and publish Modrinth / CurseForge releases
+  - expose per-platform and per-loader publish tasks
 
 `flight` stays separate until the publish boundary is mature enough to adopt.
 
@@ -86,3 +87,22 @@ Use:
 - `./gradlew -p samples/minimal publishingRelease`
 - `./gradlew -p samples/datagen validateConventionProperties validateSampleWiring :fabric:runDatagen verifyDatagenOutput`
 - `./gradlew checkSamples`
+
+## Publishing Tasks
+
+The publishing plugin exposes both aggregate and per-loader tasks:
+
+- `publishMod`
+- `publishCurseforge`
+- `publishModrinth`
+- `publishCurseforgeFabric`
+- `publishCurseforgeForge`
+- `publishCurseforgeNeoforge`
+- `publishModrinthFabric`
+- `publishModrinthForge`
+- `publishModrinthNeoforge`
+- `publishingRelease`
+
+`publishingRelease` and `publishingPublish` are aggregate compatibility aliases. Use the
+per-loader tasks when one platform or one loader upload fails and you need to retry only that
+combination.

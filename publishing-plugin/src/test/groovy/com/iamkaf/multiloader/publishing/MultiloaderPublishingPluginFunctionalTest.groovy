@@ -63,9 +63,10 @@ version = '1.2.3'
             .build()
 
         then:
-        result.task(':publishingAssemble').outcome == TaskOutcome.SUCCESS
-        result.task(':publishingPublish').outcome == TaskOutcome.SUCCESS
         result.task(':publishingRelease').outcome == TaskOutcome.SUCCESS
+        result.output.contains('[Publishing] Copied :fabric ->')
+        result.output.contains('[Publishing] Copied :forge ->')
+        result.output.contains('[Publishing] Copied :neoforge ->')
         result.output.contains('[Publishing] Modrinth dryRun payload (testmod-fabric-1.2.3.jar)')
         result.output.contains('[Publishing] Modrinth dryRun payload (testmod-forge-1.2.3.jar)')
         result.output.contains('[Publishing] Modrinth dryRun payload (testmod-neoforge-1.2.3.jar)')
@@ -84,6 +85,23 @@ version = '1.2.3'
         result.output.contains('"gameVersions": [\n            "1.21.11",\n            "client",\n            "server",\n            "Java 21",\n            "fabric"\n        ]')
         result.output.contains('"gameVersions": [\n            "1.21.11",\n            "client",\n            "server",\n            "Java 21",\n            "forge"\n        ]')
         result.output.contains('"gameVersions": [\n            "1.21.11",\n            "client",\n            "server",\n            "Java 21",\n            "neoforge"\n        ]')
+    }
+
+    def "individual loader platform tasks only publish their own artifact"() {
+        when:
+        def result = GradleRunner.create()
+            .withProjectDir(testProjectDir)
+            .withPluginClasspath()
+            .withArguments('publishCurseforgeFabric', '--stacktrace')
+            .build()
+
+        then:
+        result.task(':publishingAssembleFabric').outcome == TaskOutcome.SUCCESS
+        result.task(':publishCurseforgeFabric').outcome == TaskOutcome.SUCCESS
+        result.output.contains('[Publishing] CurseForge dryRun payload (testmod-fabric-1.2.3.jar)')
+        !result.output.contains('[Publishing] CurseForge dryRun payload (testmod-forge-1.2.3.jar)')
+        !result.output.contains('[Publishing] CurseForge dryRun payload (testmod-neoforge-1.2.3.jar)')
+        !result.output.contains('[Publishing] Modrinth dryRun payload')
     }
 
     private void createLoaderProject(String name, String metadataContents, String metadataPath) {
