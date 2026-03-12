@@ -18,8 +18,13 @@ subprojects {
         mavenCentral()
     }
 
-    plugins.withId('java') {
-        if (!plugins.hasPlugin('java-gradle-plugin')) {
+    afterEvaluate {
+        if (plugins.hasPlugin('java-gradle-plugin')) {
+            def duplicatePublication = publishing.publications.findByName('mavenJava')
+            if (duplicatePublication != null) {
+                publishing.publications.remove(duplicatePublication)
+            }
+        } else if (plugins.hasPlugin('java')) {
             publishing {
                 publications {
                     if (!findByName('mavenJava')) {
