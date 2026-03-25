@@ -24,8 +24,11 @@ class MultiloaderForgePlugin implements Plugin<Project> {
         }
 
         project.extensions.configure('minecraft') { minecraft ->
-            if (usesLegacyUserdev) {
+            if (!usesUnobfuscatedMinecraft) {
                 minecraft.mappings(channel: 'official', version: ConventionSupport.versionAlias(project, 'minecraft'))
+            }
+
+            if (usesLegacyUserdev) {
                 minecraft.copyIdeResources = true
                 minecraft.reobf = false
             }
@@ -76,11 +79,9 @@ class MultiloaderForgePlugin implements Plugin<Project> {
             }
         }
 
-        if (usesUnobfuscatedMinecraft) {
+        if (!usesLegacyUserdev) {
             project.repositories {
-                if (project.minecraft.metaClass.respondsTo(project.minecraft, 'mavenizer', Object)) {
-                    project.minecraft.mavenizer(it)
-                }
+                project.minecraft.mavenizer(it)
                 if (project.fg.hasProperty('forgeMaven')) {
                     maven project.fg.forgeMaven
                 }
