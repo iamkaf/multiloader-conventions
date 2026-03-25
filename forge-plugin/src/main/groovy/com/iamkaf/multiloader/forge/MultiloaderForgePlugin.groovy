@@ -92,7 +92,9 @@ class MultiloaderForgePlugin implements Plugin<Project> {
 
         if (usesLegacyUserdev || !usesUnobfuscatedMinecraft) {
             project.dependencies {
-                minecraft "net.minecraftforge:forge:${ConventionSupport.versionAlias(project, 'minecraft')}-${ConventionSupport.versionAlias(project, 'forge')}"
+                implementation project.minecraft.dependency(
+                    "net.minecraftforge:forge:${ConventionSupport.versionAlias(project, 'minecraft')}-${ConventionSupport.versionAlias(project, 'forge')}"
+                )
                 implementation('net.sf.jopt-simple:jopt-simple:5.0.4') {
                     version {
                         strictly '5.0.4'
