@@ -104,6 +104,46 @@ version = '1.2.3'
         !result.output.contains('[Publishing] Modrinth dryRun payload')
     }
 
+    def "publishingRelease skips disabled loaders from project.enabled-loaders"() {
+        given:
+        new File(testProjectDir, 'gradle.properties').text = '''
+project.minecraft=26.1
+project.java=25
+project.enabled-loaders=fabric,neoforge
+mod.name=Test Mod
+mod.id=testmod
+publish.game-versions=26.1
+publish.release-type=release
+publish.dry-run=true
+publish.modrinth.id=test-mod
+publish.curseforge.id=123456
+environments.client=required
+environments.server=required
+'''.stripIndent()
+
+        when:
+        def result = GradleRunner.create()
+            .withProjectDir(testProjectDir)
+            .withPluginClasspath()
+            .withArguments('publishingRelease', '--stacktrace')
+            .build()
+
+        then:
+        result.task(':publishingRelease').outcome == TaskOutcome.SUCCESS
+        result.task(':publishingAssembleFabric').outcome == TaskOutcome.SUCCESS
+        result.task(':publishingAssembleNeoforge').outcome == TaskOutcome.SUCCESS
+        result.task(':publishingAssembleForge').outcome == TaskOutcome.SKIPPED
+        result.output.contains('[Publishing] Copied :fabric ->')
+        result.output.contains('[Publishing] Copied :neoforge ->')
+        !result.output.contains('[Publishing] Copied :forge ->')
+        result.output.contains('[Publishing] CurseForge dryRun payload (testmod-fabric-1.2.3.jar)')
+        result.output.contains('[Publishing] CurseForge dryRun payload (testmod-neoforge-1.2.3.jar)')
+        !result.output.contains('[Publishing] CurseForge dryRun payload (testmod-forge-1.2.3.jar)')
+        result.output.contains('[Publishing] Modrinth dryRun payload (testmod-fabric-1.2.3.jar)')
+        result.output.contains('[Publishing] Modrinth dryRun payload (testmod-neoforge-1.2.3.jar)')
+        !result.output.contains('[Publishing] Modrinth dryRun payload (testmod-forge-1.2.3.jar)')
+    }
+
     private void createLoaderProject(String name, String metadataContents, String metadataPath) {
         def dir = new File(testProjectDir, name)
         dir.mkdirs()

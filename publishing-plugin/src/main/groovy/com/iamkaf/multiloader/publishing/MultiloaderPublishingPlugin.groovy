@@ -70,6 +70,7 @@ class MultiloaderPublishingPlugin implements Plugin<Project> {
             def assembleTask = project.tasks.register("publishingAssemble${suffix}") {
                 group = 'publishing'
                 description = "Aggregate the ${loaderId} artifact for release publishing."
+                onlyIf { (spec.enabled as Closure<Boolean>).call() }
 
                 doFirst {
                     def publication = requiredPublication(resolvedPublications, loaderId)
@@ -96,7 +97,7 @@ class MultiloaderPublishingPlugin implements Plugin<Project> {
                 group = 'publishing'
                 description = "Upload the ${loaderId} artifact to CurseForge."
                 dependsOn(assembleTask)
-                onlyIf { extension.publish.curseforge.id.isPresent() }
+                onlyIf { (spec.enabled as Closure<Boolean>).call() && extension.publish.curseforge.id.isPresent() }
 
                 doLast {
                     def publication = requiredPublication(resolvedPublications, loaderId)
@@ -125,7 +126,7 @@ class MultiloaderPublishingPlugin implements Plugin<Project> {
                 group = 'publishing'
                 description = "Upload the ${loaderId} artifact to Modrinth."
                 dependsOn(assembleTask)
-                onlyIf { extension.publish.modrinth.id.isPresent() }
+                onlyIf { (spec.enabled as Closure<Boolean>).call() && extension.publish.modrinth.id.isPresent() }
 
                 doLast {
                     def publication = requiredPublication(resolvedPublications, loaderId)
@@ -217,6 +218,10 @@ class MultiloaderPublishingPlugin implements Plugin<Project> {
         extension.config.releaseType.convention(optionalProperty(project, 'publish.release-type') ?: 'release')
         extension.publish.curseforge.environment.convention(curseEnvironment(project))
         extension.publish.curseforge.javaVersions.convention([requiredProperty(project, 'project.java')])
+        def enabledLoaders = configuredLoaders(project)
+        extension.loaders.fabric.enabled.set(enabledLoaders.contains('fabric'))
+        extension.loaders.forge.enabled.set(enabledLoaders.contains('forge'))
+        extension.loaders.neoforge.enabled.set(enabledLoaders.contains('neoforge'))
 
         def modrinthId = optionalProperty(project, 'publish.modrinth.id')
         if (modrinthId) {
@@ -512,6 +517,11 @@ class MultiloaderPublishingPlugin implements Plugin<Project> {
             return []
         }
         value.split(',').collect { it.trim() }.findAll { !it.isEmpty() }
+    }
+
+    private static List<String> configuredLoaders(Project project) {
+        def configured = requiredCsv(project, 'project.enabled-loaders')
+        configured.isEmpty() ? ['fabric', 'forge', 'neoforge'] : configured
     }
 
     private static String curseEnvironment(Project project) {
