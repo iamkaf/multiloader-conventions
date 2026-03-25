@@ -88,12 +88,17 @@ class ConventionSupport {
 
     static void configureFabricBaseDependencies(Project project) {
         project.dependencies.add('minecraft', requiredLibrary(project, 'minecraft'))
-        def loom = project.extensions.getByName('loom')
-        project.dependencies.add('mappings', loom.layered {
-            officialMojangMappings()
-            parchment(requiredLibrary(project, 'parchment'))
-        })
-        project.dependencies.add('modImplementation', requiredLibrary(project, 'fabric-loader'))
+        if (!isUnobfuscatedMinecraft(project)) {
+            def loom = project.extensions.getByName('loom')
+            project.dependencies.add('mappings', loom.layered {
+                officialMojangMappings()
+                parchment(requiredLibrary(project, 'parchment'))
+            })
+            project.dependencies.add('modImplementation', requiredLibrary(project, 'fabric-loader'))
+            return
+        }
+
+        project.dependencies.add('implementation', requiredLibrary(project, 'fabric-loader'))
     }
 
     static void registerFabricDatagenHelper(Project project) {
@@ -129,6 +134,10 @@ class ConventionSupport {
         project.repositories.maven {
             name = 'TerraformersMC'
             url = project.uri('https://maven.terraformersmc.com/')
+        }
+        project.repositories.maven {
+            name = 'Modrinth'
+            url = project.uri('https://api.modrinth.com/maven')
         }
         project.repositories.maven {
             name = 'Kaf Maven'
@@ -391,5 +400,10 @@ class ConventionSupport {
 
     static String optionalProperty(Project project, String propertyName) {
         project.findProperty(propertyName)?.toString()
+    }
+
+    static boolean isUnobfuscatedMinecraft(Project project) {
+        def minecraftVersion = optionalProperty(project, 'project.minecraft')
+        minecraftVersion != null && minecraftVersion.startsWith('26.')
     }
 }

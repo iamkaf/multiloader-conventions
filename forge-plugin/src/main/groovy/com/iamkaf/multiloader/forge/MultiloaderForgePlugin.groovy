@@ -23,9 +23,8 @@ class MultiloaderForgePlugin implements Plugin<Project> {
         }
 
         project.extensions.configure('minecraft') { minecraft ->
-            minecraft.mappings(channel: 'official', version: ConventionSupport.versionAlias(project, 'minecraft'))
-
             if (usesLegacyUserdev) {
+                minecraft.mappings(channel: 'official', version: ConventionSupport.versionAlias(project, 'minecraft'))
                 minecraft.copyIdeResources = true
                 minecraft.reobf = false
             }
@@ -78,9 +77,15 @@ class MultiloaderForgePlugin implements Plugin<Project> {
 
         if (!usesLegacyUserdev) {
             project.repositories {
-                project.minecraft.mavenizer(it)
-                maven project.fg.forgeMaven
-                maven project.fg.minecraftLibsMaven
+                if (project.minecraft.metaClass.respondsTo(project.minecraft, 'mavenizer', Object)) {
+                    project.minecraft.mavenizer(it)
+                }
+                if (project.fg.hasProperty('forgeMaven')) {
+                    maven project.fg.forgeMaven
+                }
+                if (project.fg.hasProperty('minecraftLibsMaven')) {
+                    maven project.fg.minecraftLibsMaven
+                }
             }
         }
 
@@ -95,7 +100,7 @@ class MultiloaderForgePlugin implements Plugin<Project> {
             }
         } else {
             project.dependencies {
-                implementation project.minecraft.dependency("net.minecraftforge:forge:${ConventionSupport.versionAlias(project, 'minecraft')}-${ConventionSupport.versionAlias(project, 'forge')}")
+                implementation project.minecraft.dependency("net.minecraftforge:forge:${ConventionSupport.versionAlias(project, 'forge')}")
                 implementation('net.sf.jopt-simple:jopt-simple:5.0.4') {
                     version {
                         strictly '5.0.4'

@@ -10,9 +10,12 @@ class MultiloaderFabricPlugin implements Plugin<Project> {
     @Override
     void apply(Project project) {
         project.pluginManager.apply(MultiloaderPlatformPlugin)
-        project.pluginManager.apply('fabric-loom')
+        def loomPluginId = ConventionSupport.isUnobfuscatedMinecraft(project)
+            ? 'net.fabricmc.fabric-loom'
+            : 'fabric-loom'
+        project.pluginManager.apply(loomPluginId)
 
-        project.pluginManager.withPlugin('fabric-loom') {
+        project.pluginManager.withPlugin(loomPluginId) {
             ConventionSupport.configureFabricBaseDependencies(project)
             ConventionSupport.registerFabricDatagenHelper(project)
 

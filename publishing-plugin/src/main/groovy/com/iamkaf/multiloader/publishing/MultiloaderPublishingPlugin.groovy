@@ -168,7 +168,9 @@ class MultiloaderPublishingPlugin implements Plugin<Project> {
                     return
                 }
 
-                def jarOutput = findJarOutput(subproject, spec.jarTask as String, spec.fallbackJarTask as String)
+                def jarTaskName = spec.jarTask instanceof Closure ? spec.jarTask.call(project) : spec.jarTask as String
+                def fallbackJarTaskName = spec.fallbackJarTask instanceof Closure ? spec.fallbackJarTask.call(project) : spec.fallbackJarTask as String
+                def jarOutput = findJarOutput(subproject, jarTaskName, fallbackJarTaskName)
                 if (jarOutput == null) {
                     throw new IllegalStateException("[Publishing] Could not locate a jar task for ${subproject.path}")
                 }
@@ -195,8 +197,16 @@ class MultiloaderPublishingPlugin implements Plugin<Project> {
     }
 
     private static Map<String, Map<String, Object>> loaderSpecs(MultiloaderPublishingExtension extension) {
+        def fabricJarTask = { Project project ->
+            def mcVersion = project.findProperty('project.minecraft')?.toString()
+            mcVersion != null && mcVersion.startsWith('26.') ? 'jar' : 'remapJar'
+        }
+        def fabricFallbackJarTask = { Project project ->
+            def mcVersion = project.findProperty('project.minecraft')?.toString()
+            mcVersion != null && mcVersion.startsWith('26.') ? null : 'jar'
+        }
         [
-            fabric  : [enabled: { extension.loaders.fabric.enabled.get() }, path: ':fabric', jarTask: 'remapJar', fallbackJarTask: 'jar', extraDepends: []],
+            fabric  : [enabled: { extension.loaders.fabric.enabled.get() }, path: ':fabric', jarTask: fabricJarTask, fallbackJarTask: fabricFallbackJarTask, extraDepends: []],
             forge   : [enabled: { extension.loaders.forge.enabled.get() }, path: ':forge', jarTask: 'jar', fallbackJarTask: null, extraDepends: ['reobfJar']],
             neoforge: [enabled: { extension.loaders.neoforge.enabled.get() }, path: ':neoforge', jarTask: 'jar', fallbackJarTask: null, extraDepends: []],
         ]
