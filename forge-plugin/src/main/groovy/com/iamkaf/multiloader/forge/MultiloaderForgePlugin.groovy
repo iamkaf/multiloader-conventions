@@ -14,6 +14,7 @@ class MultiloaderForgePlugin implements Plugin<Project> {
         project.pluginManager.apply(MultiloaderPlatformPlugin)
         project.pluginManager.apply('net.minecraftforge.gradle')
         def usesLegacyUserdev = ConventionSupport.versionAlias(project, 'minecraft') == '1.16.5'
+        def usesUnobfuscatedMinecraft = ConventionSupport.isUnobfuscatedMinecraft(project)
 
         def mixinConfigs = ConventionSupport.collectMixinConfigs(project, 'forge')
         project.tasks.named('jar', Jar).configure { task ->
@@ -75,7 +76,7 @@ class MultiloaderForgePlugin implements Plugin<Project> {
             }
         }
 
-        if (!usesLegacyUserdev) {
+        if (usesUnobfuscatedMinecraft) {
             project.repositories {
                 if (project.minecraft.metaClass.respondsTo(project.minecraft, 'mavenizer', Object)) {
                     project.minecraft.mavenizer(it)
@@ -89,7 +90,7 @@ class MultiloaderForgePlugin implements Plugin<Project> {
             }
         }
 
-        if (usesLegacyUserdev) {
+        if (usesLegacyUserdev || !usesUnobfuscatedMinecraft) {
             project.dependencies {
                 minecraft "net.minecraftforge:forge:${ConventionSupport.versionAlias(project, 'minecraft')}-${ConventionSupport.versionAlias(project, 'forge')}"
                 implementation('net.sf.jopt-simple:jopt-simple:5.0.4') {
