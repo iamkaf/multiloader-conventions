@@ -1,8 +1,8 @@
 [versions]
 # Core Versions
-minecraft = "26.1-snapshot-6"
+minecraft = "26.1"
 java = "25"
-neoform = "26.1-snapshot-6-1"
+neoform = "26.1-1"
 
 # Parchment
 parchment-minecraft = "1.21.11"
@@ -10,25 +10,29 @@ parchment = "2025.12.20"
 
 # Fabric
 fabric-loader = "0.18.4"
-fabric-api = "0.143.2+26.1"
+fabric-api = "0.144.0+26.1"
 modmenu = "18.0.0-alpha.5"
 
 # NeoForge
-neoforge = "26.1.0.0-alpha.10+snapshot-6"
+neoforge = "26.1.0.1-beta"
 
 # Forge
-forge = "61.0.8"
+forge = "26.1-62.0.0"
 
 # Libraries
 mixin = "0.8.5"
 mixinextras = "0.4.1"
 gson = "2.10.1"
+forge-config-api-port = "26.1.0.0"
+
+# Amber
+amber = "10.0.0+26.1"
 
 # Gradle Plugins
 fabric-loom-plugin = "1.15-SNAPSHOT"
-neoforge-moddev-plugin = "2.0.140"
+neoforge-moddev-plugin = "2.0.141"
 modpublisher-plugin = "2.1.6"
-forgegradle-plugin = "[7.0,8.0)"
+forgegradle-plugin = "7.0.16"
 mixin-plugin = "0.7-SNAPSHOT"
 
 [libraries]
@@ -53,6 +57,17 @@ forge = { group = "net.minecraftforge", name = "forge", version.ref = "forge" }
 
 # Parchment
 parchment = { group = "org.parchmentmc.data", name = "parchment-1.21.11", version.ref = "parchment" }
+
+# Forge Config API Port
+forgeconfigapiport-fabric = { group = "fuzs.forgeconfigapiport", name = "forgeconfigapiport-fabric", version.ref = "forge-config-api-port" }
+forgeconfigapiport-common-neoforgeapi = { group = "fuzs.forgeconfigapiport", name = "forgeconfigapiport-common-neoforgeapi", version.ref = "forge-config-api-port" }
+forgeconfigapiport-forge = { group = "fuzs.forgeconfigapiport", name = "forgeconfigapiport-forge", version.ref = "forge-config-api-port" }
+
+# Amber
+amber = { group = "com.iamkaf.amber", name = "amber-common", version.ref = "amber" }
+amber-fabric = { group = "com.iamkaf.amber", name = "amber-fabric", version.ref = "amber" }
+amber-neoforge = { group = "com.iamkaf.amber", name = "amber-neoforge", version.ref = "amber" }
+amber-forge = { group = "com.iamkaf.amber", name = "amber-forge", version.ref = "amber" }
 
 [plugins]
 fabric-loom = { id = "net.fabricmc.fabric-loom", version.ref = "fabric-loom-plugin" }
