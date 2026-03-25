@@ -116,6 +116,20 @@ class ConventionSupport {
         project.repositories.mavenLocal()
         project.repositories.mavenCentral()
         project.repositories.maven {
+            name = 'TerraformersMC'
+            url = project.uri('https://maven.terraformersmc.com/')
+            content {
+                includeGroup('com.terraformersmc')
+            }
+        }
+        project.repositories.maven {
+            name = 'Nucleoid'
+            url = project.uri('https://maven.nucleoid.xyz/')
+            content {
+                includeGroup('eu.pb4')
+            }
+        }
+        project.repositories.maven {
             name = 'Sponge'
             url = project.uri('https://repo.spongepowered.org/repository/maven-public')
         }
@@ -130,10 +144,6 @@ class ConventionSupport {
         project.repositories.maven {
             name = 'BlameJared'
             url = project.uri('https://maven.blamejared.com')
-        }
-        project.repositories.maven {
-            name = 'TerraformersMC'
-            url = project.uri('https://maven.terraformersmc.com/')
         }
         project.repositories.maven {
             name = 'Modrinth'
