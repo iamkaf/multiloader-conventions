@@ -23,7 +23,8 @@ forge = "26.1-62.0.4"
 mixin = "0.8.5"
 mixinextras = "0.4.1"
 gson = "2.10.1"
-forge-config-api-port = "26.1.0.1"
+forge-config-api-port-fabric = "26.1.0.1"
+forge-config-api-port-forge = "26.1.0.2"
 
 # Amber
 amber = "10.0.2+26.1"
@@ -59,9 +60,9 @@ forge = { group = "net.minecraftforge", name = "forge", version.ref = "forge" }
 parchment = { group = "org.parchmentmc.data", name = "parchment-1.21.11", version.ref = "parchment" }
 
 # Forge Config API Port
-forgeconfigapiport-fabric = { group = "fuzs.forgeconfigapiport", name = "forgeconfigapiport-fabric", version.ref = "forge-config-api-port" }
-forgeconfigapiport-common-neoforgeapi = { group = "fuzs.forgeconfigapiport", name = "forgeconfigapiport-common-neoforgeapi", version.ref = "forge-config-api-port" }
-forgeconfigapiport-forge = { group = "fuzs.forgeconfigapiport", name = "forgeconfigapiport-forge", version.ref = "forge-config-api-port" }
+forgeconfigapiport-fabric = { group = "fuzs.forgeconfigapiport", name = "forgeconfigapiport-fabric", version.ref = "forge-config-api-port-fabric" }
+forgeconfigapiport-common-neoforgeapi = { group = "fuzs.forgeconfigapiport", name = "forgeconfigapiport-common-neoforgeapi", version.ref = "forge-config-api-port-fabric" }
+forgeconfigapiport-forge = { group = "fuzs.forgeconfigapiport", name = "forgeconfigapiport-forge", version.ref = "forge-config-api-port-forge" }
 
 # Amber
 amber = { group = "com.iamkaf.amber", name = "amber-common", version.ref = "amber" }
