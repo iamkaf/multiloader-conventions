@@ -17,7 +17,7 @@ modmenu = "18.0.0-alpha.7"
 neoforge = "26.1.0.1-beta"
 
 # Forge
-forge = "26.1-62.0.0"
+forge = "26.1-62.0.4"
 
 # Libraries
 mixin = "0.8.5"
@@ -32,7 +32,7 @@ amber = "10.0.2+26.1"
 fabric-loom-plugin = "1.15-SNAPSHOT"
 neoforge-moddev-plugin = "2.0.141"
 modpublisher-plugin = "2.1.6"
-forgegradle-plugin = "7.0.16"
+forgegradle-plugin = "7.0.17"
 mixin-plugin = "0.7-SNAPSHOT"
 
 [libraries]
