@@ -26,7 +26,7 @@ gson = "2.10.1"
 forge-config-api-port = "26.1.0.1"
 
 # Amber
-amber = "10.0.1+26.1"
+amber = "10.0.2+26.1"
 
 # Gradle Plugins
 fabric-loom-plugin = "1.15-SNAPSHOT"
