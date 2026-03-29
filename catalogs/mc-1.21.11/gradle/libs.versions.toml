@@ -28,6 +28,9 @@ forge-config-api-port = "21.11.1"
 # Amber
 amber = "9.0.5+1.21.11"
 
+# TeaKit
+teakit = "0.1.0+1.21.11"
+
 # Gradle Plugins
 fabric-loom-plugin = "1.15-SNAPSHOT"
 neoforge-moddev-plugin = "2.0.140"
@@ -69,6 +72,12 @@ amber = { group = "com.iamkaf.amber", name = "amber-common", version.ref = "ambe
 amber-fabric = { group = "com.iamkaf.amber", name = "amber-fabric", version.ref = "amber" }
 amber-neoforge = { group = "com.iamkaf.amber", name = "amber-neoforge", version.ref = "amber" }
 amber-forge = { group = "com.iamkaf.amber", name = "amber-forge", version.ref = "amber" }
+
+# TeaKit
+teakit = { group = "com.iamkaf.teakit", name = "teakit-common", version.ref = "teakit" }
+teakit-fabric = { group = "com.iamkaf.teakit", name = "teakit-fabric", version.ref = "teakit" }
+teakit-neoforge = { group = "com.iamkaf.teakit", name = "teakit-neoforge", version.ref = "teakit" }
+teakit-forge = { group = "com.iamkaf.teakit", name = "teakit-forge", version.ref = "teakit" }
 
 [plugins]
 fabric-loom = { id = "fabric-loom", version.ref = "fabric-loom-plugin" }
