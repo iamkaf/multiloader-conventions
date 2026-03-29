@@ -28,6 +28,9 @@ forge-config-api-port = "21.1.6"
 # Amber
 amber = "3.0.0+1.21.1"
 
+# Konfig
+konfig = "0.2.0+1.21.1"
+
 # Gradle Plugins
 fabric-loom-plugin = "1.11-SNAPSHOT"
 neoforge-moddev-plugin = "2.0.140"
@@ -69,6 +72,12 @@ amber = { group = "com.iamkaf.amber", name = "amber-common", version.ref = "ambe
 amber-fabric = { group = "com.iamkaf.amber", name = "amber-fabric", version.ref = "amber" }
 amber-neoforge = { group = "com.iamkaf.amber", name = "amber-neoforge", version.ref = "amber" }
 amber-forge = { group = "com.iamkaf.amber", name = "amber-forge", version.ref = "amber" }
+
+# Konfig
+konfig = { group = "com.iamkaf.konfig", name = "konfig-common", version.ref = "konfig" }
+konfig-fabric = { group = "com.iamkaf.konfig", name = "konfig-fabric", version.ref = "konfig" }
+konfig-neoforge = { group = "com.iamkaf.konfig", name = "konfig-neoforge", version.ref = "konfig" }
+konfig-forge = { group = "com.iamkaf.konfig", name = "konfig-forge", version.ref = "konfig" }
 
 [plugins]
 fabric-loom = { id = "fabric-loom", version.ref = "fabric-loom-plugin" }
