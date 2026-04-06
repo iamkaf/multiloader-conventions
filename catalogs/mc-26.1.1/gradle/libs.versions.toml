@@ -1,8 +1,8 @@
 [versions]
 # Core Versions
-minecraft = "26.1"
+minecraft = "26.1.1"
 java = "25"
-neoform = "26.1-1"
+neoform = "26.1.1-1"
 
 # Parchment
 parchment-minecraft = "1.21.11"
@@ -10,14 +10,14 @@ parchment = "2025.12.20"
 
 # Fabric
 fabric-loader = "0.18.4"
-fabric-api = "0.144.0+26.1"
+fabric-api = "0.145.4+26.1.1"
 modmenu = "18.0.0-alpha.7"
 
 # NeoForge
-neoforge = "26.1.0.1-beta"
+neoforge = "26.1.1.10-beta"
 
 # Forge
-forge = "26.1-62.0.4"
+forge = "26.1.1-63.0.1"
 
 # Libraries
 mixin = "0.8.5"
@@ -27,13 +27,13 @@ forge-config-api-port-fabric = "26.1.0.1"
 forge-config-api-port-forge = "26.1.0.2"
 
 # Amber
-amber = "10.0.2+26.1"
+amber = "10.0.2+26.1.1"
 
 # Konfig
-konfig = "0.2.0+26.1"
+konfig = "0.2.0+26.1.1"
 
 # TeaKit
-teakit = "0.3.1+26.1"
+teakit = "0.3.1+26.1.1"
 
 # Gradle Plugins
 fabric-loom-plugin = "1.15-SNAPSHOT"
