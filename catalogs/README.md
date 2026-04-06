@@ -40,11 +40,12 @@ repositories {
 ## Coordinates
 
 - **Group:** `com.iamkaf.platform`
-- **Artifact:** `mc-<minecraftVersion>` (example: `mc-26.1.1`)
-- **Version:** `<minecraftVersion>-SNAPSHOT` (example: `26.1.1-SNAPSHOT`)
+- **Artifact:** `mc-<minecraftVersion>` (example: `mc-26.1`)
+- **Version:** `<minecraftVersion>-SNAPSHOT` (example: `26.1-SNAPSHOT`)
 
 Examples:
 - `com.iamkaf.platform:mc-1.20.1:1.20.1-SNAPSHOT`
+- `com.iamkaf.platform:mc-26.1:26.1-SNAPSHOT`
 - `com.iamkaf.platform:mc-26.1.1:26.1.1-SNAPSHOT`
 
 ## Using a catalog (Gradle)
@@ -60,7 +61,7 @@ dependencyResolutionManagement {
 
   versionCatalogs {
     create("libs") {
-      from("com.iamkaf.platform:mc-26.1.1:26.1.1-SNAPSHOT")
+      from("com.iamkaf.platform:mc-26.1:26.1-SNAPSHOT")
     }
   }
 }
@@ -69,7 +70,7 @@ dependencyResolutionManagement {
 ## Available catalogs
 
 This repo currently contains:
-- `mc-1.16.5` → `mc-26.1.1`
+- `mc-1.16.5` → `mc-26.1.1`, including `mc-26.1`
 
 ## Publishing (maintainers)
 
