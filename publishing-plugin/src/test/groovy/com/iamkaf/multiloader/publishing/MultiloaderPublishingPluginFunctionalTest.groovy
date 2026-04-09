@@ -107,12 +107,12 @@ version = '1.2.3'
     def "publishingRelease skips disabled loaders from project.enabled-loaders"() {
         given:
         new File(testProjectDir, 'gradle.properties').text = '''
-project.minecraft=26.1.1
+project.minecraft=26.1.2
 project.java=25
 project.enabled-loaders=fabric,neoforge
 mod.name=Test Mod
 mod.id=testmod
-publish.game-versions=26.1.1
+publish.game-versions=26.1.2
 publish.release-type=release
 publish.dry-run=true
 publish.modrinth.id=test-mod
