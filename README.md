@@ -13,6 +13,7 @@ This repo now provides the first real plugin family:
 - `com.iamkaf.multiloader.fabric`
 - `com.iamkaf.multiloader.forge`
 - `com.iamkaf.multiloader.neoforge`
+- `com.iamkaf.multiloader.translations`
 - `com.iamkaf.multiloader.publishing`
 
 ## Intended Boundary
@@ -36,6 +37,8 @@ This repo now provides the first real plugin family:
   - apply invariant Forge loader wiring
 - `neoforge`
   - apply invariant NeoForge loader wiring
+- `translations`
+  - manually download approved non-`en_us` locale JSON files from `i18n.kaf.sh`
 - `publishing`
   - aggregate loader jars from the version root
   - dry-run and publish Modrinth / CurseForge releases
@@ -64,6 +67,8 @@ Optional properties:
   - separate build JVM when it differs from the runtime/toolchain JVM
 - `project.plugins`
   - consumer convention plugin version
+- `translations.token`
+  - optional bearer token for private `i18n.kaf.sh` exports when using the translations plugin
 - `publish.*`, `dependencies.*`, and `environments.*`
   - used by the publishing plugin
 
@@ -77,6 +82,67 @@ The samples use `includeBuild("../../")` so the convention repo can be tested lo
 
 See [docs/version-capability-matrix.md](docs/version-capability-matrix.md) for
 the current policy on Minecraft-version and loader-version quirks.
+
+## Consumer Setup
+
+When a consumer wants the translations plugin, add it to the version-local
+`settings.gradle` plugin management block alongside the other convention plugins:
+
+```groovy
+pluginManagement {
+    def multiloaderConventionsVersion = providers.gradleProperty('project.plugins').get()
+    repositories {
+        mavenLocal()
+        maven { url = uri('https://maven.kaf.sh') }
+        gradlePluginPortal()
+        mavenCentral()
+    }
+    plugins {
+        id 'com.iamkaf.multiloader.settings' version multiloaderConventionsVersion
+        id 'com.iamkaf.multiloader.root' version multiloaderConventionsVersion
+        id 'com.iamkaf.multiloader.common' version multiloaderConventionsVersion
+        id 'com.iamkaf.multiloader.fabric' version multiloaderConventionsVersion
+        id 'com.iamkaf.multiloader.forge' version multiloaderConventionsVersion
+        id 'com.iamkaf.multiloader.neoforge' version multiloaderConventionsVersion
+        id 'com.iamkaf.multiloader.translations' version multiloaderConventionsVersion
+        id 'com.iamkaf.multiloader.publishing' version multiloaderConventionsVersion
+    }
+}
+```
+
+Apply it explicitly in the consumer root project:
+
+```groovy
+plugins {
+    id 'com.iamkaf.multiloader.root'
+    id 'com.iamkaf.multiloader.translations'
+}
+
+multiloaderTranslations {
+    projectSlug = 'liteminer'
+    outputDir = layout.projectDirectory.dir('common/src/main/resources/assets/liteminer/lang')
+}
+```
+
+Private export example:
+
+```groovy
+multiloaderTranslations {
+    projectSlug = 'liteminer'
+    outputDir = layout.projectDirectory.dir('common/src/main/resources/assets/liteminer/lang')
+    token = providers.gradleProperty('translations.token')
+}
+```
+
+Run the sync manually:
+
+```bash
+./gradlew downloadTranslations
+```
+
+The translations plugin is intentionally separate from source-catalog upload.
+It does not make `en_us` authoritative in the atelier and will never overwrite
+the repo-owned source locale.
 
 ## Validation
 
@@ -106,3 +172,13 @@ The publishing plugin exposes both aggregate and per-loader tasks:
 `publishingRelease` and `publishingPublish` are aggregate compatibility aliases. Use the
 per-loader tasks when one platform or one loader upload fails and you need to retry only that
 combination.
+
+## Translation Tasks
+
+The translations plugin exposes:
+
+- `downloadTranslations`
+
+It is a manual, root-only task. It downloads approved non-`en_us` locale JSON
+files from `i18n.kaf.sh` into the configured lang directory without deleting
+local files that are not present remotely.
