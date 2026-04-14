@@ -144,6 +144,64 @@ environments.server=required
         !result.output.contains('[Publishing] Modrinth dryRun payload (testmod-forge-1.2.3.jar)')
     }
 
+    def "explicit publications support matrix artifacts with per-project game and java versions"() {
+        given:
+        new File(testProjectDir, 'settings.gradle').text = '''
+rootProject.name = 'publishing-matrix-test'
+include('fabric:1.21.11', 'neoforge:26.1.2')
+'''.stripIndent()
+
+        new File(testProjectDir, 'build.gradle').text = '''
+plugins {
+    id 'com.iamkaf.multiloader.publishing'
+}
+
+group = 'com.example'
+version = '1.2.3'
+
+multiloaderPublishing {
+    publication('fabric-1.21.11') {
+        project ':fabric:1.21.11'
+        loader 'fabric'
+    }
+    publication('neoforge-26.1.2') {
+        project ':neoforge:26.1.2'
+        loader 'neoforge'
+    }
+}
+'''.stripIndent()
+
+        new File(testProjectDir, 'gradle.properties').text = '''
+mod.name=Test Mod
+mod.id=testmod
+publish.release-type=beta
+publish.dry-run=true
+publish.modrinth.id=test-mod
+publish.curseforge.id=123456
+environments.client=required
+environments.server=required
+'''.stripIndent()
+
+        createNestedLoaderProject('fabric/1.21.11', 'testmod-fabric', '{"schemaVersion":1,"id":"testmod","version":"1.2.3"}', 'fabric.mod.json', '1.21.11', '21')
+        createNestedLoaderProject('neoforge/26.1.2', 'testmod-neoforge', 'modLoader="javafml"\\n[[mods]]\\nmodId="testmod"\\n', 'META-INF/neoforge.mods.toml', '26.1.2', '25')
+
+        when:
+        def result = GradleRunner.create()
+            .withProjectDir(testProjectDir)
+            .withPluginClasspath()
+            .withArguments('publishingRelease', '--stacktrace')
+            .build()
+
+        then:
+        result.task(':publishingRelease').outcome == TaskOutcome.SUCCESS
+        result.output.contains('[Publishing] Copied :fabric:1.21.11 ->')
+        result.output.contains('[Publishing] Copied :neoforge:26.1.2 ->')
+        result.output.contains('[Publishing] Modrinth dryRun payload (testmod-fabric-1.2.3.jar)')
+        result.output.contains('[Publishing] Modrinth dryRun payload (testmod-neoforge-1.2.3.jar)')
+        result.output.contains('"gameVersions": [\n            "1.21.11",\n            "client",\n            "server",\n            "Java 21",\n            "fabric"\n        ]')
+        result.output.contains('"gameVersions": [\n            "26.1.2",\n            "client",\n            "server",\n            "Java 25",\n            "neoforge"\n        ]')
+    }
+
     private void createLoaderProject(String name, String metadataContents, String metadataPath) {
         def dir = new File(testProjectDir, name)
         dir.mkdirs()
@@ -157,6 +215,29 @@ version = '1.2.3'
 
 tasks.named('jar') {
   archiveBaseName.set('testmod-${name}')
+}
+""".stripIndent()
+
+        def metadata = new File(dir, "src/main/resources/${metadataPath}")
+        metadata.parentFile.mkdirs()
+        metadata.text = metadataContents
+    }
+
+    private void createNestedLoaderProject(String path, String archiveBaseName, String metadataContents, String metadataPath, String minecraftVersion, String javaVersion) {
+        def dir = new File(testProjectDir, path)
+        dir.mkdirs()
+        new File(dir, 'build.gradle').text = """
+plugins {
+  id 'java'
+}
+
+group = 'com.example'
+version = '1.2.3'
+ext['project.minecraft'] = '${minecraftVersion}'
+ext['project.java'] = '${javaVersion}'
+
+tasks.named('jar') {
+  archiveBaseName.set('${archiveBaseName}')
 }
 """.stripIndent()
 

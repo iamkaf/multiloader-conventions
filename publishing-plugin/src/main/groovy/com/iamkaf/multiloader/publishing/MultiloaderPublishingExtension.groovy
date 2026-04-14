@@ -1,5 +1,7 @@
 package com.iamkaf.multiloader.publishing
 
+import org.gradle.api.Named
+import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
@@ -11,6 +13,7 @@ class MultiloaderPublishingExtension {
     final PublishingMetadata metadata
     final Publish publish
     final Loaders loaders
+    final NamedDomainObjectContainer<Publication> publications
 
     @Inject
     MultiloaderPublishingExtension(ObjectFactory objects) {
@@ -18,6 +21,9 @@ class MultiloaderPublishingExtension {
         this.metadata = objects.newInstance(PublishingMetadata, objects)
         this.publish = objects.newInstance(Publish, objects)
         this.loaders = objects.newInstance(Loaders, objects)
+        this.publications = objects.domainObjectContainer(Publication) { String name ->
+            objects.newInstance(Publication, name, objects)
+        }
     }
 
     void config(Closure<?> configure) {
@@ -40,6 +46,19 @@ class MultiloaderPublishingExtension {
 
     void loaders(Closure<?> configure) {
         configure.delegate = loaders
+        configure.resolveStrategy = Closure.DELEGATE_FIRST
+        configure.call()
+    }
+
+    void publications(Closure<?> configure) {
+        configure.delegate = publications
+        configure.resolveStrategy = Closure.DELEGATE_FIRST
+        configure.call()
+    }
+
+    void publication(String name, Closure<?> configure) {
+        def publication = publications.maybeCreate(name)
+        configure.delegate = publication
         configure.resolveStrategy = Closure.DELEGATE_FIRST
         configure.call()
     }
@@ -238,6 +257,70 @@ class MultiloaderPublishingExtension {
         @Inject
         LoaderConfig(ObjectFactory objects, Boolean defaultEnabled) {
             this.enabled = objects.property(Boolean).convention(defaultEnabled)
+        }
+    }
+
+    static class Publication implements Named {
+        final String name
+        final Property<Boolean> enabled
+        final Property<String> projectPath
+        final Property<String> artifactTask
+        final Property<String> fallbackArtifactTask
+        final ListProperty<String> buildTasks
+        final ListProperty<String> loaders
+        final ListProperty<String> gameVersions
+        final ListProperty<String> javaVersions
+        final Property<String> displayName
+
+        @Inject
+        Publication(String name, ObjectFactory objects) {
+            this.name = name
+            this.enabled = objects.property(Boolean).convention(true)
+            this.projectPath = objects.property(String)
+            this.artifactTask = objects.property(String).convention('jar')
+            this.fallbackArtifactTask = objects.property(String)
+            this.buildTasks = objects.listProperty(String).convention([])
+            this.loaders = objects.listProperty(String).convention([])
+            this.gameVersions = objects.listProperty(String).convention([])
+            this.javaVersions = objects.listProperty(String).convention([])
+            this.displayName = objects.property(String)
+        }
+
+        @Override
+        String getName() {
+            return name
+        }
+
+        void project(String path) {
+            projectPath.set(path)
+        }
+
+        void artifactTask(String name) {
+            artifactTask.set(name)
+        }
+
+        void fallbackArtifactTask(String name) {
+            fallbackArtifactTask.set(name)
+        }
+
+        void buildTask(String name) {
+            buildTasks.add(name)
+        }
+
+        void loader(String loader) {
+            loaders.add(loader)
+        }
+
+        void gameVersion(String version) {
+            gameVersions.add(version)
+        }
+
+        void javaVersion(String version) {
+            javaVersions.add(version)
+        }
+
+        void displayName(String value) {
+            displayName.set(value)
         }
     }
 }

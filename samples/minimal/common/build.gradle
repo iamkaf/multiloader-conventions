@@ -1,12 +1,3 @@
 plugins {
     id 'com.iamkaf.multiloader.common'
-    id 'net.neoforged.moddev'
-}
-
-neoForge {
-    neoFormVersion = libs.versions.neoform.get()
-    parchment {
-        minecraftVersion = libs.versions.parchment.minecraft.get()
-        mappingsVersion = libs.parchment.get().version.toString()
-    }
 }

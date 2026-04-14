@@ -8,6 +8,7 @@ This repo now provides the first real plugin family:
 
 - `com.iamkaf.multiloader.settings`
 - `com.iamkaf.multiloader.root`
+- `com.iamkaf.multiloader.core`
 - `com.iamkaf.multiloader.common`
 - `com.iamkaf.multiloader.platform`
 - `com.iamkaf.multiloader.fabric`
@@ -26,6 +27,8 @@ This repo now provides the first real plugin family:
 - `root`
   - register aggregate tasks
   - validate required root properties
+- `core`
+  - expose shared branch-based property, catalog, repository, publishing, mixin, and resource-expansion helpers
 - `common`
   - configure Java, publishing, resource expansion, manifest metadata, capabilities, and shared repositories
   - expose `commonJava` and `commonResources` from the `common` project
@@ -100,6 +103,7 @@ pluginManagement {
     plugins {
         id 'com.iamkaf.multiloader.settings' version multiloaderConventionsVersion
         id 'com.iamkaf.multiloader.root' version multiloaderConventionsVersion
+        id 'com.iamkaf.multiloader.core' version multiloaderConventionsVersion
         id 'com.iamkaf.multiloader.common' version multiloaderConventionsVersion
         id 'com.iamkaf.multiloader.fabric' version multiloaderConventionsVersion
         id 'com.iamkaf.multiloader.forge' version multiloaderConventionsVersion

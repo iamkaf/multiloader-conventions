@@ -4,7 +4,9 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 
 import java.nio.charset.StandardCharsets
@@ -15,13 +17,13 @@ import java.nio.file.StandardCopyOption
 
 abstract class DownloadTranslationsTask extends DefaultTask {
 
-    @Internal
+    @Input
     abstract Property<String> getProjectSlug()
 
-    @Internal
+    @OutputDirectory
     abstract DirectoryProperty getOutputDir()
 
-    @Internal
+    @Input
     abstract Property<String> getBaseUrl()
 
     @Internal
