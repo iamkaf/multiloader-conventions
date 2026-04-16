@@ -2,9 +2,16 @@
 
 Gradle convention plugins for the multiloader mod workspace.
 
-## Scope
+This repo is the shared build layer used by the branch-based Stonecutter projects in this workspace. It centralizes the repeatable parts of the build while leaving genuinely versioned or one-off behavior explicit.
 
-This repo now provides the first real plugin family:
+Current release in this repo:
+
+- Group: `com.iamkaf.multiloader`
+- Version: `2.0.0`
+
+## Plugin Set
+
+The live plugin family included by `settings.gradle` is:
 
 - `com.iamkaf.multiloader.settings`
 - `com.iamkaf.multiloader.root`
@@ -17,104 +24,199 @@ This repo now provides the first real plugin family:
 - `com.iamkaf.multiloader.translations`
 - `com.iamkaf.multiloader.publishing`
 
-## Intended Boundary
+Included modules in this repo:
 
-- `settings`
-  - include enabled projects from version-local properties
-  - set the root project name
-  - configure shared dependency-resolution repositories
-  - load the shared version catalog
-- `root`
-  - register aggregate tasks
-  - validate required root properties
-- `core`
-  - expose shared branch-based property, catalog, repository, publishing, mixin, and resource-expansion helpers
-- `common`
-  - configure Java, publishing, resource expansion, manifest metadata, capabilities, and shared repositories
-  - expose `commonJava` and `commonResources` from the `common` project
-- `platform`
-  - bridge loader projects to `:common`
-- `fabric`
-  - apply invariant Fabric loader wiring
-- `forge`
-  - apply invariant Forge loader wiring
-- `neoforge`
-  - apply invariant NeoForge loader wiring
-- `translations`
-  - manually download approved non-`en_us` locale JSON files from `i18n.kaf.sh`
-- `publishing`
-  - aggregate loader jars from the version root
-  - dry-run and publish Modrinth / CurseForge releases
-  - expose per-platform and per-loader publish tasks
+- `conventions-support`
+- `core-plugin`
+- `settings-plugin`
+- `root-plugin`
+- `common-plugin`
+- `platform-plugin`
+- `fabric-plugin`
+- `forge-plugin`
+- `neoforge-plugin`
+- `translations-plugin`
+- `publishing-plugin`
 
-`flight` stays separate until the publish boundary is mature enough to adopt.
+## What Each Plugin Owns
 
-## Required Properties
+`settings`
 
-The convention plugins expect these Gradle properties in the consumer version directory:
+- builds the Stonecutter project graph from `versions/<mc>/gradle.properties`
+- sets the root project name
+- wires repositories for dependency resolution
+- loads the shared version catalog
 
-- `project.group`
+`root`
+
+- owns root-only aggregate tasks
+- owns root-level validations and top-level workflow wiring
+
+`core`
+
+- exposes shared helpers used by the other plugins:
+  - property access
+  - catalog access
+  - repository wiring
+  - metadata expansion
+  - publishing helpers
+  - mixin compatibility expansion
+
+`common`
+
+- configures the standalone `common` artifact
+- publishes the shared common component
+- expands metadata and manifest values
+- exposes the shared common source and resource outputs to loader projects
+- selects the common tool family by Minecraft line
+
+`platform`
+
+- bridges loader projects to the `common` project outputs
+- keeps the common-to-loader source/resource flow consistent
+
+`fabric`
+
+- configures Fabric loader wiring
+- configures Fabric runs
+- owns current shared Fabric dependency policy
+- exposes the current helper path for Fabric datagen
+
+`forge`
+
+- configures Forge loader wiring
+- configures Forge run behavior
+- owns the supported Forge floor in the convention layer
+
+`neoforge`
+
+- configures NeoForge loader wiring
+- configures NeoForge runs and current datagen shape
+
+`translations`
+
+- downloads approved non-`en_us` locale JSON files from `i18n.kaf.sh`
+- writes them to the configured consumer lang directory
+- intentionally stays separate from source-locale ownership
+
+`publishing`
+
+- assembles loader outputs into release tasks
+- exposes dry-run and live Modrinth and CurseForge tasks
+- builds version-specific aggregate publish tasks
+
+## Current Version Policy
+
+The detailed policy lives in [docs/version-capability-matrix.md](docs/version-capability-matrix.md). The short version is:
+
+- stable behavior belongs in plugins
+- repeated drift belongs behind explicit strategy points
+- one-off quirks stay consumer-local until they repeat
+
+Important current boundaries:
+
+- the convention Forge plugin supports Forge on `1.17+`
+- pre-`1.17` Forge stays consumer-local
+- the common plugin selects different tool families by Minecraft line
+- Fabric datagen is centralized as a helper, but still consumer opt-in
+
+## Expected Consumer Shape
+
+These plugins are built for the branch-based Stonecutter layout:
+
+```text
+consumer/
+├── common/
+├── fabric/
+├── forge/
+├── neoforge/
+├── versions/<mc>/
+├── settings.gradle.kts
+├── stonecutter.gradle.kts
+└── gradle.properties
+```
+
+The active graph is derived from:
+
+- shared root properties
+- `versions/<mc>/gradle.properties`
+- the selected catalog coordinate
+- `project.enabled-loaders`
+
+See:
+
+- [samples/minimal](samples/minimal)
+- [samples/datagen](samples/datagen)
+
+## Required Consumer Properties
+
+The plugins expect these version-local properties:
+
 - `project.version`
 - `project.minecraft`
 - `project.java`
 - `mod.name`
 - `mod.id`
 
-Optional properties:
+Common optional properties:
 
 - `project.enabled-loaders`
-  - comma-separated list such as `fabric,forge,neoforge`
 - `project.catalog-coordinate`
-  - overrides the default catalog coordinate
 - `project.build-java`
-  - separate build JVM when it differs from the runtime/toolchain JVM
 - `project.plugins`
-  - consumer convention plugin version
 - `translations.token`
-  - optional bearer token for private `i18n.kaf.sh` exports when using the translations plugin
-- `publish.*`, `dependencies.*`, and `environments.*`
-  - used by the publishing plugin
+- `publish.*`
+- `dependencies.*`
+- `environments.*`
 
-If `project.enabled-loaders` is omitted, the settings plugin defaults to `fabric,forge,neoforge`.
-
-## Sample Consumer
-
-See [samples/minimal](samples/minimal) for the current consumer shape and [samples/datagen](samples/datagen) for the current Fabric datagen shape.
-
-The samples use `includeBuild("../../")` so the convention repo can be tested locally before any publication step exists.
-
-See [docs/version-capability-matrix.md](docs/version-capability-matrix.md) for
-the current policy on Minecraft-version and loader-version quirks.
+Workspace defaults are usually supplied from the consumer root `gradle.properties`, with version overrides in `versions/<mc>/gradle.properties`.
 
 ## Consumer Setup
 
-When a consumer wants the translations plugin, add it to the version-local
-`settings.gradle` plugin management block alongside the other convention plugins:
+Typical `settings.gradle.kts` plugin management:
 
-```groovy
+```kotlin
 pluginManagement {
-    def multiloaderConventionsVersion = providers.gradleProperty('project.plugins').get()
+    val multiloaderConventionsVersion = providers.gradleProperty("project.plugins").get()
+
     repositories {
         mavenLocal()
-        maven { url = uri('https://maven.kaf.sh') }
+        maven("https://maven.kaf.sh")
         gradlePluginPortal()
         mavenCentral()
     }
+
     plugins {
-        id 'com.iamkaf.multiloader.settings' version multiloaderConventionsVersion
-        id 'com.iamkaf.multiloader.root' version multiloaderConventionsVersion
-        id 'com.iamkaf.multiloader.core' version multiloaderConventionsVersion
-        id 'com.iamkaf.multiloader.common' version multiloaderConventionsVersion
-        id 'com.iamkaf.multiloader.fabric' version multiloaderConventionsVersion
-        id 'com.iamkaf.multiloader.forge' version multiloaderConventionsVersion
-        id 'com.iamkaf.multiloader.neoforge' version multiloaderConventionsVersion
-        id 'com.iamkaf.multiloader.translations' version multiloaderConventionsVersion
-        id 'com.iamkaf.multiloader.publishing' version multiloaderConventionsVersion
+        id("com.iamkaf.multiloader.settings") version multiloaderConventionsVersion
+        id("com.iamkaf.multiloader.root") version multiloaderConventionsVersion
+        id("com.iamkaf.multiloader.common") version multiloaderConventionsVersion
+        id("com.iamkaf.multiloader.fabric") version multiloaderConventionsVersion
+        id("com.iamkaf.multiloader.forge") version multiloaderConventionsVersion
+        id("com.iamkaf.multiloader.neoforge") version multiloaderConventionsVersion
+        id("com.iamkaf.multiloader.translations") version multiloaderConventionsVersion
+        id("com.iamkaf.multiloader.publishing") version multiloaderConventionsVersion
     }
 }
 ```
 
-Apply it explicitly in the consumer root project:
+Typical root plugin application:
+
+```kotlin
+plugins {
+    id("dev.kikugie.stonecutter")
+    id("com.iamkaf.multiloader.root")
+}
+```
+
+The concrete current consumer examples are the real source of truth:
+
+- `samples/minimal`
+- `samples/datagen`
+- active consumer repos such as `multiloader-template`, `konfig`, and `teakit`
+
+## Translations Plugin
+
+Apply the translations plugin in the consumer root and configure it explicitly:
 
 ```groovy
 plugins {
@@ -138,29 +240,23 @@ multiloaderTranslations {
 }
 ```
 
-Run the sync manually:
+Run it manually:
 
 ```bash
 ./gradlew downloadTranslations
 ```
 
-The translations plugin is intentionally separate from source-catalog upload.
-It does not make `en_us` authoritative in the atelier and will never overwrite
-the repo-owned source locale.
+The translations plugin:
 
-## Validation
+- is root-only
+- never treats `en_us` as remote-owned
+- never deletes unrelated local lang files automatically
 
-Use:
+## Publishing Plugin
 
-- `./gradlew build`
-- `./gradlew -p samples/minimal validateConventionProperties validateSampleWiring build`
-- `./gradlew -p samples/minimal publishingRelease`
-- `./gradlew -p samples/datagen validateConventionProperties validateSampleWiring :fabric:runDatagen verifyDatagenOutput`
-- `./gradlew checkSamples`
+The publishing plugin exposes aggregate and per-loader tasks.
 
-## Publishing Tasks
-
-The publishing plugin exposes both aggregate and per-loader tasks:
+Important tasks:
 
 - `publishMod`
 - `publishCurseforge`
@@ -173,16 +269,29 @@ The publishing plugin exposes both aggregate and per-loader tasks:
 - `publishModrinthNeoforge`
 - `publishingRelease`
 
-`publishingRelease` and `publishingPublish` are aggregate compatibility aliases. Use the
-per-loader tasks when one platform or one loader upload fails and you need to retry only that
-combination.
+Use the aggregate tasks for normal release flows. Use the per-loader tasks when one destination or one loader upload fails and you need a targeted retry.
 
-## Translation Tasks
+## Validation
 
-The translations plugin exposes:
+Root checks:
 
-- `downloadTranslations`
+```bash
+./gradlew build
+./gradlew checkAll
+./gradlew checkSamples
+```
 
-It is a manual, root-only task. It downloads approved non-`en_us` locale JSON
-files from `i18n.kaf.sh` into the configured lang directory without deleting
-local files that are not present remotely.
+Important sample validations:
+
+```bash
+./gradlew -p samples/minimal validateConventionProperties validateSampleWiring build publishingRelease
+./gradlew -p samples/datagen validateConventionProperties validateSampleWiring :fabric:runDatagen verifyDatagenOutput
+```
+
+These sample consumers are the main regression harness for the plugin family.
+
+## Notes
+
+- `platform-plugin` still exists in the repo and in the live build graph. It remains part of the current bridge between `common` and loader projects.
+- This repo is not trying to erase every Minecraft-version difference. It is trying to make version policy explicit and repeatable.
+- If a quirk is not standardized yet, the intended policy is to keep it in the consumer and document it in `docs/version-capability-matrix.md`.
