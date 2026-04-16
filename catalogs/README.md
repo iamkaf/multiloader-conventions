@@ -1,25 +1,89 @@
 # version-catalog
 
-Gradle multi-project repo containing Kaf’s shared **Version Catalogs** — one module per Minecraft version.
+Shared Gradle version catalogs for the mod workspace.
 
-## Maven server (how to consume)
+This repo publishes one catalog module per Minecraft line. Consumer repos use these catalogs to keep loader versions, API versions, publishing coordinates, and shared dependency pins aligned across projects.
 
-The public Maven repository URL to add to builds is:
+The source of truth for what is actually published is `settings.gradle`.
 
-- `https://maven.kaf.sh/`
+## What this repo publishes
 
-### Gradle (Kotlin DSL)
+Each published module is a Gradle version catalog:
+
+- Group: `com.iamkaf.platform`
+- Artifact: `mc-<minecraftVersion>`
+- Version: `<minecraftVersion>-SNAPSHOT`
+
+Examples:
+
+- `com.iamkaf.platform:mc-1.20.1:1.20.1-SNAPSHOT`
+- `com.iamkaf.platform:mc-1.21.11:1.21.11-SNAPSHOT`
+- `com.iamkaf.platform:mc-26.1.2:26.1.2-SNAPSHOT`
+
+## Published Build Graph
+
+The root `settings.gradle` currently includes these catalog modules:
+
+- `mc-1.16.5`
+- `mc-1.18.2`
+- `mc-1.19.2`
+- `mc-1.20.1`
+- `mc-1.20.2`
+- `mc-1.20.3`
+- `mc-1.20.4`
+- `mc-1.20.5`
+- `mc-1.20.6`
+- `mc-1.21`
+- `mc-1.21.1`
+- `mc-1.21.2`
+- `mc-1.21.3`
+- `mc-1.21.4`
+- `mc-1.21.5`
+- `mc-1.21.6`
+- `mc-1.21.7`
+- `mc-1.21.8`
+- `mc-1.21.9`
+- `mc-1.21.10`
+- `mc-1.21.11`
+- `mc-26.1-snapshot-5`
+- `mc-26.1`
+- `mc-26.1.1`
+- `mc-26.1.2`
+
+There are additional `mc-*` directories in the repo that are not currently part of the live root build. If you care about what is actually published, trust `settings.gradle`, not the directory list.
+
+## Repository Layout
+
+```text
+version-catalog/
+├── mc-<version>/
+│   ├── build.gradle
+│   └── gradle/libs.versions.toml
+├── build.gradle
+├── settings.gradle
+└── gradle.properties
+```
+
+Each included subproject:
+
+- applies `version-catalog`
+- publishes `components.versionCatalog`
+- reads its catalog data from `gradle/libs.versions.toml`
+
+## Consuming a Catalog
+
+Add the Kaf Maven repository:
+
+### Gradle Kotlin DSL
 
 ```kotlin
 repositories {
-    maven {
-        url = uri("https://maven.kaf.sh/")
-    }
+    maven("https://maven.kaf.sh/")
     mavenCentral()
 }
 ```
 
-### Gradle (Groovy)
+### Gradle Groovy DSL
 
 ```groovy
 repositories {
@@ -28,58 +92,71 @@ repositories {
 }
 ```
 
-### Maven (pom.xml)
+Then load the catalog in `settings.gradle(.kts)`:
 
-```xml
-<repository>
-  <id>kaf-maven</id>
-  <url>https://maven.kaf.sh/</url>
-</repository>
-```
-
-## Coordinates
-
-- **Group:** `com.iamkaf.platform`
-- **Artifact:** `mc-<minecraftVersion>` (example: `mc-26.1.2`)
-- **Version:** `<minecraftVersion>-SNAPSHOT` (example: `26.1.2-SNAPSHOT`)
-
-Examples:
-- `com.iamkaf.platform:mc-1.20.1:1.20.1-SNAPSHOT`
-- `com.iamkaf.platform:mc-26.1:26.1-SNAPSHOT`
-- `com.iamkaf.platform:mc-26.1.1:26.1.1-SNAPSHOT`
-- `com.iamkaf.platform:mc-26.1.2:26.1.2-SNAPSHOT`
-
-## Using a catalog (Gradle)
-
-In `settings.gradle(.kts)`:
+### Kotlin DSL
 
 ```kotlin
 dependencyResolutionManagement {
-  repositories {
-    maven("https://maven.kaf.sh/")
-    mavenCentral()
-  }
-
-  versionCatalogs {
-    create("libs") {
-      from("com.iamkaf.platform:mc-26.1.2:26.1.2-SNAPSHOT")
+    repositories {
+        maven("https://maven.kaf.sh/")
+        mavenCentral()
     }
-  }
+
+    versionCatalogs {
+        create("libs") {
+            from("com.iamkaf.platform:mc-1.21.11:1.21.11-SNAPSHOT")
+        }
+    }
 }
 ```
 
-## Available catalogs
+### Groovy DSL
 
-This repo currently contains:
-- `mc-1.16.5` → `mc-26.1.2`, including `mc-26.1` and `mc-26.1.1`
+```groovy
+dependencyResolutionManagement {
+    repositories {
+        maven { url = uri('https://maven.kaf.sh/') }
+        mavenCentral()
+    }
 
-## Publishing (maintainers)
+    versionCatalogs {
+        libs {
+            from('com.iamkaf.platform:mc-1.21.11:1.21.11-SNAPSHOT')
+        }
+    }
+}
+```
 
-This repo is configured to publish catalogs to Kaf’s Maven infrastructure.
+## Publishing
 
-Convenience tasks:
-- Publish all catalogs: `./gradlew publishAll`
-- Publish all catalogs to KafMaven: `./gradlew publishAllToKafMaven`
-- Publish all catalogs to mavenLocal: `./gradlew publishAllToMavenLocal`
+Root convenience tasks:
 
-Note: publishing credentials are read from `MAVEN_PUBLISH_USERNAME` / `MAVEN_PUBLISH_PASSWORD` (or Gradle properties `maven.kaf.username` / `maven.kaf.password`).
+- `./gradlew publishAll`
+- `./gradlew publishAllToKafMaven`
+- `./gradlew publishAllToMavenLocal`
+
+What they do:
+
+- `publishAll`
+  - runs `publish` in every included catalog project
+- `publishAllToKafMaven`
+  - publishes every included catalog to the configured Kaf Maven repository
+- `publishAllToMavenLocal`
+  - publishes every included catalog to `mavenLocal`
+
+Credentials:
+
+- `MAVEN_PUBLISH_USERNAME`
+- `MAVEN_PUBLISH_PASSWORD`
+
+or Gradle properties:
+
+- `maven.kaf.username`
+- `maven.kaf.password`
+
+## Notes
+
+- This repo is intentionally simple. It is a publication wrapper around per-version `libs.versions.toml` files.
+- The published graph is deliberately narrower than the full set of historical version directories currently present in the repo.
+- If you change which catalogs should be published, update `settings.gradle` first.

@@ -29,7 +29,7 @@ forge-config-api-port = "21.9.8"
 amber = "7.0.1+1.21.9"
 
 # TeaKit
-teakit = "0.5.0+1.21.9"
+teakit = "0.6.0+1.21.9"
 
 # Gradle Plugins
 fabric-loom-plugin = "1.11-SNAPSHOT"

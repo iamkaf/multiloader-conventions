@@ -26,7 +26,7 @@ gson = "2.10.1"
 forge-config-api-port = "20.6.1"
 
 # TeaKit
-teakit = "0.5.0+1.20.6"
+teakit = "0.6.0+1.20.6"
 
 # Gradle Plugins
 fabric-loom-plugin = "1.7-SNAPSHOT"
