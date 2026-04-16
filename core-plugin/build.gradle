@@ -1,0 +1,24 @@
+plugins {
+    id 'groovy-gradle-plugin'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(providers.gradleProperty('project.java').get().toInteger())
+    }
+}
+
+dependencies {
+    implementation project(':conventions-support')
+}
+
+gradlePlugin {
+    plugins {
+        multiloaderCore {
+            id = 'com.iamkaf.multiloader.core'
+            implementationClass = 'com.iamkaf.multiloader.core.MultiloaderCorePlugin'
+            displayName = 'Multiloader Core Plugin'
+            description = 'Registers shared branch-based helper APIs for Stonecutter multiloader builds.'
+        }
+    }
+}

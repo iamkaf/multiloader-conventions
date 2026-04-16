@@ -244,7 +244,7 @@ multiloaderTranslations {
         def result = gradleRunner('downloadTranslations').buildAndFail()
 
         then:
-        result.output.contains('multiloaderTranslations.projectSlug must be configured.')
+        result.output.contains("property 'projectSlug' doesn't have a configured value")
     }
 
     def "downloadTranslations validates that outputDir is configured"() {
@@ -263,7 +263,7 @@ multiloaderTranslations {
         def result = gradleRunner('downloadTranslations').buildAndFail()
 
         then:
-        result.output.contains('multiloaderTranslations.outputDir must be configured.')
+        result.output.contains("property 'outputDir' doesn't have a configured value")
     }
 
     private void startServer() {

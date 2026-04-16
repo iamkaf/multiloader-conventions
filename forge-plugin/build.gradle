@@ -2,6 +2,12 @@ plugins {
     id 'groovy-gradle-plugin'
 }
 
+repositories {
+    maven {
+        url = uri('https://maven.minecraftforge.net')
+    }
+}
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(providers.gradleProperty('project.java').get().toInteger())
@@ -9,6 +15,8 @@ java {
 }
 
 dependencies {
+    implementation 'net.minecraftforge:forgegradle:7.0.17'
+    implementation project(':core-plugin')
     implementation project(':conventions-support')
     implementation project(':platform-plugin')
 }

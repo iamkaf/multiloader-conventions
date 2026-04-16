@@ -2,8 +2,6 @@ plugins {
     id 'com.iamkaf.multiloader.root'
     id 'com.iamkaf.multiloader.common' apply false
     id 'com.iamkaf.multiloader.fabric' apply false
-    alias(libs.plugins.fabric.loom) apply false
-    alias(libs.plugins.neoforge.moddev) apply false
 }
 
 tasks.register('validateSampleWiring') {
@@ -33,5 +31,6 @@ tasks.register('verifyDatagenOutput') {
         def generatedLang = file('common/src/main/generated/assets/exampledatagen/lang/en_us.json')
         assert generatedLang.isFile() : "Expected generated language file at ${generatedLang}"
         assert generatedLang.text.contains('"itemGroup.exampledatagen": "Example Datagen"')
+        assert generatedLang.text.contains('"exampledatagen.dummy": "Dummy Datagen Value"')
     }
 }

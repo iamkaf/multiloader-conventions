@@ -8,6 +8,17 @@ java {
     }
 }
 
+repositories {
+    maven {
+        url = uri('https://maven.firstdarkdev.xyz/releases')
+    }
+}
+
+dependencies {
+    implementation project(':publishing-plugin')
+    implementation project(':translations-plugin')
+}
+
 gradlePlugin {
     plugins {
         multiloaderRoot {

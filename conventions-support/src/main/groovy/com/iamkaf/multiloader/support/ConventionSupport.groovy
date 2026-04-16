@@ -69,6 +69,7 @@ class ConventionSupport {
         project.tasks.named('processResources', ProcessResources).configure { task ->
             task.dependsOn(commonResources)
             task.from(commonResources)
+            task.exclude('.cache/**')
         }
 
         project.tasks.named('javadoc').configure { task ->
@@ -83,6 +84,8 @@ class ConventionSupport {
             task.from(commonJava)
             task.dependsOn(commonResources)
             task.from(commonResources)
+            task.exclude('.cache/**')
+            task.duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         }
     }
 
@@ -204,6 +207,8 @@ class ConventionSupport {
                 [(key): value instanceof String ? value.replace('\n', '\\\\n') : value]
             }
 
+            task.exclude('.cache/**')
+
             task.filesMatching(['META-INF/mods.toml', 'META-INF/neoforge.mods.toml']) {
                 expand(expandProps)
             }
@@ -244,6 +249,7 @@ class ConventionSupport {
                     rename { "${it}_${requiredProperty(project, 'mod.name')}" }
                 }
                 task.duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+                task.exclude('.cache/**')
             }
         }
     }

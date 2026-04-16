@@ -15,5 +15,6 @@ public final class ExampleLanguageProvider extends FabricLanguageProvider {
     @Override
     public void generateTranslations(HolderLookup.Provider provider, TranslationBuilder translationBuilder) {
         translationBuilder.add("itemGroup.exampledatagen", "Example Datagen");
+        translationBuilder.add("exampledatagen.dummy", "Dummy Datagen Value");
     }
 }

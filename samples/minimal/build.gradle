@@ -5,9 +5,6 @@ plugins {
     id 'com.iamkaf.multiloader.fabric' apply false
     id 'com.iamkaf.multiloader.forge' apply false
     id 'com.iamkaf.multiloader.neoforge' apply false
-    alias(libs.plugins.fabric.loom) apply false
-    alias(libs.plugins.neoforge.moddev) apply false
-    alias(libs.plugins.forgegradle) apply false
 }
 
 tasks.register('validateSampleWiring') {

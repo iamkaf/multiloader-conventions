@@ -8,6 +8,7 @@ pluginManagement {
 rootProject.name = 'multiloader-conventions'
 
 include('conventions-support')
+include('core-plugin')
 include('settings-plugin')
 include('root-plugin')
 include('common-plugin')

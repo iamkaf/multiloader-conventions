@@ -45,9 +45,9 @@ separate:
 | Forge run config and mixin arg shape | versioned | `forge` | MC line, FG behavior | Works today, but is a likely future strategy point if FG behavior diverges again. |
 | NeoForge run/datagen shape | versioned | `neoforge` | MC line, ModDev behavior | Shared for current active lines, but should stay explicit as a strategy point. |
 | Fabric datagen DSL | versioned | `fabric` helper + consumer opt-in | Loom/Fabric API DSL by line | Currently centralized only as `enableCommonFabricDatagen`, but consumers opt in per line. |
-| Common-project tool plugin family | local | consumer `common/build.gradle` | MC line | `legacyforge` on `1.20.1`, `moddev` on `1.21+`; still intentionally consumer-local. |
-| Forge tool plugin family/version | local | consumer root + catalog | MC line | Current repo shape still chooses FG family/version outside the plugin. |
-| NeoForge tool plugin family/version | local | consumer root + catalog | MC line | Current repo shape still chooses ModDev family/version outside the plugin. |
+| Common-project tool plugin family | versioned | `common` | MC line, catalog | Centralized now: Fabric Loom on the old Fabric-only era, `legacyforge` on the LegacyForge window, `moddev` when NeoForm is available. |
+| Forge tool plugin family/version | versioned | `forge` | MC line, catalog | Centralized now for the supported floor. The convention plugin only supports Forge on `1.17+`; older Forge stays consumer-local. |
+| NeoForge tool plugin family/version | stable | `neoforge` | MC line, catalog | Centralized in the plugin. |
 | Publishing payload assembly | stable | `publishing` | loader outputs, changelog, IDs | Already centralized. |
 | Publishing tag normalization | versioned | `publishing` | MC version, Java version, loader set | Current implementation is shared, but CurseForge/Modrinth quirks should be treated as versioned strategy points. |
 | Placeholder or prototype publish metadata policy | local | consumer properties | repo intent | Not a plugin concern. |
@@ -90,20 +90,20 @@ Reason:
 If a new MC line needs different Forge run or mixin wiring, add a dedicated
 strategy boundary inside the plugin instead of branching inline.
 
-### 3. NeoForge Common Strategy
+### 3. Common Tool-Family Strategy
 
 Current state:
 
-- common NeoForge behavior is centralized
-- common-project tool plugin selection is still local
+- common-project tool plugin selection is centralized
+- the strategy is keyed by the available tool family for that MC line
 
 Reason:
 
-- the workspace currently supports both `legacyforge`-style older lines and
-  `moddev`-based newer lines
+- the workspace currently spans Fabric-Loom-backed old common builds,
+  LegacyForge common builds, and NeoForm-backed common builds
 
-Do not centralize tool-family selection until the workspace has a clear
-cross-repo standard for it.
+Keep this as an explicit strategy point. If another common build family appears,
+add it here instead of scattering version checks across consumers.
 
 ### 4. Publishing Normalization Strategy
 

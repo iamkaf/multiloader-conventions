@@ -5,11 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## 2.0.0
 
 ### Added
 
-- initial scaffold for the `settings`, `root`, and `core` convention plugins
+- v2 convention plugins for branch-based Stonecutter projects.
+
+### Changed
+
+- Fabric projects now resolve version-specific access wideners when present.
 
 ## Types of changes
 
@@ -36,4 +40,3 @@ for any bug fixes.
 ### `Security`
 
 in case of vulnerabilities.
-
