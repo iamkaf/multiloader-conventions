@@ -28,7 +28,7 @@ amber = "3.0.0+1.20.1"
 konfig = "0.2.0+1.20.1"
 
 # TeaKit
-teakit = "0.4.0+1.20.1"
+teakit = "0.5.0+1.20.1"
 
 # Gradle Plugins
 fabric-loom-plugin = "1.15-SNAPSHOT"
@@ -74,7 +74,6 @@ konfig-forge = { group = "com.iamkaf.konfig", name = "konfig-forge", version.ref
 teakit = { group = "com.iamkaf.teakit", name = "teakit-common", version.ref = "teakit" }
 teakit-fabric = { group = "com.iamkaf.teakit", name = "teakit-fabric", version.ref = "teakit" }
 teakit-forge = { group = "com.iamkaf.teakit", name = "teakit-forge", version.ref = "teakit" }
-
 [plugins]
 fabric-loom = { id = "fabric-loom", version.ref = "fabric-loom-plugin" }
 modpublisher = { id = "com.hypherionmc.modutils.modpublisher", version.ref = "modpublisher-plugin" }

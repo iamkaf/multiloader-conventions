@@ -6,7 +6,7 @@ neoform = "1.21.5-20250325.162830"
 
 # Parchment
 parchment-minecraft = "1.21.5"
-parchment = "2025.04.19"
+parchment = "2025.06.15"
 
 # Fabric
 fabric-loader = "0.16.13"
@@ -27,6 +27,9 @@ forge-config-api-port = "21.5.3"
 
 # Amber
 amber = "4.2.2+1.21.5"
+
+# TeaKit
+teakit = "0.5.0+1.21.5"
 
 # Gradle Plugins
 fabric-loom-plugin = "1.10-SNAPSHOT"
@@ -69,6 +72,12 @@ amber = { group = "com.iamkaf.amber", name = "amber-common", version.ref = "ambe
 amber-fabric = { group = "com.iamkaf.amber", name = "amber-fabric", version.ref = "amber" }
 amber-neoforge = { group = "com.iamkaf.amber", name = "amber-neoforge", version.ref = "amber" }
 amber-forge = { group = "com.iamkaf.amber", name = "amber-forge", version.ref = "amber" }
+
+# TeaKit
+teakit = { group = "com.iamkaf.teakit", name = "teakit-common", version.ref = "teakit" }
+teakit-fabric = { group = "com.iamkaf.teakit", name = "teakit-fabric", version.ref = "teakit" }
+teakit-neoforge = { group = "com.iamkaf.teakit", name = "teakit-neoforge", version.ref = "teakit" }
+teakit-forge = { group = "com.iamkaf.teakit", name = "teakit-forge", version.ref = "teakit" }
 
 [plugins]
 fabric-loom = { id = "fabric-loom", version.ref = "fabric-loom-plugin" }

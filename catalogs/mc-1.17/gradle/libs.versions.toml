@@ -1,0 +1,74 @@
+[versions]
+# Core Versions
+minecraft = "1.17"
+java = "16"
+
+# Parchment
+parchment-minecraft = "1.17"
+parchment = "2021.07.21"
+
+# Fabric
+fabric-loader = "0.13.3"
+fabric-api = "0.36.0+1.17"
+modmenu = "2.0.17"
+
+# Forge
+forge = "null"
+
+# Libraries
+mixin = "0.8.5"
+mixinextras = "0.4.1"
+gson = "2.10.1"
+forge-config-api-port = "3.2.4"
+
+# Amber
+amber = "3.0.0+1.20.1"
+
+# TeaKit
+teakit = "0.5.0+1.17"
+
+# Gradle Plugins
+fabric-loom-plugin = "1.15-SNAPSHOT"
+modpublisher-plugin = "2.1.6"
+forgegradle-plugin = "[7.0.11,8.0)"
+mixin-plugin = "0.7-SNAPSHOT"
+neoforge-legacyforge-plugin = "2.0.140"
+
+[libraries]
+# Core Dependencies
+minecraft = { group = "com.mojang", name = "minecraft", version.ref = "minecraft" }
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+
+# Mixin
+mixin = { group = "org.spongepowered", name = "mixin", version.ref = "mixin" }
+mixin-extras = { group = "io.github.llamalad7", name = "mixinextras-common", version.ref = "mixinextras" }
+
+# Fabric
+fabric-loader = { group = "net.fabricmc", name = "fabric-loader", version.ref = "fabric-loader" }
+fabric-api = { group = "net.fabricmc.fabric-api", name = "fabric-api", version.ref = "fabric-api" }
+modmenu = { group = "com.terraformersmc", name = "modmenu", version.ref = "modmenu" }
+
+# Forge
+forge = { group = "net.minecraftforge", name = "forge", version.ref = "forge" }
+
+# Parchment
+parchment = { group = "org.parchmentmc.data", name = "parchment-1.17", version.ref = "parchment" }
+
+# Forge Config API Port
+forgeconfigapiport-fabric = { group = "fuzs.forgeconfigapiport", name = "forgeconfigapiport-fabric", version.ref = "forge-config-api-port" }
+
+# Amber (all platforms)
+amber = { group = "com.iamkaf.amber", name = "amber-common", version.ref = "amber" }
+amber-fabric = { group = "com.iamkaf.amber", name = "amber-fabric", version.ref = "amber" }
+amber-forge = { group = "com.iamkaf.amber", name = "amber-forge", version.ref = "amber" }
+
+# TeaKit
+teakit = { group = "com.iamkaf.teakit", name = "teakit-common", version.ref = "teakit" }
+teakit-fabric = { group = "com.iamkaf.teakit", name = "teakit-fabric", version.ref = "teakit" }
+
+[plugins]
+fabric-loom = { id = "fabric-loom", version.ref = "fabric-loom-plugin" }
+modpublisher = { id = "com.hypherionmc.modutils.modpublisher", version.ref = "modpublisher-plugin" }
+forgegradle = { id = "net.minecraftforge.gradle", version.ref = "forgegradle-plugin" }
+mixin = { id = "org.spongepowered.mixin", version.ref = "mixin-plugin" }
+legacyforge = { id = "net.neoforged.moddev.legacyforge", version.ref = "neoforge-legacyforge-plugin" }

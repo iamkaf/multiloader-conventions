@@ -5,7 +5,7 @@ java = "21"
 neoform = "1.21.2-20241022.151510"
 
 # Parchment
-parchment-minecraft = "1.21.2"
+parchment-minecraft = "1.21.1"
 parchment = "2024.11.17"
 
 # Fabric
@@ -24,6 +24,9 @@ forge-config-api-port = "21.3.5"
 mixin = "0.8.5"
 mixinextras = "0.4.1"
 gson = "2.10.1"
+
+# TeaKit
+teakit = "0.5.0+1.21.2"
 
 # Gradle Plugins
 fabric-loom-plugin = "1.7-SNAPSHOT"
@@ -53,7 +56,12 @@ neoforge = { group = "net.neoforged", name = "neoforge", version.ref = "neoforge
 forge = { group = "net.minecraftforge", name = "forge", version.ref = "forge" }
 
 # Parchment
-parchment = { group = "org.parchmentmc.data", name = "parchment-1.21.2", version.ref = "parchment" }
+parchment = { group = "org.parchmentmc.data", name = "parchment-1.21.1", version.ref = "parchment" }
+
+# TeaKit
+teakit = { group = "com.iamkaf.teakit", name = "teakit-common", version.ref = "teakit" }
+teakit-fabric = { group = "com.iamkaf.teakit", name = "teakit-fabric", version.ref = "teakit" }
+teakit-neoforge = { group = "com.iamkaf.teakit", name = "teakit-neoforge", version.ref = "teakit" }
 
 [plugins]
 fabric-loom = { id = "fabric-loom", version.ref = "fabric-loom-plugin" }

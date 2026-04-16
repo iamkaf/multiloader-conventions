@@ -32,7 +32,7 @@ amber = "9.0.5+1.21.11"
 konfig = "0.2.0+1.21.11"
 
 # TeaKit
-teakit = "0.4.0+1.21.11"
+teakit = "0.5.0+1.21.11"
 
 # Gradle Plugins
 fabric-loom-plugin = "1.15-SNAPSHOT"
@@ -87,7 +87,6 @@ teakit = { group = "com.iamkaf.teakit", name = "teakit-common", version.ref = "t
 teakit-fabric = { group = "com.iamkaf.teakit", name = "teakit-fabric", version.ref = "teakit" }
 teakit-neoforge = { group = "com.iamkaf.teakit", name = "teakit-neoforge", version.ref = "teakit" }
 teakit-forge = { group = "com.iamkaf.teakit", name = "teakit-forge", version.ref = "teakit" }
-
 [plugins]
 fabric-loom = { id = "fabric-loom", version.ref = "fabric-loom-plugin" }
 neoforge-moddev = { id = "net.neoforged.moddev", version.ref = "neoforge-moddev-plugin" }
