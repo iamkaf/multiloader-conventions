@@ -84,7 +84,6 @@ class MultiloaderFabricPlugin implements Plugin<Project> {
         def modId = requiredProp('mod.id')
         def modName = requiredProp('mod.name')
         def loader = requiredProp('loader')
-        def accessWidener = project.rootProject.file("common/src/main/resources/${modId}.accesswidener")
         def commonProject = project.project(":common:${minecraftVersion}")
         def commonGeneratedJavaDir = commonProject.layout.buildDirectory.dir('generated/stonecutter/main/java')
         def commonGeneratedResourcesDir = commonProject.layout.buildDirectory.dir('generated/stonecutter/main/resources')
@@ -92,6 +91,10 @@ class MultiloaderFabricPlugin implements Plugin<Project> {
         def generatedResourcesDir = project.layout.buildDirectory.dir('generated/stonecutter/main/resources')
         def mergedJavaDir = project.layout.buildDirectory.dir('generated/merged/main/java')
         def versionDir = project.rootProject.file("versions/${minecraftVersion}")
+        def versionAccessWidener = versionDir.toPath().resolve("common/src/main/resources/${modId}.accesswidener").toFile()
+        def accessWidener = versionAccessWidener.exists()
+            ? versionAccessWidener
+            : project.rootProject.file("common/src/main/resources/${modId}.accesswidener")
         def loomPluginId = useUnobfuscatedMinecraft ? 'net.fabricmc.fabric-loom' : 'fabric-loom'
 
         project.pluginManager.apply(loomPluginId)
