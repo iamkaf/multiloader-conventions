@@ -16,6 +16,7 @@ java {
 
 dependencies {
     implementation 'net.neoforged.moddev:net.neoforged.moddev.gradle.plugin:2.0.141'
+    implementation 'net.neoforged.gradle:userdev:7.1.22'
     implementation project(':core-plugin')
     implementation project(':conventions-support')
     implementation project(':platform-plugin')

@@ -9,6 +9,7 @@ import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.plugins.BasePluginExtension
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.tasks.Sync
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.jvm.tasks.Jar
 import org.gradle.jvm.toolchain.JavaLanguageVersion
@@ -71,13 +72,15 @@ class MultiloaderNeoForgePlugin implements Plugin<Project> {
         project.pluginManager.apply('com.iamkaf.multiloader.core')
         project.pluginManager.apply('java-library')
         project.pluginManager.apply('maven-publish')
-        project.pluginManager.apply('net.neoforged.moddev')
 
         def requiredProp = { String name -> project.ext.requiredProp.call(project, name) }
         def optionalProp = { String name -> project.ext.optionalProp.call(project, name) }
         def minecraftVersion = requiredProp('project.minecraft')
+        def useNeoGradleUserdev = usesNeoGradleUserdev(minecraftVersion)
+        project.pluginManager.apply(useNeoGradleUserdev ? 'net.neoforged.gradle.userdev' : 'net.neoforged.moddev')
         def catalog = project.ext.catalogFor.call(project, minecraftVersion) as VersionCatalog
         def libraryVersion = { String alias -> project.ext.versionOrNull.call(catalog, alias) }
+        def hasParchment = libraryVersion('parchment') != null
         def modId = requiredProp('mod.id')
         def modName = requiredProp('mod.name')
         def loader = requiredProp('loader')
@@ -87,6 +90,7 @@ class MultiloaderNeoForgePlugin implements Plugin<Project> {
         def commonGeneratedResourcesDir = commonProject.layout.buildDirectory.dir('generated/stonecutter/main/resources')
         def generatedJavaDir = project.layout.buildDirectory.dir('generated/stonecutter/main/java')
         def generatedResourcesDir = project.layout.buildDirectory.dir('generated/stonecutter/main/resources')
+        def mergedJavaDir = project.layout.buildDirectory.dir('generated/merged/main/java')
         def versionDir = project.rootProject.file("versions/${minecraftVersion}")
 
         project.group = requiredProp('project.group')
@@ -98,12 +102,26 @@ class MultiloaderNeoForgePlugin implements Plugin<Project> {
 
         project.ext.sharedRepositories.call(project)
 
+        project.tasks.register('stageMergedJavaSources', Sync) { task ->
+            task.duplicatesStrategy = DuplicatesStrategy.INCLUDE
+            task.dependsOn(commonProject.tasks.named('stonecutterGenerate'))
+            task.dependsOn(project.tasks.named('stonecutterGenerate'))
+            task.from(commonGeneratedJavaDir)
+            task.from(generatedJavaDir)
+            def versionCommonJavaDir = versionDir.toPath().resolve('common/src/main/java').toFile()
+            if (versionCommonJavaDir.isDirectory()) {
+                task.from(versionCommonJavaDir)
+            }
+            def versionLoaderJavaDir = versionDir.toPath().resolve('neoforge/src/main/java').toFile()
+            if (versionLoaderJavaDir.isDirectory()) {
+                task.from(versionLoaderJavaDir)
+            }
+            task.into(mergedJavaDir)
+        }
+
         project.sourceSets {
             main {
-                java.srcDirs = [
-                    commonGeneratedJavaDir.get().asFile,
-                    generatedJavaDir.get().asFile,
-                ]
+                java.srcDirs = [mergedJavaDir.get().asFile]
                 resources.srcDirs = [
                     versionDir.toPath().resolve('common/src/main/resources').toFile(),
                     versionDir.toPath().resolve('neoforge/src/main/resources').toFile(),
@@ -138,6 +156,7 @@ class MultiloaderNeoForgePlugin implements Plugin<Project> {
             project.tasks.named(taskName).configure {
                 dependsOn commonProject.tasks.named('stonecutterGenerate')
                 dependsOn project.tasks.named('stonecutterGenerate')
+                dependsOn project.tasks.named('stageMergedJavaSources')
             }
         }
 
@@ -148,37 +167,72 @@ class MultiloaderNeoForgePlugin implements Plugin<Project> {
             implementation project.ext.library.call(catalog, 'gson')
         }
 
-        project.extensions.configure('neoForge') { neoForge ->
-            neoForge.version = libraryVersion('neoforge')
-
-            if (accessTransformerFile.exists()) {
-                neoForge.accessTransformers.from(accessTransformerFile.absolutePath)
+        if (useNeoGradleUserdev) {
+            project.configurations {
+                runtimeClasspath.extendsFrom(localRuntime)
             }
 
-            neoForge.parchment {
-                setMinecraftVersion(libraryVersion('parchment-minecraft') ?: minecraftVersion)
-                setMappingsVersion(libraryVersion('parchment'))
+            project.dependencies {
+                implementation "net.neoforged:neoforge:${libraryVersion('neoforge')}"
             }
 
-            neoForge.runs {
+            project.runs {
                 configureEach {
-                    systemProperty('neoforge.enabledGameTestNamespaces', modId)
-                    ideName = "NeoForge ${it.name.capitalize()} (${project.path})"
+                    systemProperty 'forge.logging.console.level', 'debug'
+                    systemProperty 'neoforge.enabledGameTestNamespaces', modId
+                    environmentVariables.put('MOD_CLASSES', '{source_roots}')
+                    environmentVariables.put('MCP_MAPPINGS', '{mcp_mappings}')
+                    modSource project.sourceSets.main
                 }
                 client {
-                    client()
                 }
                 data {
-                    client()
+                    arguments.addAll(
+                            '--mod', modId,
+                            '--all',
+                            '--output', project.file('src/generated/resources').absolutePath,
+                            '--existing', project.file('src/main/resources').absolutePath
+                    )
                 }
                 server {
-                    server()
+                    argument '--nogui'
                 }
             }
+        } else {
+            project.extensions.configure('neoForge') { neoForge ->
+                neoForge.version = libraryVersion('neoforge')
 
-            neoForge.mods {
-                "${modId}" {
-                    sourceSet project.sourceSets.main
+                if (accessTransformerFile.exists()) {
+                    neoForge.accessTransformers.from(accessTransformerFile.absolutePath)
+                }
+
+                if (hasParchment) {
+                    neoForge.parchment {
+                        setMinecraftVersion(libraryVersion('parchment-minecraft') ?: minecraftVersion)
+                        setMappingsVersion(libraryVersion('parchment'))
+                    }
+                }
+
+                neoForge.runs {
+                    configureEach {
+                        systemProperty('neoforge.enabledGameTestNamespaces', modId)
+                        ideName = "NeoForge ${it.name.capitalize()} (${project.path})"
+                    }
+                    client {
+                        client()
+                    }
+                    data {
+                        client()
+                    }
+                    server {
+                        server()
+                    }
+                }
+
+                neoForge.mods {
+                    "${modId}" {
+                        sourceSet project.sourceSets.main
+                    }
                 }
             }
         }
@@ -191,7 +245,7 @@ class MultiloaderNeoForgePlugin implements Plugin<Project> {
         project.tasks.named('processResources', ProcessResources).configure {
             inputs.properties(expandProps.findAll { _, value -> value != null })
 
-            filesMatching(['META-INF/neoforge.mods.toml']) {
+            filesMatching(['META-INF/neoforge.mods.toml', 'META-INF/mods.toml']) {
                 expand(expandProps)
             }
 
@@ -227,5 +281,9 @@ class MultiloaderNeoForgePlugin implements Plugin<Project> {
 
     private static boolean isStonecutterNeoForgeProject(Project project) {
         project.parent?.name == 'neoforge'
+    }
+
+    private static boolean usesNeoGradleUserdev(String minecraftVersion) {
+        minecraftVersion in ['1.20.2', '1.20.3', '1.20.4']
     }
 }

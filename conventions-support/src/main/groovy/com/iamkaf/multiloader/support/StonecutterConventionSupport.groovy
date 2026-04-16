@@ -85,7 +85,16 @@ class StonecutterConventionSupport {
 
     static String versionOrNull(VersionCatalog catalog, String alias) {
         def version = catalog.findVersion(alias)
-        version.present ? version.get().requiredVersion : null
+        if (!version.present) {
+            return null
+        }
+
+        def resolved = version.get().requiredVersion
+        if (resolved == null || resolved.isBlank() || resolved == 'null') {
+            return null
+        }
+
+        resolved
     }
 
     static Object library(VersionCatalog catalog, String alias) {
@@ -132,9 +141,10 @@ class StonecutterConventionSupport {
     }
 
     static List<String> mixinConfigs(Project project, String loader) {
+        def modId = requiredProp(project, 'mod.id')
         [
-            project.rootProject.file('common/src/main/resources/template.mixins.json').exists() ? "${requiredProp(project, 'mod.id')}.mixins.json" : null,
-            project.rootProject.file("${loader}/src/main/resources/template.${loader}.mixins.json").exists() ? "${requiredProp(project, 'mod.id')}.${loader}.mixins.json" : null,
+            project.rootProject.file("common/src/main/resources/${modId}.mixins.json").exists() ? "${modId}.mixins.json" : null,
+            project.rootProject.file("${loader}/src/main/resources/${modId}.${loader}.mixins.json").exists() ? "${modId}.${loader}.mixins.json" : null,
         ].findAll { it != null }
     }
 
@@ -157,6 +167,7 @@ class StonecutterConventionSupport {
             'neoforge_loader_version_range'     : optionalProp(project, 'mod.neoforge-loader-range'),
             'forge_version'                     : versionOrNull(catalog, 'forge'),
             'forge_loader_version_range'        : optionalProp(project, 'mod.forge-loader-range'),
+            'amber_version'                     : versionOrNull(catalog, 'amber'),
             'parchment_minecraft'               : versionOrNull(catalog, 'parchment-minecraft'),
             'parchment_version'                 : versionOrNull(catalog, 'parchment'),
             'credits'                           : optionalProp(project, 'mod.credits'),

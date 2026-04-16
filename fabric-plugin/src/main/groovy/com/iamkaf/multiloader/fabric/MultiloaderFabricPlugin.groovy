@@ -9,6 +9,7 @@ import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.plugins.BasePluginExtension
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.tasks.Sync
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.jvm.tasks.Jar
 import org.gradle.jvm.toolchain.JavaLanguageVersion
@@ -76,6 +77,10 @@ class MultiloaderFabricPlugin implements Plugin<Project> {
         def catalog = project.ext.catalogFor.call(project, minecraftVersion) as VersionCatalog
         def library = { String alias -> project.ext.library.call(catalog, alias) }
         def useUnobfuscatedMinecraft = project.ext.useUnobfuscatedMinecraft.call(minecraftVersion)
+        def useLegacyFabricApiModules = minecraftVersion == '1.16' || minecraftVersion == '1.16.1'
+        def hasParchment = project.ext.versionOrNull.call(catalog, 'parchment') != null
+        def modMenuVersion = project.ext.versionOrNull.call(catalog, 'modmenu')
+        def hasModMenu = modMenuVersion != null && modMenuVersion != 'null'
         def modId = requiredProp('mod.id')
         def modName = requiredProp('mod.name')
         def loader = requiredProp('loader')
@@ -85,6 +90,7 @@ class MultiloaderFabricPlugin implements Plugin<Project> {
         def commonGeneratedResourcesDir = commonProject.layout.buildDirectory.dir('generated/stonecutter/main/resources')
         def generatedJavaDir = project.layout.buildDirectory.dir('generated/stonecutter/main/java')
         def generatedResourcesDir = project.layout.buildDirectory.dir('generated/stonecutter/main/resources')
+        def mergedJavaDir = project.layout.buildDirectory.dir('generated/merged/main/java')
         def versionDir = project.rootProject.file("versions/${minecraftVersion}")
         def loomPluginId = useUnobfuscatedMinecraft ? 'net.fabricmc.fabric-loom' : 'fabric-loom'
 
@@ -99,12 +105,26 @@ class MultiloaderFabricPlugin implements Plugin<Project> {
 
         project.ext.sharedRepositories.call(project)
 
+        project.tasks.register('stageMergedJavaSources', Sync) { task ->
+            task.duplicatesStrategy = DuplicatesStrategy.INCLUDE
+            task.dependsOn(commonProject.tasks.named('stonecutterGenerate'))
+            task.dependsOn(project.tasks.named('stonecutterGenerate'))
+            task.from(commonGeneratedJavaDir)
+            task.from(generatedJavaDir)
+            def versionCommonJavaDir = versionDir.toPath().resolve('common/src/main/java').toFile()
+            if (versionCommonJavaDir.isDirectory()) {
+                task.from(versionCommonJavaDir)
+            }
+            def versionLoaderJavaDir = versionDir.toPath().resolve('fabric/src/main/java').toFile()
+            if (versionLoaderJavaDir.isDirectory()) {
+                task.from(versionLoaderJavaDir)
+            }
+            task.into(mergedJavaDir)
+        }
+
         project.sourceSets {
             main {
-                java.srcDirs = [
-                    commonGeneratedJavaDir.get().asFile,
-                    generatedJavaDir.get().asFile,
-                ]
+                java.srcDirs = [mergedJavaDir.get().asFile]
                 resources.srcDirs = [
                     versionDir.toPath().resolve('common/src/main/resources').toFile(),
                     versionDir.toPath().resolve('fabric/src/main/resources').toFile(),
@@ -139,6 +159,7 @@ class MultiloaderFabricPlugin implements Plugin<Project> {
             project.tasks.named(taskName).configure {
                 dependsOn commonProject.tasks.named('stonecutterGenerate')
                 dependsOn project.tasks.named('stonecutterGenerate')
+                dependsOn project.tasks.named('stageMergedJavaSources')
             }
         }
 
@@ -151,9 +172,13 @@ class MultiloaderFabricPlugin implements Plugin<Project> {
             minecraft library('minecraft')
 
             if (!useUnobfuscatedMinecraft) {
-                mappings project.loom.layered {
-                    officialMojangMappings()
-                    parchment library('parchment')
+                if (hasParchment) {
+                    mappings project.loom.layered {
+                        officialMojangMappings()
+                        parchment library('parchment')
+                    }
+                } else {
+                    mappings project.loom.officialMojangMappings()
                 }
                 modImplementation library('fabric-loader')
             } else {
@@ -161,11 +186,31 @@ class MultiloaderFabricPlugin implements Plugin<Project> {
             }
 
             if (useUnobfuscatedMinecraft) {
-                implementation library('fabric-api')
-                implementation library('modmenu')
+                if (useLegacyFabricApiModules) {
+                    implementation 'net.fabricmc.fabric-api:fabric-api-base:0.4.0+3cc0f0907d'
+                    implementation 'net.fabricmc.fabric-api:fabric-command-api-v1:1.0.9+6a2618f53a'
+                    implementation 'net.fabricmc.fabric-api:fabric-networking-api-v1:1.0.5+3cc0f0907d'
+                    implementation 'net.fabricmc.fabric-api:fabric-lifecycle-events-v1:1.2.2+3cc0f0907d'
+                    implementation 'net.fabricmc.fabric-api:fabric-resource-loader-v0:0.4.2+ca58154a7d'
+                } else {
+                    implementation library('fabric-api')
+                }
+                if (hasModMenu) {
+                    implementation library('modmenu')
+                }
             } else {
-                modImplementation library('fabric-api')
-                modImplementation library('modmenu')
+                if (useLegacyFabricApiModules) {
+                    modImplementation 'net.fabricmc.fabric-api:fabric-api-base:0.4.0+3cc0f0907d'
+                    modImplementation 'net.fabricmc.fabric-api:fabric-command-api-v1:1.0.9+6a2618f53a'
+                    modImplementation 'net.fabricmc.fabric-api:fabric-networking-api-v1:1.0.5+3cc0f0907d'
+                    modImplementation 'net.fabricmc.fabric-api:fabric-lifecycle-events-v1:1.2.2+3cc0f0907d'
+                    modImplementation 'net.fabricmc.fabric-api:fabric-resource-loader-v0:0.4.2+ca58154a7d'
+                } else {
+                    modImplementation library('fabric-api')
+                }
+                if (hasModMenu) {
+                    modImplementation library('modmenu')
+                }
             }
         }
 

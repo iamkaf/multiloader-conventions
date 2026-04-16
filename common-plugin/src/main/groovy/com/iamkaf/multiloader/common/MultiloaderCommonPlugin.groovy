@@ -8,6 +8,7 @@ import org.gradle.api.plugins.BasePluginExtension
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.api.tasks.Sync
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.jvm.tasks.Jar
 import org.gradle.jvm.toolchain.JavaLanguageVersion
@@ -32,11 +33,22 @@ class MultiloaderCommonPlugin implements Plugin<Project> {
         def library = { String alias -> project.ext.library.call(catalog, alias) }
         def versionOrNull = { String alias -> project.ext.versionOrNull.call(catalog, alias) }
         def modId = requiredProp('mod.id')
-        def useLegacyForgeCommon = minecraftVersion == '1.20.1'
+        def useFabricLoomCommon = minecraftVersion == '1.16.5' ||
+            minecraftVersion.startsWith('1.16.') ||
+            minecraftVersion == '1.16' ||
+            minecraftVersion.startsWith('1.15.') ||
+            minecraftVersion == '1.15' ||
+            minecraftVersion.startsWith('1.14.')
+        def useLegacyForgeCommon = !useFabricLoomCommon && versionOrNull('neoform') == null
+        def hasParchment = versionOrNull('parchment') != null
         def accessTransformerFile = resolveAccessTransformerFile(project)
         def usesStonecutter = project.tasks.findByName('stonecutterGenerate') != null
 
-        project.pluginManager.apply(useLegacyForgeCommon ? 'net.neoforged.moddev.legacyforge' : 'net.neoforged.moddev')
+        if (useFabricLoomCommon) {
+            project.pluginManager.apply('fabric-loom')
+        } else {
+            project.pluginManager.apply(useLegacyForgeCommon ? 'net.neoforged.moddev.legacyforge' : 'net.neoforged.moddev')
+        }
 
         project.group = requiredProp('project.group')
         project.version = requiredProp('project.version')
@@ -55,7 +67,20 @@ class MultiloaderCommonPlugin implements Plugin<Project> {
             toolchain.languageVersion = JavaLanguageVersion.of(requiredProp('project.java').toInteger())
         }
 
-        if (useLegacyForgeCommon) {
+        if (useFabricLoomCommon) {
+            project.dependencies {
+                minecraft library('minecraft')
+                if (hasParchment) {
+                    mappings project.loom.layered {
+                        officialMojangMappings()
+                        parchment library('parchment')
+                    }
+                } else {
+                    mappings project.loom.officialMojangMappings()
+                }
+                modImplementation library('fabric-loader')
+            }
+        } else if (useLegacyForgeCommon) {
             project.legacyForge {
                 mcpVersion = versionOrNull('minecraft')
 
@@ -63,9 +88,11 @@ class MultiloaderCommonPlugin implements Plugin<Project> {
                     accessTransformers = [accessTransformerFile.absolutePath]
                 }
 
-                parchment {
-                    setMinecraftVersion(versionOrNull('parchment-minecraft') ?: versionOrNull('minecraft'))
-                    setMappingsVersion(versionOrNull('parchment'))
+                if (hasParchment) {
+                    parchment {
+                        setMinecraftVersion(versionOrNull('parchment-minecraft') ?: versionOrNull('minecraft'))
+                        setMappingsVersion(versionOrNull('parchment'))
+                    }
                 }
             }
         } else {
@@ -76,9 +103,11 @@ class MultiloaderCommonPlugin implements Plugin<Project> {
                     accessTransformers.from(accessTransformerFile.absolutePath)
                 }
 
-                parchment {
-                    setMinecraftVersion(versionOrNull('parchment-minecraft') ?: versionOrNull('minecraft'))
-                    setMappingsVersion(versionOrNull('parchment'))
+                if (hasParchment) {
+                    parchment {
+                        setMinecraftVersion(versionOrNull('parchment-minecraft') ?: versionOrNull('minecraft'))
+                        setMappingsVersion(versionOrNull('parchment'))
+                    }
                 }
             }
         }
@@ -88,6 +117,7 @@ class MultiloaderCommonPlugin implements Plugin<Project> {
         }
 
         project.tasks.withType(ProcessResources).configureEach {
+            duplicatesStrategy = org.gradle.api.file.DuplicatesStrategy.EXCLUDE
             exclude('.cache/**')
         }
 
@@ -103,6 +133,7 @@ class MultiloaderCommonPlugin implements Plugin<Project> {
             ['compileJava', 'processResources', 'sourcesJar', 'javadoc'].each { taskName ->
                 project.tasks.named(taskName).configure {
                     dependsOn project.tasks.named('stonecutterGenerate')
+                    dependsOn project.tasks.named('stageMergedJavaSources')
                 }
             }
         }
@@ -165,8 +196,20 @@ class MultiloaderCommonPlugin implements Plugin<Project> {
             if (usesStonecutter) {
                 def generatedJavaDir = project.layout.buildDirectory.dir('generated/stonecutter/main/java')
                 def generatedResourcesDir = project.layout.buildDirectory.dir('generated/stonecutter/main/resources')
+                def mergedJavaDir = project.layout.buildDirectory.dir('generated/merged/main/java')
 
-                main.java.srcDirs = [generatedJavaDir.get().asFile]
+                project.tasks.register('stageMergedJavaSources', Sync) { task ->
+                    task.duplicatesStrategy = org.gradle.api.file.DuplicatesStrategy.INCLUDE
+                    task.dependsOn(project.tasks.named('stonecutterGenerate'))
+                    task.from(generatedJavaDir)
+                    def versionJavaDir = versionDir.toPath().resolve('common/src/main/java').toFile()
+                    if (versionJavaDir.isDirectory()) {
+                        task.from(versionJavaDir)
+                    }
+                    task.into(mergedJavaDir)
+                }
+
+                main.java.srcDirs = [mergedJavaDir.get().asFile]
                 main.resources.srcDirs = [
                     versionDir.toPath().resolve('common/src/main/resources').toFile(),
                     generatedResourcesDir.get().asFile,
