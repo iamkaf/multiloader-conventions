@@ -16,12 +16,16 @@ class MultiloaderRootPlugin implements Plugin<Project> {
         'project.minecraft',
         'project.java',
     ]
+    private static final Set<String> TEAKIT_RUN_TASK_NAMES = ['runClient', 'runLegacyClient'] as Set
+    private static final String TEAKIT_PROPERTY_PREFIX = 'teakit.'
 
     @Override
     void apply(Project project) {
         if (project != project.rootProject) {
             throw new GradleException('com.iamkaf.multiloader.root must be applied to the root project only.')
         }
+
+        configureTeaKitRunPropertyForwarding(project)
 
         if (hasVersionMatrix(project)) {
             applyStonecutterRootPlugin(project)
@@ -138,6 +142,27 @@ class MultiloaderRootPlugin implements Plugin<Project> {
         }
     }
 
+    private static void configureTeaKitRunPropertyForwarding(Project project) {
+        project.subprojects { child ->
+            child.tasks.configureEach { task ->
+                if (!TEAKIT_RUN_TASK_NAMES.contains(task.name)) {
+                    return
+                }
+
+                def systemPropertyMethod = task.class.methods.find { method ->
+                    method.name == 'systemProperty' && method.parameterCount == 2
+                }
+                if (systemPropertyMethod == null) {
+                    return
+                }
+
+                collectTeaKitSystemProperties(project).each { propertyName, value ->
+                    systemPropertyMethod.invoke(task, propertyName, value)
+                }
+            }
+        }
+    }
+
     private static String requiredProperty(Project project, String name) {
         def value = project.findProperty(name)?.toString()
         if (value == null || value.isBlank()) {
@@ -173,5 +198,27 @@ class MultiloaderRootPlugin implements Plugin<Project> {
             .split(',')
             .collect { it.trim() }
             .findAll { !it.isBlank() }
+    }
+
+    private static Map<String, String> collectTeaKitSystemProperties(Project project) {
+        def properties = new LinkedHashMap<String, String>()
+
+        project.gradle.startParameter.systemPropertiesArgs.each { key, value ->
+            if (key.startsWith(TEAKIT_PROPERTY_PREFIX) && value != null) {
+                properties.put(key, value.toString())
+            }
+        }
+
+        System.properties.stringPropertyNames()
+            .findAll { it.startsWith(TEAKIT_PROPERTY_PREFIX) }
+            .sort()
+            .each { key ->
+                def value = System.getProperty(key)
+                if (value != null) {
+                    properties.put(key, value)
+                }
+            }
+
+        properties
     }
 }

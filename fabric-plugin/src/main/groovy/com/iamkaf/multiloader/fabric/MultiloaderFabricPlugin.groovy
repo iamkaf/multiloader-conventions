@@ -183,9 +183,21 @@ class MultiloaderFabricPlugin implements Plugin<Project> {
                 } else {
                     mappings project.loom.officialMojangMappings()
                 }
-                modImplementation library('fabric-loader')
+                if (minecraftVersion == '1.18.2') {
+                    modImplementation('net.fabricmc:fabric-loader:0.14.9') {
+                        version { strictly '0.14.9' }
+                    }
+                } else {
+                    modImplementation library('fabric-loader')
+                }
             } else {
-                implementation library('fabric-loader')
+                if (minecraftVersion == '1.18.2') {
+                    implementation('net.fabricmc:fabric-loader:0.14.9') {
+                        version { strictly '0.14.9' }
+                    }
+                } else {
+                    implementation library('fabric-loader')
+                }
             }
 
             if (useUnobfuscatedMinecraft) {
