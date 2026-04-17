@@ -84,6 +84,14 @@ class MultiloaderNeoForgePlugin implements Plugin<Project> {
         def modId = requiredProp('mod.id')
         def modName = requiredProp('mod.name')
         def loader = requiredProp('loader')
+        def teaKitVersion = libraryVersion('teakit')
+        def teaKitLibrary = catalog.findLibrary('teakit-neoforge')
+        def hasTeaKit = teaKitLibrary.present && teaKitVersion != null && teaKitVersion != 'null'
+        def useTeaKit = project.providers.systemProperty("${modId}.withTeaKit")
+            .orElse(project.providers.gradleProperty("${modId}.withTeaKit"))
+            .map { it.toBoolean() }
+            .orElse(false)
+            .get()
         def accessTransformerFile = project.rootProject.file('common/src/main/resources/META-INF/accesstransformer.cfg')
         def commonProject = project.project(":common:${minecraftVersion}")
         def commonGeneratedJavaDir = commonProject.layout.buildDirectory.dir('generated/stonecutter/main/java')
@@ -165,6 +173,9 @@ class MultiloaderNeoForgePlugin implements Plugin<Project> {
             compileOnly project.ext.library.call(catalog, 'mixin-extras')
             annotationProcessor project.ext.library.call(catalog, 'mixin-extras')
             implementation project.ext.library.call(catalog, 'gson')
+            if (useTeaKit && hasTeaKit) {
+                runtimeOnly teaKitLibrary.get()
+            }
         }
 
         if (useNeoGradleUserdev) {

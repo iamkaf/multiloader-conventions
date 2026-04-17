@@ -84,6 +84,15 @@ class MultiloaderFabricPlugin implements Plugin<Project> {
         def modId = requiredProp('mod.id')
         def modName = requiredProp('mod.name')
         def loader = requiredProp('loader')
+        def teaKitVersion = project.ext.versionOrNull.call(catalog, 'teakit')
+        def teaKitLibrary = catalog.findLibrary('teakit-fabric')
+        def hasTeaKit = teaKitLibrary.present && teaKitVersion != null && teaKitVersion != 'null'
+        def useTeaKit = project.providers.systemProperty("${modId}.withTeaKit")
+            .orElse(project.providers.gradleProperty("${modId}.withTeaKit"))
+            .map { it.toBoolean() }
+            .orElse(false)
+            .get()
+        def useModernFabricRuntime = !minecraftVersion.startsWith('1.')
         def commonProject = project.project(":common:${minecraftVersion}")
         def commonGeneratedJavaDir = commonProject.layout.buildDirectory.dir('generated/stonecutter/main/java')
         def commonGeneratedResourcesDir = commonProject.layout.buildDirectory.dir('generated/stonecutter/main/resources')
@@ -225,6 +234,14 @@ class MultiloaderFabricPlugin implements Plugin<Project> {
                 }
                 if (hasModMenu) {
                     modImplementation library('modmenu')
+                }
+            }
+
+            if (useTeaKit && hasTeaKit) {
+                if (useModernFabricRuntime) {
+                    runtimeOnly teaKitLibrary.get()
+                } else {
+                    modLocalRuntime teaKitLibrary.get()
                 }
             }
         }

@@ -142,6 +142,15 @@ class MultiloaderForgePlugin implements Plugin<Project> {
         def modId = requiredProp('mod.id')
         def modName = requiredProp('mod.name')
         def loader = requiredProp('loader')
+        def teaKitVersion = versionOrNull('teakit')
+        def teaKitLibrary = catalog.findLibrary('teakit-forge')
+        def hasTeaKit = teaKitLibrary.present && teaKitVersion != null && teaKitVersion != 'null'
+        def useTeaKit = project.providers.systemProperty("${modId}.withTeaKit")
+            .orElse(project.providers.gradleProperty("${modId}.withTeaKit"))
+            .map { it.toBoolean() }
+            .orElse(false)
+            .get()
+        def useLegacyTeaKitRunHack = ['1.16.5', '1.17.1', '1.18', '1.18.1', '1.18.2'].contains(minecraftVersion)
         def accessTransformerFile = project.rootProject.file('common/src/main/resources/META-INF/accesstransformer.cfg')
         def mixinConfigs = project.ext.mixinConfigs.call(project, loader)
         def commonProject = project.project(":common:${minecraftVersion}")
@@ -286,6 +295,10 @@ class MultiloaderForgePlugin implements Plugin<Project> {
                 version {
                     strictly '5.0.4'
                 }
+            }
+
+            if (useTeaKit && hasTeaKit && !useLegacyTeaKitRunHack) {
+                runtimeOnly teaKitLibrary.get()
             }
         }
 
