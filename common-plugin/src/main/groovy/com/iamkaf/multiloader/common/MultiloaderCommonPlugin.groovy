@@ -130,10 +130,15 @@ class MultiloaderCommonPlugin implements Plugin<Project> {
         }
 
         if (usesStonecutter) {
-            ['compileJava', 'processResources', 'sourcesJar', 'javadoc'].each { taskName ->
+            ['compileJava', 'sourcesJar', 'javadoc'].each { taskName ->
                 project.tasks.named(taskName).configure {
                     dependsOn project.tasks.named('stonecutterGenerate')
                     dependsOn project.tasks.named('stageMergedJavaSources')
+                }
+            }
+            ['processResources', 'sourcesJar'].each { taskName ->
+                project.tasks.named(taskName).configure {
+                    dependsOn project.tasks.named('stageMergedResources')
                 }
             }
         }
@@ -159,6 +164,7 @@ class MultiloaderCommonPlugin implements Plugin<Project> {
         }
 
         project.dependencies {
+            compileOnly 'org.jetbrains:annotations:24.1.0'
             compileOnly library('mixin')
             compileOnly library('mixin-extras')
             annotationProcessor library('mixin-extras')
@@ -168,8 +174,26 @@ class MultiloaderCommonPlugin implements Plugin<Project> {
         project.extensions.configure(PublishingExtension) { publishing ->
             publishing.publications {
                 mavenJava(MavenPublication) {
-                    from project.components.java
                     artifactId = project.base.archivesName.get()
+                    if (useFabricLoomCommon) {
+                        artifact(project.tasks.named('remapJar')) {
+                            builtBy(project.tasks.named('remapJar'))
+                        }
+                        if (project.tasks.findByName('remapSourcesJar') != null) {
+                            artifact(project.tasks.named('remapSourcesJar')) {
+                                builtBy(project.tasks.named('remapSourcesJar'))
+                            }
+                        } else {
+                            artifact(project.tasks.named('sourcesJar')) {
+                                builtBy(project.tasks.named('sourcesJar'))
+                            }
+                        }
+                        artifact(project.tasks.named('javadocJar')) {
+                            builtBy(project.tasks.named('javadocJar'))
+                        }
+                    } else {
+                        from project.components.java
+                    }
                 }
             }
         }
@@ -197,6 +221,7 @@ class MultiloaderCommonPlugin implements Plugin<Project> {
                 def generatedJavaDir = project.layout.buildDirectory.dir('generated/stonecutter/main/java')
                 def generatedResourcesDir = project.layout.buildDirectory.dir('generated/stonecutter/main/resources')
                 def mergedJavaDir = project.layout.buildDirectory.dir('generated/merged/main/java')
+                def mergedResourcesDir = project.layout.buildDirectory.dir('generated/merged/main/resources')
 
                 project.tasks.register('stageMergedJavaSources', Sync) { task ->
                     task.duplicatesStrategy = org.gradle.api.file.DuplicatesStrategy.INCLUDE
@@ -209,11 +234,21 @@ class MultiloaderCommonPlugin implements Plugin<Project> {
                     task.into(mergedJavaDir)
                 }
 
+                project.tasks.register('stageMergedResources', Sync) { task ->
+                    task.duplicatesStrategy = org.gradle.api.file.DuplicatesStrategy.INCLUDE
+                    task.dependsOn(project.tasks.named('stonecutterGenerate'))
+                    task.from(generatedResourcesDir)
+                    task.from(project.rootProject.file('common/src/main/generated'))
+                    task.from(project.rootProject.file('src/main/generated'))
+                    def versionResourcesDir = versionDir.toPath().resolve('common/src/main/resources').toFile()
+                    if (versionResourcesDir.isDirectory()) {
+                        task.from(versionResourcesDir)
+                    }
+                    task.into(mergedResourcesDir)
+                }
+
                 main.java.srcDirs = [mergedJavaDir.get().asFile]
-                main.resources.srcDirs = [
-                    versionDir.toPath().resolve('common/src/main/resources').toFile(),
-                    generatedResourcesDir.get().asFile,
-                ]
+                main.resources.srcDirs = [mergedResourcesDir.get().asFile]
                 return
             }
 

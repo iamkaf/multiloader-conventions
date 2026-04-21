@@ -113,7 +113,14 @@ class StonecutterConventionSupport {
         project.repositories {
             mavenLocal()
             mavenCentral()
-            maven { name = 'TerraformersMC'; url = project.uri('https://maven.terraformersmc.com/') }
+            maven {
+                name = 'TerraformersMC'
+                url = project.uri('https://maven.terraformersmc.com/')
+                metadataSources {
+                    mavenPom()
+                    artifact()
+                }
+            }
             maven { name = 'Nucleoid'; url = project.uri('https://maven.nucleoid.xyz/') }
             maven { name = 'Sponge'; url = project.uri('https://repo.spongepowered.org/repository/maven-public') }
             maven { name = 'ParchmentMC'; url = project.uri('https://maven.parchmentmc.org/') }

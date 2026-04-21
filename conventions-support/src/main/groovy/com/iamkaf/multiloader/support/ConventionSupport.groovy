@@ -121,6 +121,10 @@ class ConventionSupport {
         project.repositories.maven {
             name = 'TerraformersMC'
             url = project.uri('https://maven.terraformersmc.com/')
+            metadataSources {
+                mavenPom()
+                artifact()
+            }
             content {
                 includeGroup('com.terraformersmc')
             }

@@ -159,6 +159,7 @@ class MultiloaderForgePlugin implements Plugin<Project> {
         def generatedJavaDir = project.layout.buildDirectory.dir('generated/stonecutter/main/java')
         def generatedResourcesDir = project.layout.buildDirectory.dir('generated/stonecutter/main/resources')
         def mergedJavaDir = project.layout.buildDirectory.dir('generated/merged/main/java')
+        def mergedResourcesDir = project.layout.buildDirectory.dir('generated/merged/main/resources')
         def versionDir = project.rootProject.file("versions/${minecraftVersion}")
 
         project.group = requiredProp('project.group')
@@ -187,16 +188,29 @@ class MultiloaderForgePlugin implements Plugin<Project> {
             task.into(mergedJavaDir)
         }
 
+        project.tasks.register('stageMergedResources', Sync) { task ->
+            task.duplicatesStrategy = DuplicatesStrategy.INCLUDE
+            task.dependsOn(commonProject.tasks.named('stonecutterGenerate'))
+            task.dependsOn(project.tasks.named('stonecutterGenerate'))
+            task.from(commonGeneratedResourcesDir)
+            task.from(generatedResourcesDir)
+            task.from(project.rootProject.file('common/src/main/generated'))
+            task.from(project.rootProject.file('src/main/generated'))
+            def versionCommonResourcesDir = versionDir.toPath().resolve('common/src/main/resources').toFile()
+            if (versionCommonResourcesDir.isDirectory()) {
+                task.from(versionCommonResourcesDir)
+            }
+            def versionLoaderResourcesDir = versionDir.toPath().resolve('forge/src/main/resources').toFile()
+            if (versionLoaderResourcesDir.isDirectory()) {
+                task.from(versionLoaderResourcesDir)
+            }
+            task.into(mergedResourcesDir)
+        }
+
         project.sourceSets {
             main {
                 java.srcDirs = [mergedJavaDir.get().asFile]
-                resources.srcDirs = [
-                    versionDir.toPath().resolve('common/src/main/resources').toFile(),
-                    versionDir.toPath().resolve('forge/src/main/resources').toFile(),
-                    commonGeneratedResourcesDir.get().asFile,
-                    generatedResourcesDir.get().asFile,
-                    project.rootProject.file('src/main/generated'),
-                ]
+                resources.srcDirs = [mergedResourcesDir.get().asFile]
             }
         }
 
@@ -220,11 +234,16 @@ class MultiloaderForgePlugin implements Plugin<Project> {
             exclude('.cache/**')
         }
 
-        ['compileJava', 'processResources', 'sourcesJar', 'javadoc'].each { taskName ->
+        ['compileJava', 'sourcesJar', 'javadoc'].each { taskName ->
             project.tasks.named(taskName).configure {
                 dependsOn commonProject.tasks.named('stonecutterGenerate')
                 dependsOn project.tasks.named('stonecutterGenerate')
                 dependsOn project.tasks.named('stageMergedJavaSources')
+            }
+        }
+        ['processResources', 'sourcesJar'].each { taskName ->
+            project.tasks.named(taskName).configure {
+                dependsOn project.tasks.named('stageMergedResources')
             }
         }
 
