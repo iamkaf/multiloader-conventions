@@ -190,6 +190,7 @@ class MultiloaderNeoForgePlugin implements Plugin<Project> {
         project.dependencies {
             compileOnly project.ext.library.call(catalog, 'mixin')
             compileOnly project.ext.library.call(catalog, 'mixin-extras')
+            compileOnly 'org.jetbrains:annotations:24.1.0'
             annotationProcessor project.ext.library.call(catalog, 'mixin-extras')
             implementation project.ext.library.call(catalog, 'gson')
             if (useTeaKit && hasTeaKit) {

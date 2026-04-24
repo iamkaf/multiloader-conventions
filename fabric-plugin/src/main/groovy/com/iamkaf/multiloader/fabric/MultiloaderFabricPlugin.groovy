@@ -197,6 +197,7 @@ class MultiloaderFabricPlugin implements Plugin<Project> {
         project.dependencies {
             compileOnly library('mixin')
             compileOnly library('mixin-extras')
+            compileOnly 'org.jetbrains:annotations:24.1.0'
             annotationProcessor library('mixin-extras')
             implementation library('gson')
 

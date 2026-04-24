@@ -18,6 +18,16 @@ class MultiloaderRootPlugin implements Plugin<Project> {
     ]
     private static final Set<String> TEAKIT_RUN_TASK_NAMES = ['runClient', 'runLegacyClient'] as Set
     private static final String TEAKIT_PROPERTY_PREFIX = 'teakit.'
+    private static final List<String> LEGACY_FABRIC_ONLY = ['1.14.4', '1.15', '1.15.1', '1.15.2', '1.16', '1.16.1', '1.16.2', '1.16.3', '1.16.4', '1.16.5', '1.17']
+    private static final Map<String, String> FORGE_LOADER_RANGES = [
+        '1.16.4':'[36,)', '1.16.5':'[36,)', '1.17.1':'[37,)',
+        '1.18':'[38,)', '1.18.1':'[39,)', '1.18.2':'[40,)',
+        '1.19':'[41,)', '1.19.1':'[42,)', '1.19.2':'[43,)', '1.19.3':'[44,)', '1.19.4':'[45,)',
+        '1.20':'[46,)', '1.20.1':'[47,)', '1.20.2':'[48,)', '1.20.3':'[49,)', '1.20.4':'[49,)', '1.20.6':'[50,)',
+        '1.21':'[51,)', '1.21.1':'[52,)', '1.21.3':'[53,)', '1.21.4':'[54,)', '1.21.5':'[55,)', '1.21.6':'[56,)',
+        '1.21.7':'[57,)', '1.21.8':'[58,)', '1.21.9':'[59,)', '1.21.10':'[60,)', '1.21.11':'[61,)',
+        '26.1':'[62,)', '26.1.1':'[62,)', '26.1.2':'[62,)'
+    ]
 
     @Override
     void apply(Project project) {
@@ -61,7 +71,7 @@ class MultiloaderRootPlugin implements Plugin<Project> {
 
         project.extensions.configure(MultiloaderPublishingExtension) { extension ->
             versionDirs.each { dir ->
-                def props = loadProperties(new File(dir, 'gradle.properties'))
+                def props = versionMetadata(dir.name)
                 def minecraftVersion = props.getProperty('project.minecraft')
                 def javaVersion = props.getProperty('project.java')
                 def enabledLoaders = parseEnabledLoaders(props)
@@ -182,7 +192,7 @@ class MultiloaderRootPlugin implements Plugin<Project> {
         }
 
         versionsDir.listFiles()
-            ?.findAll { candidate -> new File(candidate, 'gradle.properties').isFile() }
+            ?.findAll { candidate -> candidate.isDirectory() }
             ?.sort { left, right -> left.name <=> right.name }
             ?: []
     }
@@ -191,6 +201,51 @@ class MultiloaderRootPlugin implements Plugin<Project> {
         def properties = new Properties()
         file.withInputStream(properties.&load)
         properties
+    }
+
+    private static Properties versionMetadata(String versionKey) {
+        def props = new Properties()
+        props.setProperty('project.minecraft', versionKey)
+        props.setProperty('project.version', "11.0.0+${versionKey}")
+        props.setProperty('project.java', javaVersion(versionKey))
+        props.setProperty('project.enabled-loaders', enabledLoaders(versionKey))
+        def forgeRange = FORGE_LOADER_RANGES[versionKey]
+        if (forgeRange != null) {
+            props.setProperty('mod.forge-loader-range', forgeRange)
+        }
+        if (enabledLoaders(versionKey).contains('neoforge')) {
+            props.setProperty('mod.neoforge-loader-range', '[4,)')
+        }
+        props
+    }
+
+    private static String enabledLoaders(String versionKey) {
+        if (LEGACY_FABRIC_ONLY.contains(versionKey) || versionKey == '1.20.5') {
+            return 'fabric'
+        }
+        if (versionKey == '1.21.2') {
+            return 'fabric,neoforge'
+        }
+        if (versionKey == '1.21.1' || versionKey.startsWith('26.') || (versionKey.startsWith('1.21.') && versionKey != '1.21.2')) {
+            return 'fabric,forge,neoforge'
+        }
+        return 'fabric,forge'
+    }
+
+    private static String javaVersion(String versionKey) {
+        if (versionKey.startsWith('26.')) {
+            return '25'
+        }
+        if (versionKey.startsWith('1.14') || versionKey.startsWith('1.15') || versionKey.startsWith('1.16')) {
+            return '8'
+        }
+        if (versionKey == '1.17' || versionKey == '1.17.1') {
+            return '16'
+        }
+        if (versionKey == '1.20.5' || versionKey == '1.20.6' || versionKey.startsWith('1.21')) {
+            return '21'
+        }
+        return '17'
     }
 
     private static List<String> parseEnabledLoaders(Properties props) {

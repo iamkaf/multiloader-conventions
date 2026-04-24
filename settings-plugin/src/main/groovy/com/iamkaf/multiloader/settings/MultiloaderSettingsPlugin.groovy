@@ -13,6 +13,7 @@ class MultiloaderSettingsPlugin implements Plugin<Settings> {
 
     private static final List<String> KNOWN_LOADERS = ['fabric', 'forge', 'neoforge']
     private static final String STONECUTTER_VERSION = '0.7.10'
+    private static final List<String> LEGACY_FABRIC_ONLY = ['1.14.4', '1.15', '1.15.1', '1.15.2', '1.16', '1.16.1', '1.16.2', '1.16.3', '1.16.4', '1.16.5', '1.17']
 
     @Override
     void apply(Settings settings) {
@@ -129,7 +130,7 @@ class MultiloaderSettingsPlugin implements Plugin<Settings> {
             return
         }
 
-        def firstVersionProps = loadProperties(new File(versionDirs.first(), 'gradle.properties'))
+        def firstVersionProps = versionMetadata(versionDirs.first().name)
         settings.rootProject.name = firstVersionProps.getProperty('mod.name', 'Template')
     }
 
@@ -144,7 +145,7 @@ class MultiloaderSettingsPlugin implements Plugin<Settings> {
     private static void configureStonecutterProjects(Settings settings, List<File> versionDirs) {
         def versionsWithLoaders = [:] as LinkedHashMap<String, List<String>>
         versionDirs.each { dir ->
-            def props = loadProperties(new File(dir, 'gradle.properties'))
+            def props = versionMetadata(dir.name)
             def loaders = parseEnabledLoaders(props)
             if (loaders.isEmpty()) {
                 throw new IllegalStateException("No enabled loaders configured for ${dir.name}")
@@ -231,9 +232,28 @@ class MultiloaderSettingsPlugin implements Plugin<Settings> {
         }
 
         versionsDir.listFiles()
-            ?.findAll { candidate -> new File(candidate, 'gradle.properties').isFile() }
+            ?.findAll { candidate -> candidate.directory }
             ?.sort { left, right -> left.name <=> right.name }
             ?: []
+    }
+
+    private static Properties versionMetadata(String versionKey) {
+        def properties = new Properties()
+        properties.setProperty('project.enabled-loaders', enabledLoaders(versionKey))
+        properties
+    }
+
+    private static String enabledLoaders(String versionKey) {
+        if (LEGACY_FABRIC_ONLY.contains(versionKey) || versionKey == '1.20.5') {
+            return 'fabric'
+        }
+        if (versionKey == '1.21.2') {
+            return 'fabric,neoforge'
+        }
+        if (versionKey == '1.21.1' || versionKey.startsWith('26.') || (versionKey.startsWith('1.21.') && versionKey != '1.21.2')) {
+            return 'fabric,forge,neoforge'
+        }
+        return 'fabric,forge'
     }
 
     private static Properties loadProperties(File file) {

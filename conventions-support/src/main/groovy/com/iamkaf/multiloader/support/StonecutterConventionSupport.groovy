@@ -10,6 +10,22 @@ import java.util.Properties
 
 class StonecutterConventionSupport {
 
+    private static final List<String> LEGACY_FABRIC_ONLY = [
+        '1.14.4', '1.15', '1.15.1', '1.15.2',
+        '1.16', '1.16.1', '1.16.2', '1.16.3', '1.16.4', '1.16.5',
+        '1.17'
+    ]
+
+    private static final Map<String, String> FORGE_LOADER_RANGES = [
+        '1.16.4':'[36,)', '1.16.5':'[36,)', '1.17.1':'[37,)',
+        '1.18':'[38,)', '1.18.1':'[39,)', '1.18.2':'[40,)',
+        '1.19':'[41,)', '1.19.1':'[42,)', '1.19.2':'[43,)', '1.19.3':'[44,)', '1.19.4':'[45,)',
+        '1.20':'[46,)', '1.20.1':'[47,)', '1.20.2':'[48,)', '1.20.3':'[49,)', '1.20.4':'[49,)', '1.20.6':'[50,)',
+        '1.21':'[51,)', '1.21.1':'[52,)', '1.21.3':'[53,)', '1.21.4':'[54,)', '1.21.5':'[55,)', '1.21.6':'[56,)',
+        '1.21.7':'[57,)', '1.21.8':'[58,)', '1.21.9':'[59,)', '1.21.10':'[60,)', '1.21.11':'[61,)',
+        '26.1':'[62,)', '26.1.1':'[62,)', '26.1.2':'[62,)'
+    ]
+
     static String requiredProp(Project project, String name) {
         def value = optionalProp(project, name)
         if (value == null || value.isBlank()) {
@@ -34,6 +50,8 @@ class StonecutterConventionSupport {
                 def versionFile = project.rootProject.file("versions/${versionKey}/gradle.properties")
                 if (versionFile.isFile()) {
                     versionFile.withInputStream(versionProps.&load)
+                } else {
+                    versionProps.putAll(versionMetadata(versionKey))
                 }
                 project.rootProject.extensions.extraProperties.set(cacheKey, versionProps)
             }
@@ -56,8 +74,8 @@ class StonecutterConventionSupport {
     }
 
     private static String resolveVersionKey(Project project) {
-        def directVersionDir = project.rootProject.file("versions/${project.name}/gradle.properties")
-        if (directVersionDir.isFile()) {
+        def directVersionDir = project.rootProject.file("versions/${project.name}")
+        if (directVersionDir.isDirectory()) {
             return project.name
         }
 
@@ -68,6 +86,107 @@ class StonecutterConventionSupport {
         }
 
         null
+    }
+
+    private static Properties versionMetadata(String versionKey) {
+        def props = new Properties()
+        props.setProperty('project.minecraft', versionKey)
+        props.setProperty('project.version', "11.0.0+${versionKey}")
+        props.setProperty('project.java', javaVersion(versionKey))
+        props.setProperty('project.build-java', buildJavaVersion(versionKey))
+        props.setProperty('project.enabled-loaders', enabledLoaders(versionKey))
+        props.setProperty('mod.minecraft-range', "[${versionKey}, ${nextMinecraftUpperBound(versionKey)})")
+        props.setProperty('mod.fabric-range', ">=${versionKey}")
+        applyMixinCompat(props, versionKey)
+
+        def forgeRange = FORGE_LOADER_RANGES[versionKey]
+        if (forgeRange != null) {
+            props.setProperty('mod.forge-loader-range', forgeRange)
+        }
+
+        if (enabledLoaders(versionKey).contains('neoforge')) {
+            props.setProperty('mod.neoforge-loader-range', '[4,)')
+        }
+
+        props
+    }
+
+    private static String enabledLoaders(String versionKey) {
+        if (LEGACY_FABRIC_ONLY.contains(versionKey) || versionKey == '1.20.5') {
+            return 'fabric'
+        }
+        if (versionKey == '1.21.2') {
+            return 'fabric,neoforge'
+        }
+        if (versionKey == '1.21.1' || versionKey.startsWith('26.') || (versionKey.startsWith('1.21.') && !['1.21.2'].contains(versionKey))) {
+            return 'fabric,forge,neoforge'
+        }
+        return 'fabric,forge'
+    }
+
+    private static String javaVersion(String versionKey) {
+        if (versionKey.startsWith('26.')) {
+            return '25'
+        }
+        if (versionKey.startsWith('1.14') || versionKey.startsWith('1.15') || versionKey.startsWith('1.16')) {
+            return '8'
+        }
+        if (versionKey == '1.17' || versionKey == '1.17.1') {
+            return '16'
+        }
+        if (versionKey == '1.20.5' || versionKey == '1.20.6' || versionKey.startsWith('1.21')) {
+            return '21'
+        }
+        return '17'
+    }
+
+    private static String buildJavaVersion(String versionKey) {
+        if (versionKey.startsWith('26.')) {
+            return '25'
+        }
+        if (versionKey.startsWith('1.14') || versionKey.startsWith('1.15') || versionKey.startsWith('1.16')) {
+            return '17'
+        }
+        return '21'
+    }
+
+    private static String nextMinecraftUpperBound(String versionKey) {
+        if (versionKey.startsWith('26.')) {
+            return '27'
+        }
+        def parts = versionKey.tokenize('.')
+        if (parts.isEmpty() || parts[0] != '1' || parts.size() < 2) {
+            return versionKey
+        }
+        return "1.${(parts[1] as int) + 1}"
+    }
+
+    private static void applyMixinCompat(Properties props, String versionKey) {
+        if (versionKey.startsWith('1.14') || versionKey.startsWith('1.15') || versionKey.startsWith('1.16')) {
+            props.setProperty('mixin.compat.common', 'JAVA_8')
+            props.setProperty('mixin.compat.fabric', 'JAVA_8')
+            if (enabledLoaders(versionKey).contains('forge')) {
+                props.setProperty('mixin.compat.forge', 'JAVA_8')
+            }
+            return
+        }
+
+        if (versionKey == '1.17' || versionKey == '1.17.1') {
+            props.setProperty('mixin.compat.common', 'JAVA_16')
+            props.setProperty('mixin.compat.fabric', 'JAVA_16')
+            if (enabledLoaders(versionKey).contains('forge')) {
+                props.setProperty('mixin.compat.forge', 'JAVA_16')
+            }
+            return
+        }
+
+        if (versionKey.startsWith('1.18') || versionKey.startsWith('1.19') || versionKey == '1.20' || versionKey == '1.20.1' || versionKey == '1.20.2' || versionKey == '1.20.3' || versionKey == '1.20.4') {
+            props.setProperty('mixin.compat.common', 'JAVA_17')
+            props.setProperty('mixin.compat.fabric', 'JAVA_17')
+            if (enabledLoaders(versionKey).contains('forge')) {
+                props.setProperty('mixin.compat.forge', 'JAVA_17')
+            }
+        }
     }
 
     static String catalogName(String minecraftVersion) {
