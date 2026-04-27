@@ -26,7 +26,10 @@ gson = "2.10.1"
 forge-config-api-port = "21.0.8"
 
 # Amber
-amber = "1.2.1-beta.1"
+amber = "11.0.0+1.21"
+
+# Konfig
+konfig = "0.3.0+1.21"
 
 # TeaKit
 teakit = "0.6.0+1.21"
@@ -72,6 +75,11 @@ amber = { group = "com.iamkaf.amber", name = "amber-common", version.ref = "ambe
 amber-fabric = { group = "com.iamkaf.amber", name = "amber-fabric", version.ref = "amber" }
 amber-neoforge = { group = "com.iamkaf.amber", name = "amber-neoforge", version.ref = "amber" }
 amber-forge = { group = "com.iamkaf.amber", name = "amber-forge", version.ref = "amber" }
+
+# Konfig
+konfig = { group = "com.iamkaf.konfig", name = "konfig-common", version.ref = "konfig" }
+konfig-fabric = { group = "com.iamkaf.konfig", name = "konfig-fabric", version.ref = "konfig" }
+konfig-forge = { group = "com.iamkaf.konfig", name = "konfig-forge", version.ref = "konfig" }
 
 # TeaKit
 teakit = { group = "com.iamkaf.teakit", name = "teakit-common", version.ref = "teakit" }

@@ -25,6 +25,12 @@ mixin = "0.8.5"
 mixinextras = "0.4.1"
 gson = "2.10.1"
 
+# Amber
+amber = "11.0.0+1.21.2"
+
+# Konfig
+konfig = "0.3.0+1.21.2"
+
 # TeaKit
 teakit = "0.6.0+1.21.2"
 
@@ -57,6 +63,16 @@ forge = { group = "net.minecraftforge", name = "forge", version.ref = "forge" }
 
 # Parchment
 parchment = { group = "org.parchmentmc.data", name = "parchment-1.21.1", version.ref = "parchment" }
+
+# Amber
+amber = { group = "com.iamkaf.amber", name = "amber-common", version.ref = "amber" }
+amber-fabric = { group = "com.iamkaf.amber", name = "amber-fabric", version.ref = "amber" }
+amber-neoforge = { group = "com.iamkaf.amber", name = "amber-neoforge", version.ref = "amber" }
+
+# Konfig
+konfig = { group = "com.iamkaf.konfig", name = "konfig-common", version.ref = "konfig" }
+konfig-fabric = { group = "com.iamkaf.konfig", name = "konfig-fabric", version.ref = "konfig" }
+konfig-neoforge = { group = "com.iamkaf.konfig", name = "konfig-neoforge", version.ref = "konfig" }
 
 # TeaKit
 teakit = { group = "com.iamkaf.teakit", name = "teakit-common", version.ref = "teakit" }

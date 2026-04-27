@@ -10,6 +10,7 @@ parchment = "null"
 # Fabric
 fabric-loader = "0.13.3"
 fabric-api = "0.29.3+1.16"
+fabric-data-generation-api = "1.1.2+4a20890318"
 modmenu = "1.14.5+build.30"
 
 # Forge
@@ -22,7 +23,10 @@ gson = "2.10.1"
 forge-config-api-port = "1.0.2"
 
 # Amber
-amber = "3.0.0+1.20.1"
+amber = "11.0.0+1.16"
+
+# Konfig
+konfig = "0.3.0+1.16"
 
 # TeaKit
 teakit = "0.6.0+1.16"
@@ -46,6 +50,7 @@ mixin-extras = { group = "io.github.llamalad7", name = "mixinextras-common", ver
 # Fabric
 fabric-loader = { group = "net.fabricmc", name = "fabric-loader", version.ref = "fabric-loader" }
 fabric-api = { group = "net.fabricmc.fabric-api", name = "fabric-api", version.ref = "fabric-api" }
+fabric-data-generation-api-v1 = { group = "net.fabricmc.fabric-api", name = "fabric-data-generation-api-v1", version.ref = "fabric-data-generation-api" }
 modmenu = { group = "maven.modrinth", name = "mOgUt4GM", version.ref = "modmenu" }
 
 # Forge
@@ -61,6 +66,10 @@ forgeconfigapiport-fabric = { group = "fuzs.forgeconfigapiport", name = "forgeco
 amber = { group = "com.iamkaf.amber", name = "amber-common", version.ref = "amber" }
 amber-fabric = { group = "com.iamkaf.amber", name = "amber-fabric", version.ref = "amber" }
 amber-forge = { group = "com.iamkaf.amber", name = "amber-forge", version.ref = "amber" }
+
+# Konfig
+konfig = { group = "com.iamkaf.konfig", name = "konfig-common", version.ref = "konfig" }
+konfig-fabric = { group = "com.iamkaf.konfig", name = "konfig-fabric", version.ref = "konfig" }
 
 # TeaKit
 teakit = { group = "com.iamkaf.teakit", name = "teakit-common", version.ref = "teakit" }
