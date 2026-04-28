@@ -71,7 +71,7 @@ class MultiloaderRootPlugin implements Plugin<Project> {
 
         project.extensions.configure(MultiloaderPublishingExtension) { extension ->
             versionDirs.each { dir ->
-                def props = versionMetadata(dir.name)
+                def props = versionMetadata(dir)
                 def minecraftVersion = props.getProperty('project.minecraft')
                 def javaVersion = props.getProperty('project.java')
                 def enabledLoaders = parseEnabledLoaders(props)
@@ -203,7 +203,13 @@ class MultiloaderRootPlugin implements Plugin<Project> {
         properties
     }
 
-    private static Properties versionMetadata(String versionKey) {
+    private static Properties versionMetadata(File versionDir) {
+        def metadataFile = new File(versionDir, 'gradle.properties')
+        if (metadataFile.isFile()) {
+            return loadProperties(metadataFile)
+        }
+
+        def versionKey = versionDir.name
         def props = new Properties()
         props.setProperty('project.minecraft', versionKey)
         props.setProperty('project.version', "11.0.0+${versionKey}")

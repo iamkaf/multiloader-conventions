@@ -32,8 +32,9 @@ class MultiloaderForgePlugin implements Plugin<Project> {
 
     private static void applyFlatForgePlugin(Project project) {
         project.pluginManager.apply(MultiloaderPlatformPlugin)
-        project.pluginManager.apply('net.minecraftforge.gradle')
         def minecraftVersion = ConventionSupport.versionAlias(project, 'minecraft')
+        def useLegacyForgePlugin = usesLegacyForgePlugin(minecraftVersion)
+        project.pluginManager.apply(useLegacyForgePlugin ? 'net.neoforged.moddev.legacyforge' : 'net.minecraftforge.gradle')
         requireSupportedForgeVersion(project, minecraftVersion)
         def usesUnobfuscatedMinecraft = ConventionSupport.isUnobfuscatedMinecraft(project)
 
@@ -45,74 +46,78 @@ class MultiloaderForgePlugin implements Plugin<Project> {
         }
 
         def accessTransformerFile = project.file('src/main/resources/META-INF/accesstransformer.cfg')
-        project.extensions.configure('minecraft') { minecraft ->
-            if (!usesUnobfuscatedMinecraft) {
-                minecraft.mappings(channel: 'official', version: minecraftVersion)
-            }
+        if (useLegacyForgePlugin) {
+            configureFlatLegacyForge(project, minecraftVersion, mixinConfigs, usesUnobfuscatedMinecraft, accessTransformerFile)
+        } else {
+            project.extensions.configure('minecraft') { minecraft ->
+                if (!usesUnobfuscatedMinecraft) {
+                    minecraft.mappings(channel: 'official', version: minecraftVersion)
+                }
 
-            if (accessTransformerFile.exists()) {
-                minecraft.accessTransformer = accessTransformerFile
-            }
+                if (accessTransformerFile.exists()) {
+                    minecraft.accessTransformer = accessTransformerFile
+                }
 
-            minecraft.runs {
-                configureEach {
-                    workingDir.convention(project.layout.projectDirectory.dir('run'))
-                    mixinConfigs.each { mixinConfig ->
-                        args '--mixin.config', mixinConfig
+                minecraft.runs {
+                    configureEach {
+                        workingDir.convention(project.layout.projectDirectory.dir('run'))
+                        mixinConfigs.each { mixinConfig ->
+                            args '--mixin.config', mixinConfig
+                        }
+                        environment 'MOD_CLASSES', '{source_roots}'
                     }
-                    environment 'MOD_CLASSES', '{source_roots}'
+
+                    register('client') {
+                    }
+
+                    register('server') {
+                        args '--nogui'
+                    }
                 }
 
-                register('client') {
-                }
-
-                register('server') {
-                    args '--nogui'
-                }
-            }
-
-            ['client', 'server'].each { runName ->
-                minecraft.runs.named(runName).configure { run ->
-                    run.mods {
-                        "${ConventionSupport.requiredProp(project, 'mod.id')}" {
-                            source project.sourceSets.main
+                ['client', 'server'].each { runName ->
+                    minecraft.runs.named(runName).configure { run ->
+                        run.mods {
+                            "${ConventionSupport.requiredProp(project, 'mod.id')}" {
+                                source project.sourceSets.main
+                            }
                         }
                     }
                 }
             }
-        }
 
-        project.repositories {
-            project.minecraft.mavenizer(it)
-            if (project.fg.hasProperty('forgeMaven')) {
-                maven project.fg.forgeMaven
-            }
-            if (project.fg.hasProperty('minecraftLibsMaven')) {
-                maven project.fg.minecraftLibsMaven
-            }
-        }
-
-        if (!usesUnobfuscatedMinecraft) {
-            project.dependencies {
-                def targetMinecraftVersion = ConventionSupport.versionAlias(project, 'minecraft')
-                def forgeVersion = ConventionSupport.versionAlias(project, 'forge')
-                def forgeArtifactVersion = forgeVersion.startsWith("${targetMinecraftVersion}-") ? forgeVersion : "${targetMinecraftVersion}-${forgeVersion}"
-                def forgeCoordinate = "net.minecraftforge:forge:${forgeArtifactVersion}"
-                implementation project.minecraft.dependency(
-                    forgeCoordinate
-                )
-                implementation('net.sf.jopt-simple:jopt-simple:5.0.4') {
-                    version {
-                        strictly '5.0.4'
-                    }
+            project.repositories {
+                project.minecraft.mavenizer(it)
+                if (project.fg.hasProperty('forgeMaven')) {
+                    maven project.fg.forgeMaven
+                }
+                if (project.fg.hasProperty('minecraftLibsMaven')) {
+                    maven project.fg.minecraftLibsMaven
                 }
             }
-        } else {
-            project.dependencies {
-                implementation project.minecraft.dependency("net.minecraftforge:forge:${ConventionSupport.versionAlias(project, 'forge')}")
-                implementation('net.sf.jopt-simple:jopt-simple:5.0.4') {
-                    version {
-                        strictly '5.0.4'
+
+            if (!usesUnobfuscatedMinecraft) {
+                project.dependencies {
+                    def targetMinecraftVersion = ConventionSupport.versionAlias(project, 'minecraft')
+                    def forgeVersion = ConventionSupport.versionAlias(project, 'forge')
+                    def forgeArtifactVersion = forgeVersion.startsWith("${targetMinecraftVersion}-") ? forgeVersion : "${targetMinecraftVersion}-${forgeVersion}"
+                    def forgeCoordinate = "net.minecraftforge:forge:${forgeArtifactVersion}"
+                    implementation project.minecraft.dependency(
+                        forgeCoordinate
+                    )
+                    implementation('net.sf.jopt-simple:jopt-simple:5.0.4') {
+                        version {
+                            strictly '5.0.4'
+                        }
+                    }
+                }
+            } else {
+                project.dependencies {
+                    implementation project.minecraft.dependency("net.minecraftforge:forge:${ConventionSupport.versionAlias(project, 'forge')}")
+                    implementation('net.sf.jopt-simple:jopt-simple:5.0.4') {
+                        version {
+                            strictly '5.0.4'
+                        }
                     }
                 }
             }
@@ -129,11 +134,12 @@ class MultiloaderForgePlugin implements Plugin<Project> {
         project.pluginManager.apply('com.iamkaf.multiloader.core')
         project.pluginManager.apply('java-library')
         project.pluginManager.apply('maven-publish')
-        project.pluginManager.apply('net.minecraftforge.gradle')
 
         def requiredProp = { String name -> project.ext.requiredProp.call(project, name) }
         def optionalProp = { String name -> project.ext.optionalProp.call(project, name) }
         def minecraftVersion = requiredProp('project.minecraft')
+        def useLegacyForgePlugin = usesLegacyForgePlugin(minecraftVersion)
+        project.pluginManager.apply(useLegacyForgePlugin ? 'net.neoforged.moddev.legacyforge' : 'net.minecraftforge.gradle')
         requireSupportedForgeVersion(project, minecraftVersion)
         def catalog = project.ext.catalogFor.call(project, minecraftVersion) as VersionCatalog
         def library = { String alias -> project.ext.library.call(catalog, alias) }
@@ -247,47 +253,51 @@ class MultiloaderForgePlugin implements Plugin<Project> {
             }
         }
 
-        project.repositories {
-            project.minecraft.mavenizer(delegate)
-            if (project.fg.hasProperty('forgeMaven')) {
-                maven project.fg.forgeMaven
-            }
-            if (project.fg.hasProperty('minecraftLibsMaven')) {
-                maven project.fg.minecraftLibsMaven
-            }
-        }
-
-        project.extensions.configure('minecraft') { minecraft ->
-            if (!useUnobfuscatedMinecraft) {
-                minecraft.mappings(channel: 'official', version: minecraftVersion)
+        if (useLegacyForgePlugin) {
+            configureStonecutterLegacyForge(project, minecraftVersion, catalog, mixinConfigs, modId, accessTransformerFile, useTeaKit && !useLegacyTeaKitRunHack, hasTeaKit, teaKitLibrary)
+        } else {
+            project.repositories {
+                project.minecraft.mavenizer(delegate)
+                if (project.fg.hasProperty('forgeMaven')) {
+                    maven project.fg.forgeMaven
+                }
+                if (project.fg.hasProperty('minecraftLibsMaven')) {
+                    maven project.fg.minecraftLibsMaven
+                }
             }
 
-            if (accessTransformerFile.exists()) {
-                minecraft.accessTransformer = accessTransformerFile
-            }
+            project.extensions.configure('minecraft') { minecraft ->
+                if (!useUnobfuscatedMinecraft) {
+                    minecraft.mappings(channel: 'official', version: minecraftVersion)
+                }
 
-            minecraft.runs {
-                configureEach {
-                    workingDir.convention(project.layout.projectDirectory.dir('run'))
-                    mixinConfigs.each { mixinConfig ->
-                        args '--mixin.config', mixinConfig
+                if (accessTransformerFile.exists()) {
+                    minecraft.accessTransformer = accessTransformerFile
+                }
+
+                minecraft.runs {
+                    configureEach {
+                        workingDir.convention(project.layout.projectDirectory.dir('run'))
+                        mixinConfigs.each { mixinConfig ->
+                            args '--mixin.config', mixinConfig
+                        }
+                        environment 'MOD_CLASSES', '{source_roots}'
                     }
-                    environment 'MOD_CLASSES', '{source_roots}'
+
+                    register('client') {
+                    }
+
+                    register('server') {
+                        args '--nogui'
+                    }
                 }
 
-                register('client') {
-                }
-
-                register('server') {
-                    args '--nogui'
-                }
-            }
-
-            ['client', 'server'].each { runName ->
-                minecraft.runs.named(runName).configure { run ->
-                    run.mods {
-                        "${modId}" {
-                            source project.sourceSets.main
+                ['client', 'server'].each { runName ->
+                    minecraft.runs.named(runName).configure { run ->
+                        run.mods {
+                            "${modId}" {
+                                source project.sourceSets.main
+                            }
                         }
                     }
                 }
@@ -301,15 +311,17 @@ class MultiloaderForgePlugin implements Plugin<Project> {
             annotationProcessor library('mixin-extras')
             implementation library('gson')
 
-            def forgeCoordinate
-            if (useUnobfuscatedMinecraft) {
-                forgeCoordinate = "net.minecraftforge:forge:${versionOrNull('forge')}"
-            } else {
-                def forgeVersion = versionOrNull('forge')
-                def forgeArtifactVersion = forgeVersion.startsWith("${minecraftVersion}-") ? forgeVersion : "${minecraftVersion}-${forgeVersion}"
-                forgeCoordinate = "net.minecraftforge:forge:${forgeArtifactVersion}"
+            if (!useLegacyForgePlugin) {
+                def forgeCoordinate
+                if (useUnobfuscatedMinecraft) {
+                    forgeCoordinate = "net.minecraftforge:forge:${versionOrNull('forge')}"
+                } else {
+                    def forgeVersion = versionOrNull('forge')
+                    def forgeArtifactVersion = forgeVersion.startsWith("${minecraftVersion}-") ? forgeVersion : "${minecraftVersion}-${forgeVersion}"
+                    forgeCoordinate = "net.minecraftforge:forge:${forgeArtifactVersion}"
+                }
+                implementation project.minecraft.dependency(forgeCoordinate)
             }
-            implementation project.minecraft.dependency(forgeCoordinate)
 
             implementation('net.sf.jopt-simple:jopt-simple:5.0.4') {
                 version {
@@ -372,6 +384,116 @@ class MultiloaderForgePlugin implements Plugin<Project> {
         }
 
         project.ext.publishingRepositories.call(project.extensions.getByType(PublishingExtension), project.version.toString())
+    }
+
+    private static void configureFlatLegacyForge(Project project, String minecraftVersion, List<String> mixinConfigs, boolean usesUnobfuscatedMinecraft, File accessTransformerFile) {
+        project.extensions.configure('legacyForge') { legacyForge ->
+            if (usesUnobfuscatedMinecraft) {
+                legacyForge.mcpVersion = minecraftVersion
+            } else {
+                legacyForge.version = forgeArtifactVersion(minecraftVersion, ConventionSupport.versionAlias(project, 'forge'))
+            }
+            legacyForge.validateAccessTransformers = true
+
+            if (accessTransformerFile.exists()) {
+                legacyForge.accessTransformers = [accessTransformerFile.absolutePath]
+            }
+
+            legacyForge.runs {
+                configureEach {
+                    gameDirectory = project.file('run')
+                    mixinConfigs.each { mixinConfig ->
+                        programArgument '--mixin.config'
+                        programArgument mixinConfig
+                    }
+                }
+
+                client { client() }
+                server {
+                    server()
+                    programArgument '--nogui'
+                }
+            }
+
+            legacyForge.mods {
+                "${ConventionSupport.requiredProp(project, 'mod.id')}" {
+                    sourceSet project.sourceSets.main
+                }
+            }
+        }
+
+        project.dependencies {
+            implementation('net.sf.jopt-simple:jopt-simple:5.0.4') {
+                version {
+                    strictly '5.0.4'
+                }
+            }
+        }
+    }
+
+    private static void configureStonecutterLegacyForge(
+        Project project,
+        String minecraftVersion,
+        VersionCatalog catalog,
+        List<String> mixinConfigs,
+        String modId,
+        File accessTransformerFile,
+        boolean useTeaKit,
+        boolean hasTeaKit,
+        def teaKitLibrary
+    ) {
+        def versionOrNull = { String alias -> project.ext.versionOrNull.call(catalog, alias) }
+        project.extensions.configure('legacyForge') { legacyForge ->
+            legacyForge.version = forgeArtifactVersion(minecraftVersion, versionOrNull('forge'))
+            legacyForge.validateAccessTransformers = true
+
+            if (accessTransformerFile.exists()) {
+                legacyForge.accessTransformers = [accessTransformerFile.absolutePath]
+            }
+
+            legacyForge.runs {
+                configureEach {
+                    gameDirectory = project.file('run')
+                    mixinConfigs.each { mixinConfig ->
+                        programArgument '--mixin.config'
+                        programArgument mixinConfig
+                    }
+                }
+
+                client { client() }
+                server {
+                    server()
+                    programArgument '--nogui'
+                }
+            }
+
+            legacyForge.mods {
+                "${modId}" {
+                    sourceSet project.sourceSets.main
+                }
+            }
+        }
+
+        if (useTeaKit && hasTeaKit) {
+            project.dependencies {
+                modRuntimeOnly teaKitLibrary.get()
+            }
+        }
+    }
+
+    private static boolean usesLegacyForgePlugin(String minecraftVersion) {
+        if (minecraftVersion == null || !minecraftVersion.startsWith('1.')) {
+            return false
+        }
+
+        def parts = minecraftVersion.tokenize('.').collect { it as int }
+        def minor = parts.size() > 1 ? parts[1] : 0
+        def patch = parts.size() > 2 ? parts[2] : 0
+        minor >= 17 && (minor < 20 || (minor == 20 && patch <= 1))
+    }
+
+    private static String forgeArtifactVersion(String minecraftVersion, String forgeVersion) {
+        forgeVersion.startsWith("${minecraftVersion}-") ? forgeVersion : "${minecraftVersion}-${forgeVersion}"
     }
 
     private static void requireSupportedForgeVersion(Project project, String minecraftVersion) {

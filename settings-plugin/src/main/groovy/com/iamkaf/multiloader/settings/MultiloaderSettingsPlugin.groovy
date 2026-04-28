@@ -130,7 +130,7 @@ class MultiloaderSettingsPlugin implements Plugin<Settings> {
             return
         }
 
-        def firstVersionProps = versionMetadata(versionDirs.first().name)
+        def firstVersionProps = versionMetadata(settings, versionDirs.first())
         settings.rootProject.name = firstVersionProps.getProperty('mod.name', 'Template')
     }
 
@@ -145,7 +145,7 @@ class MultiloaderSettingsPlugin implements Plugin<Settings> {
     private static void configureStonecutterProjects(Settings settings, List<File> versionDirs) {
         def versionsWithLoaders = [:] as LinkedHashMap<String, List<String>>
         versionDirs.each { dir ->
-            def props = versionMetadata(dir.name)
+            def props = versionMetadata(settings, dir)
             def loaders = parseEnabledLoaders(props)
             if (loaders.isEmpty()) {
                 throw new IllegalStateException("No enabled loaders configured for ${dir.name}")
@@ -237,7 +237,13 @@ class MultiloaderSettingsPlugin implements Plugin<Settings> {
             ?: []
     }
 
-    private static Properties versionMetadata(String versionKey) {
+    private static Properties versionMetadata(Settings settings, File versionDir) {
+        def metadataFile = new File(versionDir, 'gradle.properties')
+        if (metadataFile.isFile()) {
+            return loadProperties(metadataFile)
+        }
+
+        def versionKey = versionDir.name
         def properties = new Properties()
         properties.setProperty('project.enabled-loaders', enabledLoaders(versionKey))
         properties

@@ -16,6 +16,7 @@ java {
 
 dependencies {
     implementation 'net.minecraftforge:forgegradle:7.0.17'
+    implementation 'net.neoforged.moddev.legacyforge:net.neoforged.moddev.legacyforge.gradle.plugin:2.0.140'
     implementation project(':core-plugin')
     implementation project(':conventions-support')
     implementation project(':platform-plugin')
