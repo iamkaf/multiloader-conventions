@@ -13,4 +13,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 
 - Updated loader and helper coordinates to support the full Stonecutter migration and TeaKit-backed validation flow.
-- Aligned published `konfig` and `teakit` coordinates with the `0.3.0` and `0.6.0` releases across all covered Minecraft lines.
+- Aligned published `konfig` and `teakit` coordinates with the `0.3.0`, `0.6.0`, and `0.7.0` releases across all covered Minecraft lines.
