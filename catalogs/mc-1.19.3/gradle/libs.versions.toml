@@ -13,7 +13,7 @@ fabric-api = "0.76.1+1.19.3"
 modmenu = "5.1.0"
 
 # Forge
-forge = "1.19.3-44.0.0"
+forge = "1.19.3-44.1.0"
 
 # Libraries
 mixin = "0.8.5"
