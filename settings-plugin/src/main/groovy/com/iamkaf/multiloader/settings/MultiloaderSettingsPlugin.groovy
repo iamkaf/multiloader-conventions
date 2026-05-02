@@ -1,8 +1,8 @@
 package com.iamkaf.multiloader.settings
 
-import dev.kikugie.stonecutter.data.tree.builder.BranchBuilder
-import dev.kikugie.stonecutter.data.tree.builder.TreeBuilder
 import dev.kikugie.stonecutter.settings.StonecutterSettingsExtension
+import dev.kikugie.stonecutter.settings.tree.BranchBuilder
+import dev.kikugie.stonecutter.settings.tree.TreeBuilder
 import org.gradle.api.Plugin
 import org.gradle.api.Action
 import org.gradle.api.initialization.Settings
@@ -12,7 +12,7 @@ import java.util.Properties
 class MultiloaderSettingsPlugin implements Plugin<Settings> {
 
     private static final List<String> KNOWN_LOADERS = ['fabric', 'forge', 'neoforge']
-    private static final String STONECUTTER_VERSION = '0.7.10'
+    private static final String STONECUTTER_VERSION = '0.9.2'
     private static final List<String> LEGACY_FABRIC_ONLY = ['1.14.4', '1.15', '1.15.1', '1.15.2', '1.16', '1.16.1', '1.16.2', '1.16.3', '1.16.4', '1.16.5', '1.17']
 
     @Override
