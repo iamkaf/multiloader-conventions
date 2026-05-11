@@ -28,7 +28,7 @@ amber = "11.0.0+1.19.4"
 konfig = "0.3.0+1.19.4"
 
 # TeaKit
-teakit = "0.7.0+1.19.4"
+teakit = "0.8.0+1.19.4"
 
 # Gradle Plugins
 fabric-loom-plugin = "1.15-SNAPSHOT"
