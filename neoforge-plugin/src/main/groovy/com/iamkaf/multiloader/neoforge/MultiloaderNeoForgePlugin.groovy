@@ -163,6 +163,7 @@ class MultiloaderNeoForgePlugin implements Plugin<Project> {
         project.tasks.withType(JavaCompile).configureEach {
             options.encoding = 'UTF-8'
         }
+        ConventionSupport.configureJavadoc(project)
 
         project.tasks.withType(ProcessResources).configureEach {
             duplicatesStrategy = DuplicatesStrategy.EXCLUDE
@@ -185,6 +186,10 @@ class MultiloaderNeoForgePlugin implements Plugin<Project> {
             project.tasks.named(taskName).configure {
                 dependsOn project.tasks.named('stageMergedResources')
             }
+        }
+        project.tasks.matching { it.name == 'createMinecraftArtifacts' }.configureEach {
+            dependsOn project.tasks.named('stageMergedJavaSources')
+            dependsOn project.tasks.named('stageMergedResources')
         }
 
         project.dependencies {

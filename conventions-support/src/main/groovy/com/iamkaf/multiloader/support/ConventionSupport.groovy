@@ -11,6 +11,7 @@ import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.api.tasks.javadoc.Javadoc
 import org.gradle.jvm.tasks.Jar
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.language.jvm.tasks.ProcessResources
@@ -75,8 +76,6 @@ class ConventionSupport {
         project.tasks.named('javadoc').configure { task ->
             task.dependsOn(commonJava)
             task.source(commonJava)
-            task.options.addBooleanOption('Xdoclint:none', true)
-            task.options.addBooleanOption('quiet', true)
         }
 
         project.tasks.named('sourcesJar', Jar).configure { task ->
@@ -200,6 +199,14 @@ class ConventionSupport {
 
         project.tasks.withType(JavaCompile).configureEach { task ->
             task.options.encoding = 'UTF-8'
+        }
+
+        configureJavadoc(project)
+    }
+
+    static void configureJavadoc(Project project) {
+        project.tasks.withType(Javadoc).configureEach { task ->
+            task.options.addStringOption('Xdoclint:none', '-quiet')
         }
     }
 

@@ -55,7 +55,7 @@ class MultiloaderForgePlugin implements Plugin<Project> {
                 }
 
                 if (accessTransformerFile.exists()) {
-                    minecraft.accessTransformer = accessTransformerFile
+                    minecraft.accessTransformer.from(accessTransformerFile)
                 }
 
                 minecraft.runs {
@@ -229,6 +229,7 @@ class MultiloaderForgePlugin implements Plugin<Project> {
         project.tasks.withType(JavaCompile).configureEach {
             options.encoding = 'UTF-8'
         }
+        ConventionSupport.configureJavadoc(project)
 
         project.tasks.withType(ProcessResources).configureEach {
             duplicatesStrategy = DuplicatesStrategy.EXCLUDE
@@ -272,7 +273,7 @@ class MultiloaderForgePlugin implements Plugin<Project> {
                 }
 
                 if (accessTransformerFile.exists()) {
-                    minecraft.accessTransformer = accessTransformerFile
+                    minecraft.accessTransformer.from(accessTransformerFile)
                 }
 
                 minecraft.runs {

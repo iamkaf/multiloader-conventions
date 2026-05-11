@@ -170,6 +170,7 @@ class MultiloaderFabricPlugin implements Plugin<Project> {
         project.tasks.withType(JavaCompile).configureEach {
             options.encoding = 'UTF-8'
         }
+        ConventionSupport.configureJavadoc(project)
 
         project.tasks.withType(ProcessResources).configureEach {
             duplicatesStrategy = DuplicatesStrategy.EXCLUDE
