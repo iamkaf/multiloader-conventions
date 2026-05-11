@@ -78,7 +78,7 @@ class MultiloaderForgePlugin implements Plugin<Project> {
                 ['client', 'server'].each { runName ->
                     minecraft.runs.named(runName).configure { run ->
                         run.mods {
-                            "${ConventionSupport.requiredProp(project, 'mod.id')}" {
+                            "${ConventionSupport.requiredProperty(project, 'mod.id')}" {
                                 source project.sourceSets.main
                             }
                         }
