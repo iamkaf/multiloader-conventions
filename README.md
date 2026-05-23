@@ -115,8 +115,8 @@ The detailed policy lives in [docs/version-capability-matrix.md](docs/version-ca
 
 Important current boundaries:
 
-- the convention Forge plugin supports Forge on `1.17+`
-- pre-`1.17` Forge stays consumer-local
+- the convention Forge plugin supports `1.16.5` and `1.17+`
+- other pre-`1.17` Forge lines stay consumer-local
 - the common plugin selects different tool families by Minecraft line
 - Fabric datagen is centralized as a helper, but still consumer opt-in
 

@@ -42,11 +42,12 @@ separate:
 | Archive naming, manifests, capabilities, Maven publication | stable | `common` | `mod.id`, `mod.name`, `project.version` | Already centralized. |
 | Fabric base dependency wiring | stable | `fabric` | version catalog | Already centralized. |
 | Fabric run config shape | stable | `fabric` | Loom DSL | Current `client` / `server` run wiring is shared. |
-| Forge run config and mixin arg shape | versioned | `forge` | MC line, FG behavior | Works today, but is a likely future strategy point if FG behavior diverges again. |
+| Forge run config and mixin arg shape | versioned | `forge` | MC line, ForgeGradle/LegacyForge behavior | Centralized now, including legacy TeaKit runtime handling on `1.16.5`, `1.17.1`, `1.18`, `1.18.1`, and `1.18.2`. |
 | NeoForge run/datagen shape | versioned | `neoforge` | MC line, ModDev behavior | Shared for current active lines, but should stay explicit as a strategy point. |
-| Fabric datagen DSL | versioned | `fabric` helper + consumer opt-in | Loom/Fabric API DSL by line | Currently centralized only as `enableCommonFabricDatagen`, but consumers opt in per line. |
+| Fabric datagen DSL | versioned | `fabric` helper + consumer opt-in | Loom/Fabric API DSL by line | Currently centralized only as `enableCommonFabricDatagen`; consumers still opt in per line. |
+| Fabric legacy dependency pins | versioned | `fabric` | MC line, catalog gaps | Centralized for known exceptions such as the strict `1.18.2` Fabric Loader pin and old Fabric API module set. |
 | Common-project tool plugin family | versioned | `common` | MC line, catalog | Centralized now: Fabric Loom on the old Fabric-only era, `legacyforge` on the LegacyForge window, `moddev` when NeoForm is available. |
-| Forge tool plugin family/version | versioned | `forge` | MC line, catalog | Centralized now for the supported floor. The convention plugin only supports Forge on `1.17+`; older Forge stays consumer-local. |
+| Forge tool plugin family/version | versioned | `forge` | MC line, catalog | Centralized for `1.16.5` and `1.17+`. Other pre-`1.17` Forge lines stay consumer-local unless explicitly promoted. |
 | NeoForge tool plugin family/version | stable | `neoforge` | MC line, catalog | Centralized in the plugin. |
 | Publishing payload assembly | stable | `publishing` | loader outputs, changelog, IDs | Already centralized. |
 | Publishing tag normalization | versioned | `publishing` | MC version, Java version, loader set | Current implementation is shared, but CurseForge/Modrinth quirks should be treated as versioned strategy points. |
@@ -65,7 +66,7 @@ Current state:
 - centralized helper in
   [ConventionSupport.groovy](/home/kaf/code/mods/multiloader-conventions/conventions-support/src/main/groovy/com/iamkaf/multiloader/support/ConventionSupport.groovy)
 - consumer opt-in in loader build files
-- intentionally disabled on template `1.20.1`
+- covered by the `samples/datagen` fixture on `1.21.11`
 
 Reason:
 
@@ -80,22 +81,50 @@ strategy keyed by version capability, not by ad hoc checks in consumer builds.
 Current state:
 
 - centralized in the `forge` plugin
-- validated on active template and `mochila2` lines
+- `1.16.5` is explicitly supported as the legacy Forge floor
+- `1.14.x`, `1.15.x`, and `1.16.0` through `1.16.4` are rejected by the convention plugin and stay consumer-local
+- `1.17.x` through `1.20.1` use `net.neoforged.moddev.legacyforge`
+- newer supported Forge lines use `net.minecraftforge.gradle`
+- TeaKit runtime runs need legacy classpath/service handling on `1.16.5`, `1.17.1`, `1.18`, `1.18.1`, and `1.18.2`
+- validated on active template and consumer lines
 
 Reason:
 
 - ForgeGradle behavior has already changed across generations
 - dev-run setup and mixin argument wiring are historically fragile
+- legacy TeaKit launch wiring is fragile enough to keep as an explicit strategy
 
 If a new MC line needs different Forge run or mixin wiring, add a dedicated
 strategy boundary inside the plugin instead of branching inline.
 
-### 3. Common Tool-Family Strategy
+### 3. Fabric Legacy Dependency Strategy
+
+Current state:
+
+- Fabric dependency wiring is centralized in the `fabric` plugin
+- most lines use catalog-provided Fabric Loader and Fabric API coordinates
+- `1.18.2` pins Fabric Loader to `0.14.9`
+- old unobfuscated/Fabric-only lines use a fixed set of Fabric API modules
+
+Reason:
+
+- older Fabric lines do not always tolerate the current catalog default
+- old Fabric API module coordinates are not interchangeable with the modern
+  aggregate Fabric API dependency
+
+Keep these exceptions in one helper/strategy area in the plugin. If another
+line needs a pinned loader or split Fabric API module set, add it beside the
+existing strategy instead of placing the pin in consumer builds.
+
+### 4. Common Tool-Family Strategy
 
 Current state:
 
 - common-project tool plugin selection is centralized
 - the strategy is keyed by the available tool family for that MC line
+- `1.14.x`, `1.15.x`, and `1.16.x` common projects use Fabric Loom
+- later lines without NeoForm use `net.neoforged.moddev.legacyforge`
+- lines with NeoForm use `net.neoforged.moddev`
 
 Reason:
 
@@ -105,7 +134,7 @@ Reason:
 Keep this as an explicit strategy point. If another common build family appears,
 add it here instead of scattering version checks across consumers.
 
-### 4. Publishing Normalization Strategy
+### 5. Publishing Normalization Strategy
 
 Current state:
 
@@ -124,25 +153,17 @@ strategy helpers under `publishing`, not in consumers.
 
 Every strategy point should map to at least one sample or real-consumer check.
 
-Current required fixture matrix:
+Current sample fixture matrix:
 
-- `1.20.1`
-  - Fabric build
-  - Forge build
-  - dry-run publish
-- `1.21.1`
-  - Fabric build
-  - Forge build
-  - NeoForge build
-  - dry-run publish
-- `1.21.10`
-  - full stack build
-  - Fabric datagen
-  - dry-run publish
 - `1.21.11`
-  - full stack build
+  - minimal full-stack build
   - Fabric datagen
   - dry-run publish
+
+Older and legacy runtime strategy points are currently proven through real
+consumers rather than dedicated samples. When a legacy quirk graduates into
+shared convention behavior, add either a focused sample or a named consumer
+verification command to this section.
 
 Current proving-ground consumers:
 
