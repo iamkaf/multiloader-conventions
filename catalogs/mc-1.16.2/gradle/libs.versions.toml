@@ -31,6 +31,10 @@ konfig = "0.3.0+1.16.2"
 # TeaKit
 teakit = "0.9.0+1.16.2"
 
+# JEI
+jei = "7.3.2.28"
+jei-api = "null"
+
 # Gradle Plugins
 fabric-loom-plugin = "1.8.13"
 modpublisher-plugin = "2.1.6"
@@ -74,6 +78,18 @@ konfig-fabric = { group = "com.iamkaf.konfig", name = "konfig-fabric", version.r
 # TeaKit
 teakit = { group = "com.iamkaf.teakit", name = "teakit-common", version.ref = "teakit" }
 teakit-fabric = { group = "com.iamkaf.teakit", name = "teakit-fabric", version.ref = "teakit" }
+
+# JEI
+jei = { group = "maven.modrinth", name = "jei", version.ref = "jei" }
+jei-blamejared = { group = "mezz.jei", name = "jei-1.16.2", version.ref = "jei-api" }
+jei-common-api = { group = "mezz.jei", name = "jei-1.16.2-common-api", version.ref = "jei-api" }
+jei-common = { group = "mezz.jei", name = "jei-1.16.2-common", version.ref = "jei-api" }
+jei-fabric-api = { group = "mezz.jei", name = "jei-1.16.2-fabric-api", version.ref = "jei-api" }
+jei-fabric = { group = "mezz.jei", name = "jei-1.16.2-fabric", version.ref = "jei-api" }
+jei-forge-api = { group = "mezz.jei", name = "jei-1.16.2-forge-api", version.ref = "jei-api" }
+jei-forge = { group = "mezz.jei", name = "jei-1.16.2-forge", version.ref = "jei-api" }
+jei-neoforge-api = { group = "mezz.jei", name = "jei-1.16.2-neoforge-api", version.ref = "jei-api" }
+jei-neoforge = { group = "mezz.jei", name = "jei-1.16.2-neoforge", version.ref = "jei-api" }
 
 [plugins]
 fabric-loom = { id = "fabric-loom", version.ref = "fabric-loom-plugin" }

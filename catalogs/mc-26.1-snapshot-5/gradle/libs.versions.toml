@@ -24,6 +24,10 @@ mixin = "0.8.5"
 mixinextras = "0.4.1"
 gson = "2.10.1"
 
+# JEI
+jei = "null"
+jei-api = "null"
+
 # Gradle Plugins
 fabric-loom-plugin = "1.15-SNAPSHOT"
 neoforge-moddev-plugin = "2.0.140"
@@ -53,6 +57,18 @@ forge = { group = "net.minecraftforge", name = "forge", version.ref = "forge" }
 
 # Parchment
 parchment = { group = "org.parchmentmc.data", name = "parchment-1.21.11", version.ref = "parchment" }
+
+# JEI
+jei = { group = "maven.modrinth", name = "jei", version.ref = "jei" }
+jei-blamejared = { group = "mezz.jei", name = "jei-26.1-snapshot-5", version.ref = "jei-api" }
+jei-common-api = { group = "mezz.jei", name = "jei-26.1-snapshot-5-common-api", version.ref = "jei-api" }
+jei-common = { group = "mezz.jei", name = "jei-26.1-snapshot-5-common", version.ref = "jei-api" }
+jei-fabric-api = { group = "mezz.jei", name = "jei-26.1-snapshot-5-fabric-api", version.ref = "jei-api" }
+jei-fabric = { group = "mezz.jei", name = "jei-26.1-snapshot-5-fabric", version.ref = "jei-api" }
+jei-forge-api = { group = "mezz.jei", name = "jei-26.1-snapshot-5-forge-api", version.ref = "jei-api" }
+jei-forge = { group = "mezz.jei", name = "jei-26.1-snapshot-5-forge", version.ref = "jei-api" }
+jei-neoforge-api = { group = "mezz.jei", name = "jei-26.1-snapshot-5-neoforge-api", version.ref = "jei-api" }
+jei-neoforge = { group = "mezz.jei", name = "jei-26.1-snapshot-5-neoforge", version.ref = "jei-api" }
 
 [plugins]
 fabric-loom = { id = "fabric-loom", version.ref = "fabric-loom-plugin" }
