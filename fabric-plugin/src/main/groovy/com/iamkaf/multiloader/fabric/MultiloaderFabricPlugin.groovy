@@ -91,7 +91,7 @@ class MultiloaderFabricPlugin implements Plugin<Project> {
             .orElse(project.providers.gradleProperty("${modId}.withTeaKit"))
             .map { it.toBoolean() }
             .orElse(false)
-            .get()
+            .get() && modId != 'teakit'
         def useModernFabricRuntime = !minecraftVersion.startsWith('1.')
         def commonProject = project.project(":common:${minecraftVersion}")
         def commonGeneratedJavaDir = commonProject.layout.buildDirectory.dir('generated/stonecutter/main/java')

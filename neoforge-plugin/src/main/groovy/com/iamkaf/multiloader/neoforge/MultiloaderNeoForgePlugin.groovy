@@ -91,7 +91,7 @@ class MultiloaderNeoForgePlugin implements Plugin<Project> {
             .orElse(project.providers.gradleProperty("${modId}.withTeaKit"))
             .map { it.toBoolean() }
             .orElse(false)
-            .get()
+            .get() && modId != 'teakit'
         def accessTransformerFile = project.rootProject.file('common/src/main/resources/META-INF/accesstransformer.cfg')
         def commonProject = project.project(":common:${minecraftVersion}")
         def commonGeneratedJavaDir = commonProject.layout.buildDirectory.dir('generated/stonecutter/main/java')

@@ -155,7 +155,7 @@ class MultiloaderForgePlugin implements Plugin<Project> {
             .orElse(project.providers.gradleProperty("${modId}.withTeaKit"))
             .map { it.toBoolean() }
             .orElse(false)
-            .get()
+            .get() && modId != 'teakit'
         def useLegacyTeaKitRunHack = ['1.16.5', '1.17.1', '1.18', '1.18.1', '1.18.2'].contains(minecraftVersion)
         def accessTransformerFile = project.rootProject.file('common/src/main/resources/META-INF/accesstransformer.cfg')
         def mixinConfigs = project.ext.mixinConfigs.call(project, loader)
