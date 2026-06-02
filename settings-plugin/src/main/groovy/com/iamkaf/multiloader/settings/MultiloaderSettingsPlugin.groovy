@@ -110,8 +110,9 @@ class MultiloaderSettingsPlugin implements Plugin<Settings> {
         settings.dependencyResolutionManagement.repositories.mavenCentral()
 
         versionDirs.each { dir ->
+            def catalogCoordinate = catalogCoordinate(versionMetadata(settings, dir), dir.name)
             settings.dependencyResolutionManagement.versionCatalogs.create(catalogName(dir.name)) { libs ->
-                libs.from(settings.layout.settingsDirectory.files("../version-catalog/mc-${dir.name}/gradle/libs.versions.toml"))
+                libs.from(catalogCoordinate)
             }
         }
     }
@@ -266,6 +267,15 @@ class MultiloaderSettingsPlugin implements Plugin<Settings> {
         def properties = new Properties()
         file.withInputStream(properties.&load)
         properties
+    }
+
+    private static String catalogCoordinate(Properties props, String mcVersion) {
+        def configured = props.getProperty('project.catalog-coordinate')
+        if (configured != null && !configured.isBlank()) {
+            return configured
+        }
+
+        "com.iamkaf.platform:mc-${mcVersion}:${mcVersion}-SNAPSHOT"
     }
 
     private static String catalogName(String minecraftVersion) {
