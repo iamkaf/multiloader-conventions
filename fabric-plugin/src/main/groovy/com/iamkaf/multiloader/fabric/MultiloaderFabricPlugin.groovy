@@ -241,7 +241,7 @@ class MultiloaderFabricPlugin implements Plugin<Project> {
                     implementation library('fabric-api')
                 }
                 if (hasModMenu) {
-                    implementation library('modmenu')
+                    // implementation library('modmenu')
                 }
             } else {
                 if (useLegacyFabricApiModules) {

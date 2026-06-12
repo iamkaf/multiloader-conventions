@@ -294,6 +294,7 @@ class StonecutterConventionSupport {
             'forge_version'                     : versionOrNull(catalog, 'forge'),
             'forge_loader_version_range'        : optionalProp(project, 'mod.forge-loader-range'),
             'amber_version'                     : versionOrNull(catalog, 'amber'),
+            'konfig_version'                    : versionOrNull(catalog, 'konfig'),
             'parchment_minecraft'               : versionOrNull(catalog, 'parchment-minecraft'),
             'parchment_version'                 : versionOrNull(catalog, 'parchment'),
             'credits'                           : optionalProp(project, 'mod.credits'),

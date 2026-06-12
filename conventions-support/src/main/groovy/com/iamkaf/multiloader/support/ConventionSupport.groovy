@@ -373,6 +373,7 @@ class ConventionSupport {
             'forge_version'                : optionalVersionAlias(project, 'forge'),
             'forge_loader_version_range'   : optionalProperty(project, 'mod.forge-loader-range'),
             'amber_version'                : optionalVersionAlias(project, 'amber'),
+            'konfig_version'               : optionalVersionAlias(project, 'konfig'),
             'parchment_minecraft'          : optionalVersionAlias(project, 'parchment-minecraft'),
             'parchment_version'            : optionalVersionAlias(project, 'parchment'),
             'credits'                      : optionalProperty(project, 'mod.credits'),
