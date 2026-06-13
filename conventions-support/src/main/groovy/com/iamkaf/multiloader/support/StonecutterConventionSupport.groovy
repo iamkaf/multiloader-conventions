@@ -274,12 +274,28 @@ class StonecutterConventionSupport {
         ].findAll { it != null }
     }
 
+    private static String fabricMinecraftDependency(String minecraftVersion, String configuredRange) {
+        if (minecraftVersion == null) {
+            return configuredRange
+        }
+        if (minecraftVersion.contains('-rc-')) {
+            return configuredRange
+        }
+
+        minecraftVersion
+    }
+
     static Map<String, Object> expandProps(Project project, String minecraftVersion, String loader, VersionCatalog catalog) {
+        def minecraftVersionRange = optionalProp(project, 'mod.minecraft-range')
+        if (loader == 'fabric') {
+            minecraftVersionRange = fabricMinecraftDependency(minecraftVersion, minecraftVersionRange)
+        }
+
         [
             'version'                           : requiredProp(project, 'project.version'),
             'group'                             : requiredProp(project, 'project.group'),
             'minecraft_version'                 : minecraftVersion,
-            'minecraft_version_range'           : optionalProp(project, 'mod.minecraft-range'),
+            'minecraft_version_range'           : minecraftVersionRange,
             'fabric_version_range'              : optionalProp(project, 'mod.fabric-range'),
             'fabric_version'                    : versionOrNull(catalog, 'fabric-api'),
             'fabric_loader_version'             : versionOrNull(catalog, 'fabric-loader'),
