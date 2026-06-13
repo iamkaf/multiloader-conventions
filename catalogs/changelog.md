@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- Catalog coverage for every Konfig and TeaKit Minecraft line from `1.14.4` through `26.2-rc-1`.
+- Catalog coverage for every Konfig and TeaKit Minecraft line from `1.14.4` through `26.2-rc-2`.
 
 ### Changed
 
