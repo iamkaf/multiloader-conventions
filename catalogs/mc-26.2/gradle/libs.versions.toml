@@ -2,7 +2,7 @@
 # Core Versions
 minecraft = "26.2"
 java = "25"
-neoform = "26.2-rc-2-1"
+neoform = "26.2-1"
 
 # Parchment
 parchment-minecraft = "null"
@@ -14,7 +14,7 @@ fabric-api = "0.152.1+26.2"
 modmenu = "20.0.0-alpha.1"
 
 # NeoForge
-neoforge = "null"
+neoforge = "26.2.0.0-beta"
 
 # Forge
 forge = "null"
