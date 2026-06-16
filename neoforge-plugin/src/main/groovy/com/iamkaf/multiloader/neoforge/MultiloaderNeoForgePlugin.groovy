@@ -39,9 +39,13 @@ class MultiloaderNeoForgePlugin implements Plugin<Project> {
                 neoForge.accessTransformers.from(accessTransformerFile.absolutePath)
             }
 
-            neoForge.parchment {
-                minecraftVersion = ConventionSupport.optionalVersionAlias(project, 'parchment-minecraft')
-                mappingsVersion = ConventionSupport.requiredLibrary(project, 'parchment').versionConstraint.requiredVersion
+            def parchmentVersion = ConventionSupport.optionalVersionAlias(project, 'parchment')
+            if (parchmentVersion != null) {
+                neoForge.parchment {
+                    minecraftVersion = ConventionSupport.optionalVersionAlias(project, 'parchment-minecraft') ?:
+                        ConventionSupport.versionAlias(project, 'minecraft')
+                    mappingsVersion = parchmentVersion
+                }
             }
 
             neoForge.runs {

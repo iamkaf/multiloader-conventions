@@ -415,7 +415,16 @@ class ConventionSupport {
 
         VersionCatalog libs = catalogs.named('libs')
         def version = libs.findVersion(alias)
-        version.present ? version.get().requiredVersion : null
+        if (!version.present) {
+            return null
+        }
+
+        def resolved = version.get().requiredVersion
+        if (resolved == null || resolved.isBlank() || resolved == 'null') {
+            return null
+        }
+
+        resolved
     }
 
     static String requiredProperty(Project project, String propertyName) {
