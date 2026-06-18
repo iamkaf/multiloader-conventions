@@ -14,15 +14,15 @@ fabric-api = "0.152.1+26.2"
 modmenu = "20.0.0-alpha.1"
 
 # NeoForge
-neoforge = "26.2.0.0-beta"
+neoforge = "26.2.0.2-beta"
 
 # Forge
 forge = "26.2-65.0.0"
 
 # Libraries
 mixin = "0.8.5"
-mixinextras = "0.4.1"
-gson = "2.10.1"
+mixinextras = "0.5.4"
+gson = "2.14.0"
 forge-config-api-port-fabric = "26.1.4"
 forge-config-api-port-forge = "26.1.4"
 
