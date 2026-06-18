@@ -2,9 +2,13 @@ package com.iamkaf.multiloader.root
 
 import com.iamkaf.multiloader.publishing.MultiloaderPublishingExtension
 import com.iamkaf.multiloader.translations.MultiloaderTranslationsExtension
+import groovy.json.JsonOutput
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.Task
+import org.gradle.api.file.RegularFile
+import org.gradle.api.provider.Provider
 
 import java.util.Properties
 
@@ -18,6 +22,7 @@ class MultiloaderRootPlugin implements Plugin<Project> {
     ]
     private static final Set<String> TEAKIT_RUN_TASK_NAMES = ['runClient', 'runLegacyClient'] as Set
     private static final String TEAKIT_PROPERTY_PREFIX = 'teakit.'
+    private static final List<String> KNOWN_LOADERS = ['fabric', 'forge', 'neoforge']
     private static final List<String> LEGACY_FABRIC_ONLY = ['1.14.4', '1.15', '1.15.1', '1.15.2', '1.16', '1.16.1', '1.16.2', '1.16.3', '1.16.4', '1.16.5', '1.17']
     private static final Map<String, String> FORGE_LOADER_RANGES = [
         '1.16.4':'[36,)', '1.16.5':'[36,)', '1.17.1':'[37,)',
@@ -48,6 +53,7 @@ class MultiloaderRootPlugin implements Plugin<Project> {
     private static void applyFlatRootPlugin(Project project) {
         applyCoordinates(project)
         registerFlatValidationTask(project)
+        registerBuildGraphTasks(project)
         registerAggregateTask(project, 'buildAllLoaders', 'build')
         registerAggregateTask(project, 'checkAllLoaders', 'check')
         registerRunClientTask(project, 'runClientFabric', 'fabric')
@@ -93,6 +99,8 @@ class MultiloaderRootPlugin implements Plugin<Project> {
                 }
             }
         }
+
+        registerBuildGraphTasks(project)
     }
 
     private static void applyCoordinates(Project project) {
@@ -259,6 +267,251 @@ class MultiloaderRootPlugin implements Plugin<Project> {
             .split(',')
             .collect { it.trim() }
             .findAll { !it.isBlank() }
+    }
+
+    private static void registerBuildGraphTasks(Project project) {
+        def graphFile = project.layout.buildDirectory.file('reports/multiloader/graph.json')
+
+        project.tasks.register('writeMultiloaderGraph') { task ->
+            task.group = 'help'
+            task.description = 'Writes the resolved multiloader build graph as JSON.'
+            task.outputs.file(graphFile)
+
+            task.doLast {
+                def outputFile = graphFile.get().asFile
+                outputFile.parentFile.mkdirs()
+                outputFile.text = graphJson(project) + System.lineSeparator()
+                project.logger.lifecycle("Wrote ${project.relativePath(outputFile)}")
+            }
+        }
+
+        project.tasks.register('printMultiloaderGraph') { task ->
+            task.group = 'help'
+            task.description = 'Prints the resolved multiloader build graph as JSON.'
+
+            task.doLast {
+                println graphJson(project)
+            }
+        }
+    }
+
+    private static String graphJson(Project project) {
+        JsonOutput.prettyPrint(JsonOutput.toJson(buildGraph(project)))
+    }
+
+    private static Map<String, Object> buildGraph(Project project) {
+        def versionDirs = versionDirectories(project)
+        def teaKitNodes = readTeaKitNodes(project)
+
+        [
+            schemaVersion: 1,
+            project      : [
+                name   : project.name,
+                group  : project.group?.toString(),
+                version: project.version?.toString(),
+            ],
+            mod          : [
+                id  : optionalProjectProperty(project, 'mod.id'),
+                name: optionalProjectProperty(project, 'mod.name'),
+            ],
+            conventions  : [
+                version          : optionalProjectProperty(project, 'project.plugins'),
+                stonecutterVersion: detectStonecutterVersion(project),
+            ],
+            versions     : versionDirs.isEmpty()
+                ? [flatVersionGraph(project, teaKitNodes)]
+                : versionDirs.collect { versionGraph(project, it, teaKitNodes) },
+        ]
+    }
+
+    private static Map<String, Object> flatVersionGraph(Project project, List<Map<String, String>> teaKitNodes) {
+        def props = new Properties()
+        ['project.minecraft', 'project.version', 'project.java', 'project.build-java', 'project.enabled-loaders',
+         'mod.minecraft-range', 'mod.fabric-range', 'mod.forge-loader-range', 'mod.neoforge-loader-range'].each { name ->
+            def value = optionalProjectProperty(project, name)
+            if (value != null) {
+                props.setProperty(name, value)
+            }
+        }
+
+        def minecraftVersion = props.getProperty('project.minecraft')
+        versionGraph(project, null, teaKitNodes, props, minecraftVersion)
+    }
+
+    private static Map<String, Object> versionGraph(Project project, File versionDir, List<Map<String, String>> teaKitNodes, Properties providedProps = null, String providedVersion = null) {
+        def props = providedProps ?: versionMetadata(versionDir)
+        def minecraftVersion = providedVersion ?: props.getProperty('project.minecraft') ?: versionDir.name
+        def enabledLoaders = parseEnabledLoaders(props)
+
+        [
+            name          : minecraftVersion,
+            minecraft     : minecraftVersion,
+            projectVersion: props.getProperty('project.version') ?: project.version?.toString(),
+            java          : props.getProperty('project.java'),
+            buildJava     : props.getProperty('project.build-java'),
+            catalog       : catalogName(minecraftVersion),
+            enabledLoaders: enabledLoaders,
+            ranges        : [
+                minecraft: props.getProperty('mod.minecraft-range'),
+                fabric   : props.getProperty('mod.fabric-range'),
+                forge    : props.getProperty('mod.forge-loader-range'),
+                neoforge : props.getProperty('mod.neoforge-loader-range'),
+            ].findAll { _, value -> value != null },
+            common        : commonGraph(project, minecraftVersion),
+            loaders       : KNOWN_LOADERS.collect { loader ->
+                loaderGraph(project, minecraftVersion, loader, enabledLoaders.contains(loader), teaKitNodes)
+            },
+        ]
+    }
+
+    private static Map<String, Object> commonGraph(Project project, String minecraftVersion) {
+        def commonPath = minecraftVersion == null ? ':common' : ":common:${minecraftVersion}"
+        def commonProject = project.findProject(commonPath)
+        [
+            projectPath      : commonPath,
+            projectExists    : commonProject != null,
+            compileTask      : taskPath(commonProject, 'compileJava'),
+            buildTask        : taskPath(commonProject, 'build'),
+            mavenPublishTasks: publishTasks(commonProject, 'publish', 'PublicationTo'),
+        ]
+    }
+
+    private static Map<String, Object> loaderGraph(Project project, String minecraftVersion, String loader, boolean enabled, List<Map<String, String>> teaKitNodes) {
+        def loaderPath = minecraftVersion == null ? ":${loader}" : ":${loader}:${minecraftVersion}"
+        def loaderProject = project.findProject(loaderPath)
+        def artifactTask = artifactTaskName(loader, minecraftVersion)
+        def artifactPath = archivePath(project, loaderProject, artifactTask) ?: archivePath(project, loaderProject, 'jar')
+        def publishSuffix = taskSuffix(minecraftVersion == null ? loader : "${minecraftVersion}-${loader}")
+
+        [
+            name              : loader,
+            enabled           : enabled,
+            projectPath       : loaderPath,
+            projectExists     : loaderProject != null,
+            loaderRootExists  : project.file(loader).isDirectory(),
+            buildTask         : taskPath(loaderProject, 'build'),
+            runClientTask     : taskPath(loaderProject, 'runClient'),
+            artifactTask      : taskPath(loaderProject, artifactTask) ?: taskPath(loaderProject, 'jar'),
+            artifactPath      : artifactPath,
+            mavenPublishTasks : publishTasks(loaderProject, 'publish', 'PublicationTo'),
+            platformPublishTasks: [
+                modrinth  : taskPath(project, "publishModrinth${publishSuffix}"),
+                curseforge: taskPath(project, "publishCurseforge${publishSuffix}"),
+            ].findAll { _, value -> value != null },
+            scenarioNodes     : teaKitNodes.findAll { node ->
+                node.loader == loader && (minecraftVersion == null || node.minecraft == minecraftVersion)
+            }.collect { it.name }.sort(),
+        ]
+    }
+
+    private static String taskPath(Project project, String taskName) {
+        if (project == null || taskName == null) {
+            return null
+        }
+        def task = project.tasks.findByName(taskName)
+        task == null ? null : task.path
+    }
+
+    private static List<String> publishTasks(Project project, String prefix, String contains) {
+        if (project == null) {
+            return []
+        }
+        project.tasks.findAll { task ->
+            task.name.startsWith(prefix) && task.name.contains(contains)
+        }.collect { it.path }.sort()
+    }
+
+    private static String archivePath(Project rootProject, Project targetProject, String taskName) {
+        if (targetProject == null || taskName == null) {
+            return null
+        }
+        def task = targetProject.tasks.findByName(taskName)
+        if (task == null || !task.hasProperty('archiveFile')) {
+            return null
+        }
+        def archiveFile = ((Provider<RegularFile>) task.property('archiveFile')).get().asFile
+        rootProject.relativePath(archiveFile)
+    }
+
+    private static String artifactTaskName(String loader, String minecraftVersion) {
+        loader == 'fabric' && minecraftVersion != null && !minecraftVersion.startsWith('26.') ? 'remapJar' : 'jar'
+    }
+
+    private static String optionalProjectProperty(Project project, String name) {
+        def value = project.findProperty(name)
+        if (value == null) {
+            return null
+        }
+        def text = value.toString().trim()
+        text.isEmpty() ? null : text
+    }
+
+    private static String catalogName(String minecraftVersion) {
+        if (minecraftVersion == null || minecraftVersion.isBlank()) {
+            return null
+        }
+        "libsMc${minecraftVersion.replace('.', '').replace('-', '')}"
+    }
+
+    private static String detectStonecutterVersion(Project project) {
+        def settingsFile = ['settings.gradle.kts', 'settings.gradle']
+            .collect { project.file(it) }
+            .find { it.isFile() }
+        if (settingsFile == null) {
+            return null
+        }
+
+        def text = settingsFile.getText('UTF-8')
+        def kotlinMatcher = text =~ /id\("dev\.kikugie\.stonecutter"\)\s+version\s+"([^"]+)"/
+        if (kotlinMatcher.find()) {
+            return kotlinMatcher.group(1)
+        }
+
+        def groovyMatcher = text =~ /id\s+['"]dev\.kikugie\.stonecutter['"]\s+version\s+['"]([^'"]+)['"]/
+        groovyMatcher.find() ? groovyMatcher.group(1) : null
+    }
+
+    private static List<Map<String, String>> readTeaKitNodes(Project project) {
+        def file = project.file('teakit.toml')
+        if (!file.isFile()) {
+            return []
+        }
+
+        def nodes = []
+        def current = null
+        file.eachLine('UTF-8') { line ->
+            def section = line =~ /^\s*\[nodes\."([^"]+)"\]\s*$/
+            if (section.find()) {
+                current = [name: section.group(1)]
+                nodes.add(current)
+                return
+            }
+
+            if (line ==~ /^\s*\[.*\]\s*$/) {
+                current = null
+                return
+            }
+
+            if (current == null) {
+                return
+            }
+
+            def property = line =~ /^\s*(loader|minecraft)\s*=\s*"([^"]+)"\s*$/
+            if (property.find()) {
+                current[property.group(1)] = property.group(2)
+            }
+        }
+        nodes.findAll { it.loader != null || it.minecraft != null }
+    }
+
+    private static String taskSuffix(String name) {
+        name
+            .replaceAll(/[^A-Za-z0-9]+/, ' ')
+            .trim()
+            .split(/\s+/)
+            .findAll { !it.isEmpty() }
+            .collect { token -> token.substring(0, 1).toUpperCase(Locale.ROOT) + token.substring(1) }
+            .join('')
     }
 
     private static Map<String, String> collectTeaKitSystemProperties(Project project) {
