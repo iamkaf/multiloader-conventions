@@ -42,7 +42,7 @@ version = '9.9.9'
         new File(testProjectDir, 'gradle.properties').text = '''
 project.group=com.example
 project.version=9.9.9
-project.plugins=2.1.2
+project.plugins=2.2-SNAPSHOT
 mod.id=graphmod
 mod.name=Graph Mod
 publish.dry-run=true
@@ -96,7 +96,7 @@ tasks = [":forge:26.2:runClient"]
         graph.schemaVersion == 1
         graph.mod.id == 'graphmod'
         graph.mod.name == 'Graph Mod'
-        graph.conventions.version == '2.1.2'
+        graph.conventions.version == '2.2-SNAPSHOT'
 
         version2612.enabledLoaders == ['fabric', 'neoforge']
         version2612.common.projectPath == ':common:26.1.2'
@@ -107,7 +107,7 @@ tasks = [":forge:26.2:runClient"]
         fabric2612.buildTask == ':fabric:26.1.2:build'
         fabric2612.runClientTask == ':fabric:26.1.2:runClient'
         fabric2612.artifactTask == ':fabric:26.1.2:jar'
-        fabric2612.artifactPath.endsWith('fabric/26.1.2/build/libs/graphmod-fabric-9.9.9.jar')
+        fabric2612.artifactPath.endsWith('fabric/26.1.2/build/libs/graphmod-fabric-9.9.9+26.1.2.jar')
         fabric2612.platformPublishTasks.modrinth == ':publishModrinth2612Fabric'
         fabric2612.platformPublishTasks.curseforge == ':publishCurseforge2612Fabric'
         fabric2612.scenarioNodes == ['26.1.2-fabric']

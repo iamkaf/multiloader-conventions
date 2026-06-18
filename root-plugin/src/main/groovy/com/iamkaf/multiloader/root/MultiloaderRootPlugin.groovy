@@ -7,8 +7,6 @@ import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
-import org.gradle.api.file.RegularFile
-import org.gradle.api.provider.Provider
 
 import java.util.Properties
 
@@ -359,7 +357,7 @@ class MultiloaderRootPlugin implements Plugin<Project> {
             ].findAll { _, value -> value != null },
             common        : commonGraph(project, minecraftVersion),
             loaders       : KNOWN_LOADERS.collect { loader ->
-                loaderGraph(project, minecraftVersion, loader, enabledLoaders.contains(loader), teaKitNodes)
+                loaderGraph(project, minecraftVersion, props, loader, enabledLoaders.contains(loader), teaKitNodes)
             },
         ]
     }
@@ -376,11 +374,12 @@ class MultiloaderRootPlugin implements Plugin<Project> {
         ]
     }
 
-    private static Map<String, Object> loaderGraph(Project project, String minecraftVersion, String loader, boolean enabled, List<Map<String, String>> teaKitNodes) {
+    private static Map<String, Object> loaderGraph(Project project, String minecraftVersion, Properties props, String loader, boolean enabled, List<Map<String, String>> teaKitNodes) {
         def loaderPath = minecraftVersion == null ? ":${loader}" : ":${loader}:${minecraftVersion}"
         def loaderProject = project.findProject(loaderPath)
         def artifactTask = artifactTaskName(loader, minecraftVersion)
-        def artifactPath = archivePath(project, loaderProject, artifactTask) ?: archivePath(project, loaderProject, 'jar')
+        def artifactTaskPath = taskPath(loaderProject, artifactTask) ?: taskPath(loaderProject, 'jar')
+        def artifactPath = artifactTaskPath == null ? null : artifactPath(project, loaderProject, loader, minecraftVersion, props)
         def publishSuffix = taskSuffix(minecraftVersion == null ? loader : "${minecraftVersion}-${loader}")
 
         [
@@ -391,7 +390,7 @@ class MultiloaderRootPlugin implements Plugin<Project> {
             loaderRootExists  : project.file(loader).isDirectory(),
             buildTask         : taskPath(loaderProject, 'build'),
             runClientTask     : taskPath(loaderProject, 'runClient'),
-            artifactTask      : taskPath(loaderProject, artifactTask) ?: taskPath(loaderProject, 'jar'),
+            artifactTask      : artifactTaskPath,
             artifactPath      : artifactPath,
             mavenPublishTasks : publishTasks(loaderProject, 'publish', 'PublicationTo'),
             platformPublishTasks: [
@@ -408,29 +407,30 @@ class MultiloaderRootPlugin implements Plugin<Project> {
         if (project == null || taskName == null) {
             return null
         }
-        def task = project.tasks.findByName(taskName)
-        task == null ? null : task.path
+        project.tasks.names.contains(taskName) ? taskPath(project.path, taskName) : null
     }
 
     private static List<String> publishTasks(Project project, String prefix, String contains) {
         if (project == null) {
             return []
         }
-        project.tasks.findAll { task ->
-            task.name.startsWith(prefix) && task.name.contains(contains)
-        }.collect { it.path }.sort()
+        project.tasks.names.findAll { name ->
+            name.startsWith(prefix) && name.contains(contains)
+        }.collect { name -> taskPath(project.path, name) }.sort()
     }
 
-    private static String archivePath(Project rootProject, Project targetProject, String taskName) {
-        if (targetProject == null || taskName == null) {
+    private static String taskPath(String projectPath, String taskName) {
+        projectPath == ':' ? ":${taskName}" : "${projectPath}:${taskName}"
+    }
+
+    private static String artifactPath(Project rootProject, Project targetProject, String loader, String minecraftVersion, Properties props) {
+        if (targetProject == null) {
             return null
         }
-        def task = targetProject.tasks.findByName(taskName)
-        if (task == null || !task.hasProperty('archiveFile')) {
-            return null
-        }
-        def archiveFile = ((Provider<RegularFile>) task.property('archiveFile')).get().asFile
-        rootProject.relativePath(archiveFile)
+        def projectVersion = props.getProperty('project.version') ?: rootProject.version?.toString()
+        def modId = optionalProjectProperty(rootProject, 'mod.id') ?: rootProject.name
+        def archiveName = "${modId}-${loader}-${projectVersion}.jar"
+        rootProject.relativePath(new File(targetProject.layout.buildDirectory.get().asFile, "libs/${archiveName}"))
     }
 
     private static String artifactTaskName(String loader, String minecraftVersion) {
