@@ -1,0 +1,33 @@
+[versions]
+# Settings and build controller plugins
+foojay-resolver-convention-plugin = "1.0.0"
+foojay-resolver = "1.0.0"
+stonecutter = "0.9.2"
+
+# Loader/build plugins
+fabric-loom-plugin = "1.17-SNAPSHOT"
+fabric-loom = "1.17.12"
+neoforge-moddev = "2.0.141"
+forgegradle = "7.0.28"
+neogradle-userdev = "7.1.38"
+
+# Shared Stonecutter parameters
+resource-location-identifier-threshold = "1.21.11"
+
+[libraries]
+foojay-resolver = { group = "org.gradle.toolchains", name = "foojay-resolver", version.ref = "foojay-resolver" }
+stonecutter = { group = "dev.kikugie", name = "stonecutter", version.ref = "stonecutter" }
+fabric-loom = { group = "net.fabricmc", name = "fabric-loom", version.ref = "fabric-loom" }
+neoforge-moddev-plugin = { group = "net.neoforged.moddev", name = "net.neoforged.moddev.gradle.plugin", version.ref = "neoforge-moddev" }
+neoforge-legacyforge-plugin = { group = "net.neoforged.moddev.legacyforge", name = "net.neoforged.moddev.legacyforge.gradle.plugin", version.ref = "neoforge-moddev" }
+forgegradle = { group = "net.minecraftforge", name = "forgegradle", version.ref = "forgegradle" }
+neogradle-userdev = { group = "net.neoforged.gradle", name = "userdev", version.ref = "neogradle-userdev" }
+
+[plugins]
+foojay-resolver-convention = { id = "org.gradle.toolchains.foojay-resolver-convention", version.ref = "foojay-resolver-convention-plugin" }
+stonecutter = { id = "dev.kikugie.stonecutter", version.ref = "stonecutter" }
+fabric-loom = { id = "net.fabricmc.fabric-loom", version.ref = "fabric-loom-plugin" }
+fabric-loom-legacy = { id = "fabric-loom", version.ref = "fabric-loom-plugin" }
+neoforge-moddev = { id = "net.neoforged.moddev", version.ref = "neoforge-moddev" }
+neoforge-legacyforge = { id = "net.neoforged.moddev.legacyforge", version.ref = "neoforge-moddev" }
+forgegradle = { id = "net.minecraftforge.gradle", version.ref = "forgegradle" }

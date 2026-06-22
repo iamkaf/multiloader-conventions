@@ -1,5 +1,6 @@
 rootProject.name = 'platform'
 
+include 'build-tools'
 include 'mc-1.14.4'
 include 'mc-1.15'
 include 'mc-1.15.1'
