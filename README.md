@@ -7,7 +7,7 @@ This repo is the shared build layer used by the branch-based Stonecutter project
 Current release in this repo:
 
 - Group: `com.iamkaf.multiloader`
-- Version: `2.2-SNAPSHOT`
+- Version: `2.3-SNAPSHOT`
 
 ## Plugin Set
 

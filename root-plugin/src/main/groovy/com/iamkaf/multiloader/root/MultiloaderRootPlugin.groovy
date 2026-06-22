@@ -1,5 +1,6 @@
 package com.iamkaf.multiloader.root
 
+import com.iamkaf.multiloader.support.BuildToolsVersions
 import com.iamkaf.multiloader.publishing.MultiloaderPublishingExtension
 import com.iamkaf.multiloader.translations.MultiloaderTranslationsExtension
 import groovy.json.JsonOutput
@@ -62,6 +63,7 @@ class MultiloaderRootPlugin implements Plugin<Project> {
     private static void applyStonecutterRootPlugin(Project project) {
         project.pluginManager.apply('com.iamkaf.multiloader.publishing')
         project.pluginManager.apply('com.iamkaf.multiloader.translations')
+        configureStonecutterDefaults(project)
 
         applyCoordinates(project)
 
@@ -314,7 +316,7 @@ class MultiloaderRootPlugin implements Plugin<Project> {
             ],
             conventions  : [
                 version          : optionalProjectProperty(project, 'project.plugins'),
-                stonecutterVersion: detectStonecutterVersion(project),
+                stonecutterVersion: BuildToolsVersions.required('stonecutterPlugin'),
             ],
             versions     : versionDirs.isEmpty()
                 ? [flatVersionGraph(project, teaKitNodes)]
@@ -453,24 +455,6 @@ class MultiloaderRootPlugin implements Plugin<Project> {
         "libsMc${minecraftVersion.replace('.', '').replace('-', '')}"
     }
 
-    private static String detectStonecutterVersion(Project project) {
-        def settingsFile = ['settings.gradle.kts', 'settings.gradle']
-            .collect { project.file(it) }
-            .find { it.isFile() }
-        if (settingsFile == null) {
-            return null
-        }
-
-        def text = settingsFile.getText('UTF-8')
-        def kotlinMatcher = text =~ /id\("dev\.kikugie\.stonecutter"\)\s+version\s+"([^"]+)"/
-        if (kotlinMatcher.find()) {
-            return kotlinMatcher.group(1)
-        }
-
-        def groovyMatcher = text =~ /id\s+['"]dev\.kikugie\.stonecutter['"]\s+version\s+['"]([^'"]+)['"]/
-        groovyMatcher.find() ? groovyMatcher.group(1) : null
-    }
-
     private static List<Map<String, String>> readTeaKitNodes(Project project) {
         def file = project.file('teakit.toml')
         if (!file.isFile()) {
@@ -534,5 +518,32 @@ class MultiloaderRootPlugin implements Plugin<Project> {
             }
 
         properties
+    }
+
+    private static void configureStonecutterDefaults(Project project) {
+        project.plugins.withId('dev.kikugie.stonecutter') {
+            if (hasLocalStonecutterHandlersConfig(project)) {
+                return
+            }
+
+            project.extensions.configure('stonecutter') { stonecutter ->
+                stonecutter.handlers {
+                    inherit('json5', 'json')
+                }
+            }
+        }
+    }
+
+    private static boolean hasLocalStonecutterHandlersConfig(Project project) {
+        def controllerFile = ['stonecutter.gradle.kts', 'stonecutter.gradle']
+            .collect { project.file(it) }
+            .find { it.isFile() }
+        if (controllerFile == null) {
+            return false
+        }
+
+        def text = controllerFile.getText('UTF-8')
+        text.contains('stonecutter handlers') ||
+            text.contains('stonecutter.handlers')
     }
 }

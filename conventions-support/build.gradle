@@ -2,6 +2,8 @@ plugins {
     id 'groovy'
 }
 
+import org.gradle.api.artifacts.VersionCatalogsExtension
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(providers.gradleProperty('project.java').get().toInteger())
@@ -11,4 +13,39 @@ java {
 dependencies {
     implementation gradleApi()
     implementation localGroovy()
+}
+
+def buildToolsCatalog = extensions.getByType(VersionCatalogsExtension).named('buildTools')
+def generatedBuildToolsResources = layout.buildDirectory.dir('generated/build-tools-resources')
+
+tasks.register('generateBuildToolsVersionResource') {
+    def outputFile = generatedBuildToolsResources.map {
+        it.file('com/iamkaf/multiloader/support/build-tools.properties')
+    }
+    outputs.file(outputFile)
+
+    doLast {
+        def requiredVersion = { String alias ->
+            buildToolsCatalog.findVersion(alias)
+                .orElseThrow { new GradleException("Missing build-tools catalog version '${alias}'") }
+                .requiredVersion
+        }
+
+        def file = outputFile.get().asFile
+        file.parentFile.mkdirs()
+        file.text = [
+            "foojayResolverConventionPlugin=${requiredVersion('foojay-resolver-convention-plugin')}",
+            "stonecutterPlugin=${requiredVersion('stonecutter')}",
+            "fabricLoomPlugin=${requiredVersion('fabric-loom-plugin')}",
+            "neoforgeModDevPlugin=${requiredVersion('neoforge-moddev')}",
+            "neoforgeLegacyForgePlugin=${requiredVersion('neoforge-moddev')}",
+            "forgeGradlePlugin=${requiredVersion('forgegradle')}",
+            '',
+        ].join(System.lineSeparator())
+    }
+}
+
+sourceSets.main.resources.srcDir(generatedBuildToolsResources)
+tasks.named('processResources') {
+    dependsOn tasks.named('generateBuildToolsVersionResource')
 }

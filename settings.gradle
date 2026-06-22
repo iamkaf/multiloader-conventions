@@ -1,9 +1,29 @@
 pluginManagement {
     repositories {
+        mavenLocal()
+        maven {
+            url = uri('https://maven.kaf.sh')
+        }
         gradlePluginPortal()
         mavenCentral()
         maven {
             url = uri('https://maven.fabricmc.net')
+        }
+    }
+}
+
+dependencyResolutionManagement {
+    repositories {
+        mavenLocal()
+        maven {
+            url = uri('https://maven.kaf.sh')
+        }
+        gradlePluginPortal()
+        mavenCentral()
+    }
+    versionCatalogs {
+        buildTools {
+            from("com.iamkaf.platform:build-tools:${providers.gradleProperty('build-tools.version').get()}")
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.iamkaf.multiloader.settings
 
+import com.iamkaf.multiloader.support.BuildToolsVersions
 import dev.kikugie.stonecutter.settings.StonecutterSettingsExtension
 import dev.kikugie.stonecutter.settings.tree.BranchBuilder
 import dev.kikugie.stonecutter.settings.tree.TreeBuilder
@@ -12,13 +13,13 @@ import java.util.Properties
 class MultiloaderSettingsPlugin implements Plugin<Settings> {
 
     private static final List<String> KNOWN_LOADERS = ['fabric', 'forge', 'neoforge']
-    private static final String STONECUTTER_VERSION = '0.9.2'
     private static final List<String> LEGACY_FABRIC_ONLY = ['1.14.4', '1.15', '1.15.1', '1.15.2', '1.16', '1.16.1', '1.16.2', '1.16.3', '1.16.4', '1.16.5', '1.17']
 
     @Override
     void apply(Settings settings) {
         configurePluginRepositories(settings)
         configureConventionPluginVersions(settings)
+        applySettingsPlugins(settings)
 
         def versionDirs = versionDirectories(settings)
         if (!versionDirs.isEmpty()) {
@@ -67,7 +68,13 @@ class MultiloaderSettingsPlugin implements Plugin<Settings> {
         def conventionsVersion = settings.providers.gradleProperty('project.plugins').orNull
 
         settings.pluginManagement.plugins {
-            id('dev.kikugie.stonecutter') version STONECUTTER_VERSION
+            id('org.gradle.toolchains.foojay-resolver-convention') version BuildToolsVersions.required('foojayResolverConventionPlugin')
+            id('dev.kikugie.stonecutter') version BuildToolsVersions.required('stonecutterPlugin')
+            id('fabric-loom') version BuildToolsVersions.required('fabricLoomPlugin')
+            id('net.fabricmc.fabric-loom') version BuildToolsVersions.required('fabricLoomPlugin')
+            id('net.neoforged.moddev') version BuildToolsVersions.required('neoforgeModDevPlugin')
+            id('net.neoforged.moddev.legacyforge') version BuildToolsVersions.required('neoforgeLegacyForgePlugin')
+            id('net.minecraftforge.gradle') version BuildToolsVersions.required('forgeGradlePlugin')
             if (conventionsVersion != null && !conventionsVersion.isBlank()) {
                 id('com.iamkaf.multiloader.core') version conventionsVersion
                 id('com.iamkaf.multiloader.common') version conventionsVersion
@@ -79,6 +86,11 @@ class MultiloaderSettingsPlugin implements Plugin<Settings> {
                 id('com.iamkaf.multiloader.root') version conventionsVersion
             }
         }
+    }
+
+    private static void applySettingsPlugins(Settings settings) {
+        settings.pluginManager.apply('org.gradle.toolchains.foojay-resolver-convention')
+        settings.pluginManager.apply('dev.kikugie.stonecutter')
     }
 
     private static void configureFlatDependencyResolution(Settings settings) {

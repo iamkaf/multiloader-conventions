@@ -8,6 +8,7 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.AtomicMoveNotSupportedException
@@ -15,6 +16,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 
+@DisableCachingByDefault(because = 'Downloads remote translation exports and always refreshes its outputs.')
 abstract class DownloadTranslationsTask extends DefaultTask {
 
     @Input

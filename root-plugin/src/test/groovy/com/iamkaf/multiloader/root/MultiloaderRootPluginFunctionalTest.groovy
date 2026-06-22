@@ -42,7 +42,7 @@ version = '9.9.9'
         new File(testProjectDir, 'gradle.properties').text = '''
 project.group=com.example
 project.version=9.9.9
-project.plugins=2.2-SNAPSHOT
+project.plugins=2.3-SNAPSHOT
 mod.id=graphmod
 mod.name=Graph Mod
 publish.dry-run=true
@@ -96,7 +96,7 @@ tasks = [":forge:26.2:runClient"]
         graph.schemaVersion == 1
         graph.mod.id == 'graphmod'
         graph.mod.name == 'Graph Mod'
-        graph.conventions.version == '2.2-SNAPSHOT'
+        graph.conventions.version == '2.3-SNAPSHOT'
 
         version2612.enabledLoaders == ['fabric', 'neoforge']
         version2612.common.projectPath == ':common:26.1.2'

@@ -15,6 +15,7 @@ repositories {
 }
 
 dependencies {
+    implementation project(':conventions-support')
     implementation project(':publishing-plugin')
     implementation project(':translations-plugin')
 
