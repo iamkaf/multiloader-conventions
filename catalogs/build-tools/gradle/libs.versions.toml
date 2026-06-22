@@ -11,9 +11,6 @@ neoforge-moddev = "2.0.141"
 forgegradle = "7.0.28"
 neogradle-userdev = "7.1.38"
 
-# Shared Stonecutter parameters
-resource-location-identifier-threshold = "1.21.11"
-
 [libraries]
 foojay-resolver = { group = "org.gradle.toolchains", name = "foojay-resolver", version.ref = "foojay-resolver" }
 stonecutter = { group = "dev.kikugie", name = "stonecutter", version.ref = "stonecutter" }
