@@ -144,6 +144,54 @@ environments.server=required
         !result.output.contains('[Publishing] Modrinth dryRun payload (testmod-forge-1.2.3.jar)')
     }
 
+    def "platform dependencies can come from active version properties"() {
+        given:
+        new File(testProjectDir, 'gradle.properties').text = '''
+mod.name=Test Mod
+mod.id=testmod
+publish.release-type=release
+publish.dry-run=true
+publish.modrinth.id=test-mod
+publish.curseforge.id=123456
+environments.client=required
+environments.server=required
+'''.stripIndent()
+
+        def versionProperties = new File(testProjectDir, 'versions/26.2/gradle.properties')
+        versionProperties.parentFile.mkdirs()
+        versionProperties.text = '''
+project.minecraft=26.2
+project.java=25
+project.enabled-loaders=fabric
+publish.game-versions=26.2
+dependencies.modrinth.required=amber,konfig
+dependencies.curseforge.required=amber-lib,konfig
+'''.stripIndent()
+
+        when:
+        def result = GradleRunner.create()
+            .withProjectDir(testProjectDir)
+            .withPluginClasspath()
+            .withArguments(
+                'publishModrinthFabric',
+                'publishCurseforgeFabric',
+                '-Pmultiloader.stonecutter.active=26.2',
+                '--stacktrace',
+            )
+            .build()
+
+        then:
+        result.task(':publishModrinthFabric').outcome == TaskOutcome.SUCCESS
+        result.task(':publishCurseforgeFabric').outcome == TaskOutcome.SUCCESS
+        result.output.contains('"project_id": "amber"')
+        result.output.contains('"project_id": "konfig"')
+        result.output.contains('"dependency_type": "required"')
+        result.output.contains('"relations": {')
+        result.output.contains('"slug": "amber-lib"')
+        result.output.contains('"slug": "konfig"')
+        result.output.contains('"type": "requiredDependency"')
+    }
+
     def "explicit publications support matrix artifacts with per-project game and java versions"() {
         given:
         new File(testProjectDir, 'settings.gradle').text = '''

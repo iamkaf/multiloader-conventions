@@ -62,7 +62,7 @@ class StonecutterConventionSupport {
             }
         }
 
-        def directValue = project.findProperty(name)?.toString()
+        def directValue = scopedProperty(project, name)
         if (directValue != null && !directValue.isBlank()) {
             if (name == 'publish.game-versions' && directValue == 'auto') {
                 return optionalProp(project, 'project.minecraft')
@@ -79,6 +79,19 @@ class StonecutterConventionSupport {
             return project.name
         }
 
+        def explicitActive = scopedProperty(project, 'multiloader.stonecutter.active')?.trim()
+        if (explicitActive) {
+            return explicitActive
+        }
+
+        def targetVersions = scopedProperty(project, MultiloaderTargetScope.VERSIONS_PROPERTY)?.trim()
+        if (targetVersions && !targetVersions.equalsIgnoreCase('all')) {
+            def targets = targetVersions.split(',').collect { it.trim() }.findAll { !it.isEmpty() && !it.equalsIgnoreCase('all') }.unique()
+            if (targets.size() == 1) {
+                return targets[0]
+            }
+        }
+
         def stonecutterBuild = project.extensions.findByName('stonecutterBuild') ?: project.extensions.findByName('stonecutter')
         def currentVersion = stonecutterBuild?.current?.version?.toString()
         if (currentVersion != null && !currentVersion.isBlank()) {
@@ -86,6 +99,11 @@ class StonecutterConventionSupport {
         }
 
         null
+    }
+
+    private static String scopedProperty(Project project, String name) {
+        def value = project.findProperty(name) ?: project.rootProject.findProperty(name)
+        value?.toString()
     }
 
     private static Properties versionMetadata(String versionKey) {

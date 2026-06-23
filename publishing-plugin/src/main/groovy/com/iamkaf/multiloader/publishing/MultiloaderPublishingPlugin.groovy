@@ -1,5 +1,6 @@
 package com.iamkaf.multiloader.publishing
 
+import com.iamkaf.multiloader.support.StonecutterConventionSupport
 import me.hypherionmc.curseupload.CurseUploadApi
 import me.hypherionmc.curseupload.constants.CurseChangelogType
 import me.hypherionmc.curseupload.constants.CurseReleaseType
@@ -523,20 +524,15 @@ class MultiloaderPublishingPlugin implements Plugin<Project> {
     }
 
     private static String requiredProperty(Project project, String name) {
-        def value = project.findProperty(name)
-        if (value == null || value.toString().trim().isEmpty()) {
+        def value = optionalProperty(project, name)
+        if (value == null || value.trim().isEmpty()) {
             throw new IllegalStateException("[Publishing] Missing required Gradle property '${name}' for ${project.path}")
         }
-        value.toString()
+        value
     }
 
     private static String optionalProperty(Project project, String name) {
-        def value = project.findProperty(name)
-        if (value == null) {
-            return null
-        }
-        def trimmed = value.toString().trim()
-        trimmed.isEmpty() ? null : trimmed
+        StonecutterConventionSupport.optionalProp(project, name)
     }
 
     private static String projectProperty(Project project, String name) {
