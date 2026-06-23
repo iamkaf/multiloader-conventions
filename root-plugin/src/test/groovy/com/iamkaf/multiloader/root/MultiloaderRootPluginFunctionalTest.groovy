@@ -1,6 +1,8 @@
 package com.iamkaf.multiloader.root
 
 import groovy.json.JsonSlurper
+import org.gradle.api.Project
+import org.gradle.testfixtures.ProjectBuilder
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
 import spock.lang.Specification
@@ -108,6 +110,10 @@ tasks = [":forge:26.2:runClient"]
         fabric2612.runClientTask == ':fabric:26.1.2:runClient'
         fabric2612.artifactTask == ':fabric:26.1.2:jar'
         fabric2612.artifactPath.endsWith('fabric/26.1.2/build/libs/graphmod-fabric-9.9.9+26.1.2.jar')
+        fabric2612.mavenPublishTasks == [
+            ':fabric:26.1.2:publishMavenJavaPublicationToKafMavenRepository',
+            ':fabric:26.1.2:publishMavenJavaPublicationToMavenLocal',
+        ]
         fabric2612.platformPublishTasks.modrinth == ':publishModrinth2612Fabric'
         fabric2612.platformPublishTasks.curseforge == ':publishCurseforge2612Fabric'
         fabric2612.scenarioNodes == ['26.1.2-fabric']
@@ -137,6 +143,81 @@ tasks = [":forge:26.2:runClient"]
         def report = new File(testProjectDir, 'build/reports/multiloader/graph.json')
         report.isFile()
         new JsonSlurper().parse(report).mod.id == 'graphmod'
+    }
+
+    def "writeMultiloaderGraph does not realize unrelated lazy task providers"() {
+        given:
+        new File(testProjectDir, 'common/26.1.2/build.gradle') << '''
+
+tasks.register('genSourcesWithCfr') {
+    throw new GradleException('genSourcesWithCfr should not be realized while writing the graph')
+}
+'''.stripIndent()
+
+        when:
+        def result = GradleRunner.create()
+            .withProjectDir(testProjectDir)
+            .withPluginClasspath()
+            .withArguments('writeMultiloaderGraph', '--stacktrace')
+            .build()
+
+        then:
+        result.task(':writeMultiloaderGraph').outcome == TaskOutcome.SUCCESS
+    }
+
+    def "target scope limits root publish task registration"() {
+        when:
+        def result = GradleRunner.create()
+            .withProjectDir(testProjectDir)
+            .withPluginClasspath()
+            .withArguments(
+                'tasks',
+                '--all',
+                '-Pmultiloader.target.versions=26.2',
+                '-Pmultiloader.target.loaders=forge',
+                '--stacktrace',
+            )
+            .build()
+
+        then:
+        result.output.contains('publishModrinth262Forge')
+        result.output.contains('publishCurseforge262Forge')
+        !result.output.contains('publishModrinth262Fabric')
+        !result.output.contains('publishCurseforge262Fabric')
+        !result.output.contains('publishModrinth2612')
+        !result.output.contains('publishCurseforge2612')
+    }
+
+    def "root plugin exposes multiloader stonecutter extension"() {
+        given:
+        Project project = ProjectBuilder.builder().build()
+
+        when:
+        project.pluginManager.apply(MultiloaderRootPlugin)
+
+        then:
+        project.extensions.findByName('multiloaderStonecutter') instanceof MultiloaderStonecutterExtension
+    }
+
+    def "multiloader stonecutter active version honors explicit and scoped overrides"() {
+        given:
+        Project project = ProjectBuilder.builder().build()
+        def extension = new MultiloaderStonecutterExtension(project)
+
+        expect:
+        extension.active('26.2') == '26.2'
+
+        when:
+        project.extensions.extraProperties.set('multiloader.target.versions', '26.1.2,26.1')
+
+        then:
+        extension.active('26.2') == '26.1.2'
+
+        when:
+        project.extensions.extraProperties.set('multiloader.stonecutter.active', '1.18.2')
+
+        then:
+        extension.active('26.2') == '1.18.2'
     }
 
     private void writeVersion(String version, String loaders) {

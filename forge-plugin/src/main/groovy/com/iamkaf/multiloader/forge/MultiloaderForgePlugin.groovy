@@ -138,6 +138,11 @@ class MultiloaderForgePlugin implements Plugin<Project> {
         def requiredProp = { String name -> project.ext.requiredProp.call(project, name) }
         def optionalProp = { String name -> project.ext.optionalProp.call(project, name) }
         def minecraftVersion = requiredProp('project.minecraft')
+        if (isGraphOnlyBuild(project)) {
+            configureStonecutterForgeGraphOnly(project, requiredProp, minecraftVersion)
+            return
+        }
+
         def useLegacyForgePlugin = usesLegacyForgePlugin(minecraftVersion)
         project.pluginManager.apply(useLegacyForgePlugin ? 'net.neoforged.moddev.legacyforge' : 'net.minecraftforge.gradle')
         requireSupportedForgeVersion(project, minecraftVersion)
@@ -387,6 +392,77 @@ class MultiloaderForgePlugin implements Plugin<Project> {
         project.ext.publishingRepositories.call(project.extensions.getByType(PublishingExtension), project.version.toString())
     }
 
+    private static void configureStonecutterForgeGraphOnly(Project project, Closure requiredProp, String minecraftVersion) {
+        def modId = requiredProp('mod.id')
+        def loader = requiredProp('loader')
+        def mergedJavaDir = project.layout.buildDirectory.dir('generated/merged/main/java')
+        def mergedResourcesDir = project.layout.buildDirectory.dir('generated/merged/main/resources')
+
+        project.group = requiredProp('project.group')
+        project.version = requiredProp('project.version')
+
+        project.extensions.configure(BasePluginExtension) { base ->
+            base.archivesName = "${modId}-${loader}"
+        }
+
+        project.tasks.register('stageMergedJavaSources', Sync) { task ->
+            task.duplicatesStrategy = DuplicatesStrategy.INCLUDE
+            task.into(mergedJavaDir)
+        }
+
+        project.tasks.register('stageMergedResources', Sync) { task ->
+            task.duplicatesStrategy = DuplicatesStrategy.INCLUDE
+            task.into(mergedResourcesDir)
+        }
+
+        project.sourceSets {
+            main {
+                java.srcDirs = [mergedJavaDir.get().asFile]
+                resources.srcDirs = [mergedResourcesDir.get().asFile]
+            }
+        }
+
+        project.extensions.configure(JavaPluginExtension) { java ->
+            java.withSourcesJar()
+            java.withJavadocJar()
+            java.toolchain.languageVersion = JavaLanguageVersion.of(requiredProp('project.java').toInteger())
+        }
+
+        project.tasks.withType(JavaCompile).configureEach {
+            options.encoding = 'UTF-8'
+        }
+        ConventionSupport.configureJavadoc(project)
+
+        project.tasks.withType(ProcessResources).configureEach {
+            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+            exclude('.cache/**')
+        }
+
+        project.tasks.withType(Jar).configureEach {
+            exclude('.cache/**')
+        }
+
+        project.tasks.named('sourcesJar', Jar).configure {
+            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        }
+
+        project.tasks.register('runClient') { task ->
+            task.group = 'minecraft'
+            task.description = "Placeholder Forge client run task for graph-only ${minecraftVersion} builds."
+        }
+
+        project.extensions.configure(PublishingExtension) { publishing ->
+            publishing.publications {
+                mavenJava(MavenPublication) {
+                    from project.components.java
+                    artifactId = project.base.archivesName.get()
+                }
+            }
+        }
+
+        project.ext.publishingRepositories.call(project.extensions.getByType(PublishingExtension), project.version.toString())
+    }
+
     private static void configureFlatLegacyForge(Project project, String minecraftVersion, List<String> mixinConfigs, boolean usesUnobfuscatedMinecraft, File accessTransformerFile) {
         project.extensions.configure('legacyForge') { legacyForge ->
             if (usesUnobfuscatedMinecraft) {
@@ -508,6 +584,14 @@ class MultiloaderForgePlugin implements Plugin<Project> {
             minecraftVersion == '1.16' ||
             minecraftVersion?.startsWith('1.16.')) {
             throw new GradleException("Forge convention support starts at Minecraft 1.17. Keep ${project.path} on a repo-local legacy setup for ${minecraftVersion}.")
+        }
+    }
+
+    private static boolean isGraphOnlyBuild(Project project) {
+        def taskNames = project.gradle.startParameter.taskNames
+        !taskNames.isEmpty() && taskNames.every { taskName ->
+            def requested = taskName.tokenize(':').last()
+            requested == 'writeMultiloaderGraph' || requested == 'printMultiloaderGraph'
         }
     }
 

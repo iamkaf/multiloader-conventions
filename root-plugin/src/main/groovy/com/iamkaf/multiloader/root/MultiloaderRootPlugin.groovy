@@ -1,9 +1,11 @@
 package com.iamkaf.multiloader.root
 
 import com.iamkaf.multiloader.support.BuildToolsVersions
+import com.iamkaf.multiloader.support.MultiloaderTargetScope
 import com.iamkaf.multiloader.publishing.MultiloaderPublishingExtension
 import com.iamkaf.multiloader.translations.MultiloaderTranslationsExtension
 import groovy.json.JsonOutput
+import org.gradle.api.UnknownTaskException
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -39,6 +41,7 @@ class MultiloaderRootPlugin implements Plugin<Project> {
             throw new GradleException('com.iamkaf.multiloader.root must be applied to the root project only.')
         }
 
+        project.extensions.create('multiloaderStonecutter', MultiloaderStonecutterExtension, project)
         configureTeaKitRunPropertyForwarding(project)
 
         if (hasVersionMatrix(project)) {
@@ -69,6 +72,7 @@ class MultiloaderRootPlugin implements Plugin<Project> {
 
         def modId = requiredProperty(project, 'mod.id')
         def versionDirs = versionDirectories(project)
+        def targetScope = MultiloaderTargetScope.fromProject(project, enabledLoadersByVersion(versionDirs))
 
         project.extensions.configure(MultiloaderTranslationsExtension) { extension ->
             extension.projectSlug.set(project.providers.gradleProperty('mod.id'))
@@ -76,11 +80,11 @@ class MultiloaderRootPlugin implements Plugin<Project> {
         }
 
         project.extensions.configure(MultiloaderPublishingExtension) { extension ->
-            versionDirs.each { dir ->
+            versionDirs.findAll { dir -> targetScope.includesVersion(dir.name) }.each { dir ->
                 def props = versionMetadata(dir)
                 def minecraftVersion = props.getProperty('project.minecraft')
                 def javaVersion = props.getProperty('project.java')
-                def enabledLoaders = parseEnabledLoaders(props)
+                def enabledLoaders = targetScope.loadersFor(dir.name)
 
                 enabledLoaders.each { loaderId ->
                     extension.publication("${minecraftVersion}-${loaderId}") {
@@ -269,6 +273,14 @@ class MultiloaderRootPlugin implements Plugin<Project> {
             .findAll { !it.isBlank() }
     }
 
+    private static Map<String, List<String>> enabledLoadersByVersion(List<File> versionDirs) {
+        def versions = [:] as LinkedHashMap<String, List<String>>
+        versionDirs.each { dir ->
+            versions[dir.name] = parseEnabledLoaders(versionMetadata(dir))
+        }
+        versions
+    }
+
     private static void registerBuildGraphTasks(Project project) {
         def graphFile = project.layout.buildDirectory.file('reports/multiloader/graph.json')
 
@@ -409,16 +421,53 @@ class MultiloaderRootPlugin implements Plugin<Project> {
         if (project == null || taskName == null) {
             return null
         }
-        project.tasks.names.contains(taskName) ? taskPath(project.path, taskName) : null
+        if (!hasTask(project, taskName)) {
+            return null
+        }
+        taskPath(project.path, taskName)
     }
 
     private static List<String> publishTasks(Project project, String prefix, String contains) {
         if (project == null) {
             return []
         }
-        project.tasks.names.findAll { name ->
-            name.startsWith(prefix) && name.contains(contains)
-        }.collect { name -> taskPath(project.path, name) }.sort()
+
+        def taskPaths = [] as LinkedHashSet<String>
+        publicationNameCandidates(project).each { publicationName ->
+            def publicationSuffix = taskSuffix(publicationName)
+            addPublishTask(project, taskPaths, "${prefix}${publicationSuffix}${contains}MavenLocal")
+            addPublishTask(project, taskPaths, "${prefix}${publicationSuffix}${contains}KafMavenRepository")
+        }
+
+        taskPaths.sort()
+    }
+
+    private static List<String> publicationNameCandidates(Project project) {
+        def candidates = ['mavenJava'] as LinkedHashSet<String>
+        project.path
+            .tokenize(':')
+            .findAll { part -> part == 'common' || KNOWN_LOADERS.contains(part) }
+            .each { candidates.add(it) }
+        if (project.name != null && !project.name.isBlank()) {
+            candidates.add(project.name)
+        }
+        candidates as List<String>
+    }
+
+    private static void addPublishTask(Project project, Set<String> taskPaths, String taskName) {
+        def path = taskPath(project, taskName)
+        if (path != null) {
+            taskPaths.add(path)
+        }
+    }
+
+    private static boolean hasTask(Project project, String taskName) {
+        try {
+            project.tasks.named(taskName)
+            true
+        } catch (UnknownTaskException ignored) {
+            false
+        }
     }
 
     private static String taskPath(String projectPath, String taskName) {
@@ -522,28 +571,11 @@ class MultiloaderRootPlugin implements Plugin<Project> {
 
     private static void configureStonecutterDefaults(Project project) {
         project.plugins.withId('dev.kikugie.stonecutter') {
-            if (hasLocalStonecutterHandlersConfig(project)) {
-                return
-            }
-
             project.extensions.configure('stonecutter') { stonecutter ->
                 stonecutter.handlers {
                     inherit('json5', 'json')
                 }
             }
         }
-    }
-
-    private static boolean hasLocalStonecutterHandlersConfig(Project project) {
-        def controllerFile = ['stonecutter.gradle.kts', 'stonecutter.gradle']
-            .collect { project.file(it) }
-            .find { it.isFile() }
-        if (controllerFile == null) {
-            return false
-        }
-
-        def text = controllerFile.getText('UTF-8')
-        text.contains('stonecutter handlers') ||
-            text.contains('stonecutter.handlers')
     }
 }

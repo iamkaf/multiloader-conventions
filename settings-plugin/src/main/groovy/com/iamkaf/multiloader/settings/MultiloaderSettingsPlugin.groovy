@@ -1,6 +1,7 @@
 package com.iamkaf.multiloader.settings
 
 import com.iamkaf.multiloader.support.BuildToolsVersions
+import com.iamkaf.multiloader.support.MultiloaderTargetScope
 import dev.kikugie.stonecutter.settings.StonecutterSettingsExtension
 import dev.kikugie.stonecutter.settings.tree.BranchBuilder
 import dev.kikugie.stonecutter.settings.tree.TreeBuilder
@@ -23,9 +24,13 @@ class MultiloaderSettingsPlugin implements Plugin<Settings> {
 
         def versionDirs = versionDirectories(settings)
         if (!versionDirs.isEmpty()) {
-            configureStonecutterDependencyResolution(settings, versionDirs)
-            configureStonecutterRootName(settings, versionDirs)
-            configureStonecutterProjects(settings, versionDirs)
+            def enabledLoadersByVersion = enabledLoadersByVersion(settings, versionDirs)
+            def targetScope = MultiloaderTargetScope.fromSettings(settings, enabledLoadersByVersion)
+            def includedVersionDirs = versionDirs.findAll { dir -> targetScope.includesVersion(dir.name) }
+
+            configureStonecutterDependencyResolution(settings, includedVersionDirs)
+            configureStonecutterRootName(settings, includedVersionDirs)
+            configureStonecutterProjects(settings, includedVersionDirs, targetScope)
             return
         }
 
@@ -155,7 +160,7 @@ class MultiloaderSettingsPlugin implements Plugin<Settings> {
         }
     }
 
-    private static void configureStonecutterProjects(Settings settings, List<File> versionDirs) {
+    private static void configureStonecutterProjects(Settings settings, List<File> versionDirs, MultiloaderTargetScope targetScope) {
         def versionsWithLoaders = [:] as LinkedHashMap<String, List<String>>
         versionDirs.each { dir ->
             def props = versionMetadata(settings, dir)
@@ -163,7 +168,7 @@ class MultiloaderSettingsPlugin implements Plugin<Settings> {
             if (loaders.isEmpty()) {
                 throw new IllegalStateException("No enabled loaders configured for ${dir.name}")
             }
-            versionsWithLoaders[dir.name] = loaders
+            versionsWithLoaders[dir.name] = targetScope.loadersFor(dir.name)
         }
 
         def uniqueVersions = versionsWithLoaders.keySet().toList()
@@ -208,6 +213,14 @@ class MultiloaderSettingsPlugin implements Plugin<Settings> {
             .get()
 
         parseEnabledLoaders(parseInlineProperties(raw))
+    }
+
+    private static Map<String, List<String>> enabledLoadersByVersion(Settings settings, List<File> versionDirs) {
+        def versions = [:] as LinkedHashMap<String, List<String>>
+        versionDirs.each { dir ->
+            versions[dir.name] = parseEnabledLoaders(versionMetadata(settings, dir))
+        }
+        versions
     }
 
     private static List<String> parseEnabledLoaders(Properties props) {
