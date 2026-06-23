@@ -48,15 +48,30 @@ jobs:
 
           echo "Diff base: $base"
 
-          # Collect changed mc-* directories.
-          mapfile -t projects < <(
-            git diff --name-only "$base"...HEAD \
-              | awk -F/ '/^mc-[^/]+\// {print $1}' \
-              | sort -u
+          # Manual dispatches and global build metadata changes should publish
+          # every included catalog.
+          mapfile -t all_projects < <(
+            awk '/^include / {
+              gsub(/[,\047"]/, "")
+              print $2
+            }' settings.gradle
           )
 
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] \
+              || git diff --name-only "$base"...HEAD \
+                | grep -Eq '^(\.github/workflows/publish\.yml|build\.gradle|settings\.gradle|gradle\.properties)$'; then
+            projects=("${all_projects[@]}")
+          else
+            # Collect changed catalog project directories.
+            mapfile -t projects < <(
+              git diff --name-only "$base"...HEAD \
+                | awk -F/ '/^(build-tools|mc-[^/]+)\// {print $1}' \
+                | sort -u
+            )
+          fi
+
           if [ ${#projects[@]} -eq 0 ]; then
-            echo "No mc-* catalogs changed; skipping publish."
+            echo "No publishable catalogs changed; skipping publish."
             echo "projects=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
