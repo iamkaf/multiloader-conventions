@@ -26,10 +26,10 @@ gson = "2.10.1"
 forge-config-api-port = "21.11.1"
 
 # Amber
-amber = "11.0.0+1.21.11"
+amber = "11.1.1+1.21.11"
 
 # Konfig
-konfig = "0.3.0+1.21.11"
+konfig = "0.5.0+1.21.11"
 
 # TeaKit
 teakit = "0.10.0+1.21.11"
