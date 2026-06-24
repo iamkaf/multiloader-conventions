@@ -142,6 +142,10 @@ class MultiloaderCommonPlugin implements Plugin<Project> {
                     dependsOn project.tasks.named('stageMergedResources')
                 }
             }
+            project.tasks.matching { it.name == 'createMinecraftArtifacts' }.configureEach {
+                dependsOn project.tasks.named('stageMergedJavaSources')
+                dependsOn project.tasks.named('stageMergedResources')
+            }
         }
 
         def commonJava = project.configurations.create('commonJava') {
