@@ -27,7 +27,6 @@ class MultiloaderPublishingPlugin implements Plugin<Project> {
         configureDefaults(project, extension)
 
         def resolvedPublications = [:] as Map<String, PublicationSpec>
-        def resolvedChangelog = null as String
 
         def assembleAll = project.tasks.register('publishingAssemble') {
             group = 'publishing'
@@ -63,8 +62,6 @@ class MultiloaderPublishingPlugin implements Plugin<Project> {
         }
 
         project.gradle.projectsEvaluated {
-            resolvedChangelog = resolveChangelog(project, extension)
-
             configuredPublications(project, extension).each { publicationConfig ->
                 def taskSuffix = taskSuffix(publicationConfig.name)
 
@@ -178,7 +175,7 @@ class MultiloaderPublishingPlugin implements Plugin<Project> {
                         project.logger.lifecycle("[Publishing] loaders=${spec.loaders}")
                         project.logger.lifecycle("[Publishing] gameVersions=${spec.gameVersions}")
 
-                        publishCurseForge(project, extension, resolvedChangelog, isDryRun, curseGameVersions, stagedArtifactFile(project, spec), spec)
+                        publishCurseForge(project, extension, resolveChangelog(project, extension, spec), isDryRun, curseGameVersions, stagedArtifactFile(project, spec), spec)
 
                         if (isDryRun) {
                             project.logger.lifecycle('[Publishing] dryRun=true -> skipping live publish')
@@ -203,7 +200,7 @@ class MultiloaderPublishingPlugin implements Plugin<Project> {
                         project.logger.lifecycle("[Publishing] loaders=${spec.loaders}")
                         project.logger.lifecycle("[Publishing] gameVersions=${spec.gameVersions}")
 
-                        publishModrinth(project, extension, resolvedChangelog, isDryRun, modrinthGameVersions, stagedArtifactFile(project, spec), spec)
+                        publishModrinth(project, extension, resolveChangelog(project, extension, spec), isDryRun, modrinthGameVersions, stagedArtifactFile(project, spec), spec)
 
                         if (isDryRun) {
                             project.logger.lifecycle('[Publishing] dryRun=true -> skipping live publish')
@@ -467,7 +464,16 @@ class MultiloaderPublishingPlugin implements Plugin<Project> {
         publication.displayName ?: file.name.replaceFirst(/\.jar$/, '')
     }
 
-    private static String resolveChangelog(Project project, MultiloaderPublishingExtension extension) {
+    private static String resolveChangelog(Project project, MultiloaderPublishingExtension extension, PublicationSpec publication) {
+        def finalFilePath = project.findProperty('publish.changelog.final-file')?.toString()
+        if (finalFilePath != null && !finalFilePath.trim().isEmpty()) {
+            def finalFile = project.file(finalFilePath)
+            if (!finalFile.exists()) {
+                throw new IllegalStateException("[Publishing] Final changelog file not found: ${finalFile}")
+            }
+            return finalFile.getText('UTF-8')
+        }
+
         if (extension.metadata.changelogText.isPresent()) {
             return extension.metadata.changelogText.get()
         }
@@ -482,28 +488,146 @@ class MultiloaderPublishingPlugin implements Plugin<Project> {
             throw new IllegalStateException("[Publishing] Changelog file not found: ${file}")
         }
 
-        def extracted = extractHeaderLatestFooterFromChangelog(file.getText('UTF-8'))
+        def extracted = extractSelectedChangelog(file.getText('UTF-8'), publication.project.version.toString(), publication.gameVersions)
         if (extracted == null || extracted.trim().isEmpty()) {
-            throw new IllegalStateException("[Publishing] Failed to extract a changelog section from ${file}")
+            throw new IllegalStateException("[Publishing] Failed to extract changelog ${releaseVersionForChangelog(publication.project.version.toString())} from ${file}")
         }
         extracted
     }
 
-    private static String extractHeaderLatestFooterFromChangelog(String completeChangelog) {
-        def headerMatcher = (completeChangelog =~ /(?ms)\A.*?(?=^## \d+\.\d+\.\d+)/)
-        if (!headerMatcher.find()) {
-            return null
-        }
-        def latestMatcher = (completeChangelog =~ /(?ms)^## \d+\.\d+\.\d+[\s\S]*?(?=^## (?:\d+\.\d+\.\d+|[^0-9]|$))/)
-        if (!latestMatcher.find()) {
-            return null
-        }
-        def footerMatcher = (completeChangelog =~ /(?ms)^## Types of changes[\s\S]*/)
-        if (!footerMatcher.find()) {
+    private static String extractSelectedChangelog(String completeChangelog, String projectVersion, List<String> minecraftVersions) {
+        def parsed = parseChangelog(completeChangelog)
+        if (parsed == null) {
             return null
         }
 
-        headerMatcher.group(0) + latestMatcher.group(0) + footerMatcher.group(0)
+        def releaseVersion = releaseVersionForChangelog(projectVersion)
+        def release = parsed.releases.find { it.version == releaseVersion }
+        if (release == null) {
+            return null
+        }
+
+        def selectedEntries = release.entries.findAll { entry ->
+            entry.prefix == null || minecraftVersions.any { version -> prefixMatchesMinecraft(entry.prefix, version) }
+        }
+        if (selectedEntries.isEmpty()) {
+            return null
+        }
+
+        def lines = [release.heading]
+        def sections = selectedEntries.collect { it.section ?: '' }.unique()
+        sections.each { section ->
+            def sectionEntries = selectedEntries.findAll { (it.section ?: '') == section }
+            if (sectionEntries.isEmpty()) {
+                return
+            }
+            lines.add('')
+            if (section) {
+                lines.add("### ${section}")
+                lines.add('')
+            }
+            sectionEntries.eachWithIndex { entry, index ->
+                if (index > 0) {
+                    lines.add('')
+                }
+                lines.addAll(entry.text.split(/\r?\n/).toList())
+            }
+        }
+
+        [trimTrailingBlankLines(parsed.header.split(/\r?\n/).toList()).join('\n'), trimTrailingBlankLines(lines).join('\n'), parsed.footer]
+            .findAll { it != null && !it.isEmpty() }
+            .join('\n\n')
+            .stripTrailing() + '\n'
+    }
+
+    private static ParsedChangelog parseChangelog(String completeChangelog) {
+        def lines = completeChangelog.split(/\r?\n/, -1).toList()
+        def firstReleaseIndex = lines.findIndexOf { releaseHeading(it) != null }
+        def footerIndex = lines.findIndexOf { it == '## Types of changes' }
+        if (firstReleaseIndex < 0 || footerIndex <= firstReleaseIndex) {
+            return null
+        }
+
+        def header = lines.subList(0, firstReleaseIndex).join('\n')
+        def footer = lines.subList(footerIndex, lines.size()).join('\n')
+        def releases = []
+        ParsedRelease current = null
+
+        lines.subList(firstReleaseIndex, footerIndex).each { line ->
+            def version = releaseHeading(line)
+            if (version != null) {
+                current = new ParsedRelease(line, releaseVersionForChangelog(version), [line])
+                releases.add(current)
+            } else if (current != null) {
+                current.lines.add(line)
+            }
+        }
+
+        releases.each { release ->
+            release.entries.addAll(entriesForRelease(release))
+        }
+        new ParsedChangelog(header, footer, releases)
+    }
+
+    private static String releaseHeading(String line) {
+        def matcher = (line =~ /^##\s+(\d+\.\d+\.\d+(?:\+[^\s]+)?)(?:\s|$)/)
+        matcher.find() ? matcher.group(1) : null
+    }
+
+    private static List<ChangelogEntry> entriesForRelease(ParsedRelease release) {
+        def entries = []
+        def section = null as String
+        def currentLines = []
+        def currentIndex = 0
+        def flush = {
+            if (currentLines.isEmpty()) {
+                return
+            }
+            def text = trimTrailingBlankLines(currentLines).join('\n')
+            if (!text.trim().isEmpty()) {
+                entries.add(new ChangelogEntry("${release.version}:${section ?: 'release'}:${currentIndex}", release.version, section, text, versionPrefixForEntry(text)))
+                currentIndex += 1
+            }
+            currentLines = []
+        }
+
+        release.lines.drop(1).each { line ->
+            def sectionMatcher = (line =~ /^###\s+(.+?)\s*$/)
+            if (sectionMatcher.find()) {
+                flush()
+                section = sectionMatcher.group(1)
+                currentIndex = 0
+            } else if (line ==~ /^[-*+]\s+.*/) {
+                flush()
+                currentLines = [line]
+            } else if (!currentLines.isEmpty()) {
+                currentLines.add(line)
+            }
+        }
+        flush()
+        entries
+    }
+
+    private static String versionPrefixForEntry(String text) {
+        def firstLine = text.readLines().first()
+        def matcher = (firstLine =~ /^[-*+]\s+((?:\d+\.\d+(?:\.\d+|\.x)?|26\.\d+(?:\.\d+|\.x)?)):\s+/)
+        matcher.find() ? matcher.group(1) : null
+    }
+
+    private static boolean prefixMatchesMinecraft(String prefix, String minecraftVersion) {
+        prefix.endsWith('.x') ? minecraftVersion.startsWith(prefix.substring(0, prefix.length() - 1)) : prefix == minecraftVersion
+    }
+
+    private static String releaseVersionForChangelog(String projectVersion) {
+        projectVersion.split(/\+/, 2)[0]
+    }
+
+    private static List<String> trimTrailingBlankLines(List<String> lines) {
+        def result = new ArrayList<String>(lines)
+        while (!result.isEmpty() && result.last().trim().isEmpty()) {
+            result.remove(result.size() - 1)
+        }
+        result
     }
 
     private static List<String> inferLoaders(Project project) {
@@ -582,6 +706,47 @@ class MultiloaderPublishingPlugin implements Plugin<Project> {
             .findAll { !it.isEmpty() }
             .collect { token -> token.substring(0, 1).toUpperCase(Locale.ROOT) + token.substring(1) }
             .join('')
+    }
+
+    private static final class ParsedChangelog {
+        final String header
+        final String footer
+        final List<ParsedRelease> releases
+
+        ParsedChangelog(String header, String footer, List<ParsedRelease> releases) {
+            this.header = header
+            this.footer = footer
+            this.releases = releases
+        }
+    }
+
+    private static final class ParsedRelease {
+        final String heading
+        final String version
+        final List<String> lines
+        final List<ChangelogEntry> entries = []
+
+        ParsedRelease(String heading, String version, List<String> lines) {
+            this.heading = heading
+            this.version = version
+            this.lines = lines
+        }
+    }
+
+    private static final class ChangelogEntry {
+        final String id
+        final String releaseVersion
+        final String section
+        final String text
+        final String prefix
+
+        ChangelogEntry(String id, String releaseVersion, String section, String text, String prefix) {
+            this.id = id
+            this.releaseVersion = releaseVersion
+            this.section = section
+            this.text = text
+            this.prefix = prefix
+        }
     }
 
     private static final class PublicationConfig {
