@@ -7,7 +7,15 @@ This repo is the shared build layer used by the branch-based Stonecutter project
 Current release in this repo:
 
 - Group: `com.iamkaf.multiloader`
-- Version: `2.3-SNAPSHOT`
+- Version: `2.4-SNAPSHOT`
+
+## Versioning Policy
+
+Major version bumps mean the convention plugins have been completely rewritten. Compatibility is not guaranteed, and consuming mods should treat adoption as a porting effort.
+
+Minor version bumps cover feature additions, bug fixes, and minor behavior changes. They are intended to be safe-ish to adopt, but consumers should still validate their full loader and Minecraft-version matrix.
+
+Patch version bumps, when used, are reserved for bug fixes and are considered non-breaking. They should be rare.
 
 ## Plugin Set
 
