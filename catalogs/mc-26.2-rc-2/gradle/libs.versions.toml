@@ -33,7 +33,7 @@ amber = "11.1.0+26.2-rc-2"
 konfig = "0.4.0+26.2-rc-2"
 
 # TeaKit
-teakit = "0.10.0+26.2-rc-2"
+teakit = "0.10.1+26.2-rc-2"
 
 # JEI
 jei = "29.6.2.31"

@@ -29,7 +29,7 @@ amber = "11.0.0+1.16"
 konfig = "0.3.0+1.16"
 
 # TeaKit
-teakit = "0.10.0+1.16"
+teakit = "0.10.1+1.16"
 
 # JEI
 jei = "null"
