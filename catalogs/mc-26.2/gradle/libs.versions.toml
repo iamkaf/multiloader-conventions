@@ -17,7 +17,7 @@ modmenu = "20.0.0-alpha.1"
 neoforge = "26.2.0.2-beta"
 
 # Forge
-forge = "26.2-65.0.0"
+forge = "26.2-65.0.1"
 
 # Libraries
 mixin = "0.8.5"
@@ -27,7 +27,7 @@ forge-config-api-port-fabric = "26.1.4"
 forge-config-api-port-forge = "26.1.4"
 
 # Amber
-amber = "11.1.1+26.2"
+amber = "11.1.2+26.2"
 
 # Konfig
 konfig = "0.5.0+26.2"
