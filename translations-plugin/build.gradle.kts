@@ -1,0 +1,35 @@
+plugins {
+    `java-gradle-plugin`
+    id("org.gradle.kotlin.kotlin-dsl")
+    groovy
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(providers.gradleProperty("project.java").get().toInt())
+    }
+}
+
+dependencies {
+    implementation(localGroovy())
+
+    testImplementation(localGroovy())
+    testImplementation(gradleTestKit())
+    testImplementation("org.spockframework:spock-core:2.4-M1-groovy-4.0")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.10.2")
+}
+
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
+}
+
+gradlePlugin {
+    plugins {
+        create("multiloaderTranslations") {
+            id = "com.iamkaf.multiloader.translations"
+            implementationClass = "com.iamkaf.multiloader.translations.MultiloaderTranslationsPlugin"
+            displayName = "Multiloader Translations Plugin"
+            description = "Downloads approved non-en_us locale JSON files from i18n.kaf.sh into a configured lang directory."
+        }
+    }
+}

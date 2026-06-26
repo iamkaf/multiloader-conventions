@@ -1,0 +1,37 @@
+plugins {
+    `java-gradle-plugin`
+    id("org.gradle.kotlin.kotlin-dsl")
+    groovy
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(providers.gradleProperty("project.java").get().toInt())
+    }
+}
+
+dependencies {
+    implementation(buildTools.foojay.resolver)
+    implementation(buildTools.stonecutter)
+    implementation(project(":conventions-support"))
+
+    testImplementation(localGroovy())
+    testImplementation(gradleTestKit())
+    testImplementation("org.spockframework:spock-core:2.4-M1-groovy-4.0")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.10.2")
+}
+
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
+}
+
+gradlePlugin {
+    plugins {
+        create("multiloaderSettings") {
+            id = "com.iamkaf.multiloader.settings"
+            implementationClass = "com.iamkaf.multiloader.settings.MultiloaderSettingsPlugin"
+            displayName = "Multiloader Settings Plugin"
+            description = "Configures repositories, version catalogs, and included projects for multiloader version directories."
+        }
+    }
+}

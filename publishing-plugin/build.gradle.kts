@@ -1,0 +1,42 @@
+plugins {
+    `java-gradle-plugin`
+    id("org.gradle.kotlin.kotlin-dsl")
+    groovy
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(providers.gradleProperty("project.java").get().toInt())
+    }
+}
+
+repositories {
+    maven { url = uri("https://maven.firstdarkdev.xyz/releases") }
+}
+
+dependencies {
+    implementation(localGroovy())
+    implementation(project(":conventions-support"))
+    implementation("org.apache.maven:maven-artifact:3.9.9")
+    implementation("me.hypherionmc.modutils:CurseUpload4j:1.0.13")
+
+    testImplementation(localGroovy())
+    testImplementation(gradleTestKit())
+    testImplementation("org.spockframework:spock-core:2.4-M1-groovy-4.0")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.10.2")
+}
+
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
+}
+
+gradlePlugin {
+    plugins {
+        create("multiloaderPublishing") {
+            id = "com.iamkaf.multiloader.publishing"
+            implementationClass = "com.iamkaf.multiloader.publishing.MultiloaderPublishingPlugin"
+            displayName = "Multiloader Publishing Plugin"
+            description = "Aggregates multiloader artifacts and publishes them to Modrinth and CurseForge."
+        }
+    }
+}

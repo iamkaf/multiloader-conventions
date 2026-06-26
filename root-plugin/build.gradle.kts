@@ -1,0 +1,44 @@
+plugins {
+    `java-gradle-plugin`
+    id("org.gradle.kotlin.kotlin-dsl")
+    groovy
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(providers.gradleProperty("project.java").get().toInt())
+    }
+}
+
+repositories {
+    maven {
+        url = uri("https://maven.firstdarkdev.xyz/releases")
+    }
+}
+
+dependencies {
+    implementation(localGroovy())
+    implementation(project(":conventions-support"))
+    implementation(project(":publishing-plugin"))
+    implementation(project(":translations-plugin"))
+
+    testImplementation(localGroovy())
+    testImplementation(gradleTestKit())
+    testImplementation("org.spockframework:spock-core:2.4-M1-groovy-4.0")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.10.2")
+}
+
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
+}
+
+gradlePlugin {
+    plugins {
+        create("multiloaderRoot") {
+            id = "com.iamkaf.multiloader.root"
+            implementationClass = "com.iamkaf.multiloader.root.MultiloaderRootPlugin"
+            displayName = "Multiloader Root Plugin"
+            description = "Registers aggregate tasks and validates required root properties for multiloader version directories."
+        }
+    }
+}

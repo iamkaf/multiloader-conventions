@@ -1,0 +1,40 @@
+plugins {
+    `java-gradle-plugin`
+    id("org.gradle.kotlin.kotlin-dsl")
+    groovy
+}
+
+repositories {
+    maven {
+        url = uri("https://maven.fabricmc.net")
+    }
+    maven {
+        url = uri("https://maven.neoforged.net/releases")
+    }
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(providers.gradleProperty("project.java").get().toInt())
+    }
+}
+
+dependencies {
+    implementation(localGroovy())
+    implementation(buildTools.fabric.loom)
+    implementation(buildTools.neoforge.moddev.plugin)
+    implementation(buildTools.neoforge.legacyforge.plugin)
+    implementation(project(":core-plugin"))
+    implementation(project(":conventions-support"))
+}
+
+gradlePlugin {
+    plugins {
+        create("multiloaderCommon") {
+            id = "com.iamkaf.multiloader.common"
+            implementationClass = "com.iamkaf.multiloader.common.MultiloaderCommonPlugin"
+            displayName = "Multiloader Common Plugin"
+            description = "Applies shared Java, publishing, metadata, and artifact conventions for multiloader projects."
+        }
+    }
+}
