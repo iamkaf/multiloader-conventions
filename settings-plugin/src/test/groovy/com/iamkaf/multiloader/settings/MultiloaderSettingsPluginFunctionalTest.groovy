@@ -25,7 +25,7 @@ tasks.register('printProjectPaths') {
 '''.stripIndent()
 
         new File(testProjectDir, 'gradle.properties').text = '''
-project.plugins=2.3-SNAPSHOT
+project.plugins=3.0-SNAPSHOT
 mod.name=Settings Test
 '''.stripIndent()
 

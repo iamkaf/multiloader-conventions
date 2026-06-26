@@ -1,5 +1,7 @@
 plugins {
-    id 'groovy-gradle-plugin'
+    id 'java-gradle-plugin'
+    id 'org.jetbrains.kotlin.jvm'
+    id 'groovy'
 }
 
 repositories {
@@ -15,6 +17,7 @@ java {
 }
 
 dependencies {
+    implementation localGroovy()
     implementation buildTools.forgegradle
     implementation buildTools.neoforge.legacyforge.plugin
     implementation project(':core-plugin')

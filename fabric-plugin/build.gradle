@@ -1,5 +1,7 @@
 plugins {
-    id 'groovy-gradle-plugin'
+    id 'java-gradle-plugin'
+    id 'org.jetbrains.kotlin.jvm'
+    id 'groovy'
 }
 
 repositories {
@@ -15,6 +17,7 @@ java {
 }
 
 dependencies {
+    implementation localGroovy()
     implementation buildTools.fabric.loom
     implementation project(':core-plugin')
     implementation project(':conventions-support')

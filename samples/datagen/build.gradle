@@ -20,6 +20,12 @@ tasks.register('validateSampleWiring') {
         } : 'Fabric plugin must provide the Minecraft dependency'
 
         assert fabricProject.tasks.findByName('runDatagen') != null : 'Fabric runDatagen task is missing'
+
+        assert fabricProject.extensions.getByName('multiloaderFabric').commonDatagen.get() :
+            'Fabric datagen must be enabled through the typed multiloaderFabric extension'
+
+        assert !fabricProject.extensions.extraProperties.has('enableCommonFabricDatagen') :
+            'Deprecated enableCommonFabricDatagen helper must not be exposed'
     }
 }
 

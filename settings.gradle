@@ -10,6 +10,9 @@ pluginManagement {
             url = uri('https://maven.fabricmc.net')
         }
     }
+    plugins {
+        id('org.jetbrains.kotlin.jvm') version '2.3.20'
+    }
 }
 
 dependencyResolutionManagement {

@@ -6,4 +6,6 @@ dependencies {
     modImplementation libs.fabric.api
 }
 
-enableCommonFabricDatagen.call()
+multiloaderFabric {
+    commonDatagen = true
+}

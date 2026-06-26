@@ -1,5 +1,7 @@
 plugins {
-    id 'groovy-gradle-plugin'
+    id 'java-gradle-plugin'
+    id 'org.jetbrains.kotlin.jvm'
+    id 'groovy'
 }
 
 java {
@@ -13,10 +15,12 @@ repositories {
 }
 
 dependencies {
+    implementation localGroovy()
     implementation project(':conventions-support')
     implementation 'org.apache.maven:maven-artifact:3.9.9'
     implementation 'me.hypherionmc.modutils:CurseUpload4j:1.0.13'
 
+    testImplementation localGroovy()
     testImplementation gradleTestKit()
     testImplementation 'org.spockframework:spock-core:2.4-M1-groovy-4.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.10.2'
