@@ -136,14 +136,14 @@ object StonecutterSourceLayout {
     @JvmStatic
     fun attachStagingDependencies(project: Project, commonProject: Project? = null) {
         listOf("compileJava", "sourcesJar", "javadoc").forEach { taskName ->
-            project.tasks.named(taskName) { task ->
+            project.tasks.matching { it.name == taskName }.configureEach { task ->
                 commonProject?.let { task.dependsOn(it.tasks.named("stonecutterGenerate")) }
                 task.dependsOn(project.tasks.named("stonecutterGenerate"))
                 task.dependsOn(project.tasks.named(STAGE_JAVA_TASK))
             }
         }
         listOf("processResources", "sourcesJar").forEach { taskName ->
-            project.tasks.named(taskName) { task ->
+            project.tasks.matching { it.name == taskName }.configureEach { task ->
                 task.dependsOn(project.tasks.named(STAGE_RESOURCES_TASK))
             }
         }
