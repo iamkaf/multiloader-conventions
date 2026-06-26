@@ -5,7 +5,6 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.VersionCatalog
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.publish.PublishingExtension
-import java.net.URI
 import java.util.Properties
 
 class MultiloaderProjectContext private constructor(private val project: Project) {
@@ -71,63 +70,10 @@ class MultiloaderProjectContext private constructor(private val project: Project
     fun useUnobfuscatedMinecraft(minecraftVersion: String = minecraftVersion()): Boolean =
         VersionPolicy.useUnobfuscatedMinecraft(minecraftVersion)
 
-    fun sharedRepositories() {
-        project.repositories.mavenLocal()
-        project.repositories.mavenCentral()
-        project.repositories.maven {
-            name = "TerraformersMC"
-            url = project.uri("https://maven.terraformersmc.com/")
-            metadataSources {
-                mavenPom()
-                artifact()
-            }
-        }
-        project.repositories.maven {
-            name = "Nucleoid"
-            url = project.uri("https://maven.nucleoid.xyz/")
-        }
-        project.repositories.maven {
-            name = "Sponge"
-            url = project.uri("https://repo.spongepowered.org/repository/maven-public")
-        }
-        project.repositories.maven {
-            name = "ParchmentMC"
-            url = project.uri("https://maven.parchmentmc.org/")
-        }
-        project.repositories.maven {
-            name = "NeoForge"
-            url = project.uri("https://maven.neoforged.net/releases")
-        }
-        project.repositories.maven {
-            name = "BlameJared"
-            url = project.uri("https://maven.blamejared.com")
-        }
-        project.repositories.maven {
-            name = "Modrinth"
-            url = project.uri("https://api.modrinth.com/maven")
-        }
-        project.repositories.maven {
-            name = "Kaf Maven"
-            url = project.uri("https://maven.kaf.sh")
-        }
-        project.repositories.maven {
-            name = "Fuzs Mod Resources"
-            url = project.uri("https://raw.githubusercontent.com/Fuzss/modresources/main/maven/")
-        }
-    }
+    fun sharedRepositories() = RepositoryPolicy.configureProjectRepositories(project)
 
     fun publishingRepositories(publishing: PublishingExtension, version: String) {
-        publishing.repositories.maven {
-            name = "KafMaven"
-            url = URI.create(
-                if (version.endsWith("-SNAPSHOT")) "https://z.kaf.sh/snapshots"
-                else "https://z.kaf.sh/releases",
-            )
-            credentials {
-                username = System.getenv("MAVEN_PUBLISH_USERNAME")
-                password = System.getenv("MAVEN_PUBLISH_PASSWORD")
-            }
-        }
+        RepositoryPolicy.configurePublishingRepositories(publishing, version)
     }
 
     fun mixinConfigs(loader: String): List<String> {
@@ -146,43 +92,8 @@ class MultiloaderProjectContext private constructor(private val project: Project
         )
     }
 
-    fun expandProperties(minecraftVersion: String, loader: String, catalog: VersionCatalog): Map<String, Any?> {
-        val minecraftVersionRange = if (loader == "fabric") {
-            fabricMinecraftDependency(minecraftVersion, optionalProperty("mod.minecraft-range"))
-        } else {
-            optionalProperty("mod.minecraft-range")
-        }
-
-        return linkedMapOf(
-            "version" to requiredProperty("project.version"),
-            "group" to requiredProperty("project.group"),
-            "minecraft_version" to minecraftVersion,
-            "minecraft_version_range" to minecraftVersionRange,
-            "fabric_version_range" to optionalProperty("mod.fabric-range"),
-            "fabric_version" to versionOrNull(catalog, "fabric-api"),
-            "fabric_loader_version" to versionOrNull(catalog, "fabric-loader"),
-            "mod_menu_version" to versionOrNull(catalog, "modmenu"),
-            "mod_name" to requiredProperty("mod.name"),
-            "mod_author" to optionalProperty("mod.authors"),
-            "mod_id" to requiredProperty("mod.id"),
-            "license" to optionalProperty("mod.license"),
-            "description" to optionalProperty("mod.description"),
-            "neoforge_version" to versionOrNull(catalog, "neoforge"),
-            "neoforge_loader_version_range" to optionalProperty("mod.neoforge-loader-range"),
-            "forge_version" to versionOrNull(catalog, "forge"),
-            "forge_loader_version_range" to optionalProperty("mod.forge-loader-range"),
-            "amber_version" to versionOrNull(catalog, "amber"),
-            "konfig_version" to versionOrNull(catalog, "konfig"),
-            "parchment_minecraft" to versionOrNull(catalog, "parchment-minecraft"),
-            "parchment_version" to versionOrNull(catalog, "parchment"),
-            "credits" to optionalProperty("mod.credits"),
-            "java_version" to requiredProperty("project.java"),
-            "mixin_compat_common" to requiredProperty("mixin.compat.common"),
-            "mixin_compat_fabric" to requiredProperty("mixin.compat.fabric"),
-            "mixin_compat_forge" to requiredProperty("mixin.compat.forge"),
-            "mixin_compat_neoforge" to requiredProperty("mixin.compat.neoforge"),
-        )
-    }
+    fun expandProperties(minecraftVersion: String, loader: String, catalog: VersionCatalog): Map<String, Any?> =
+        MetadataExpansion.stonecutter(this, minecraftVersion, loader, catalog)
 
     private fun resolveVersionKey(): String? {
         val directVersionDir = project.rootProject.file("versions/${project.name}")
@@ -242,7 +153,4 @@ class MultiloaderProjectContext private constructor(private val project: Project
 
     private fun scopedProperty(name: String): String? =
         (project.findProperty(name) ?: project.rootProject.findProperty(name))?.toString()
-
-    private fun fabricMinecraftDependency(minecraftVersion: String?, configuredRange: String?): String? =
-        if (minecraftVersion == null || minecraftVersion.contains("-rc-")) configuredRange else minecraftVersion
 }

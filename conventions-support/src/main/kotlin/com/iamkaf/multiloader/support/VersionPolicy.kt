@@ -37,6 +37,13 @@ enum class NeoForgeToolchainStrategy {
     NEOGRADLE_USERDEV,
 }
 
+enum class TeaKitRuntimeStrategy(val dependencyConfiguration: String?) {
+    DISABLED_FOR_LEGACY_FORGE(null),
+    FABRIC_LOCAL_RUNTIME("modLocalRuntime"),
+    RUNTIME_ONLY("runtimeOnly"),
+    MOD_RUNTIME_ONLY("modRuntimeOnly"),
+}
+
 enum class PublicationArtifactStrategy(val artifactTask: String, val fallbackArtifactTask: String?, val buildTasks: List<String>) {
     JAR("jar", null, emptyList()),
     FABRIC_REMAP_JAR("remapJar", "jar", emptyList()),
@@ -167,7 +174,6 @@ object VersionPolicy {
     fun buildJavaVersion(version: String): Int =
         when {
             version.startsWith("26.") -> 25
-            version.startsWith("1.14") || version.startsWith("1.15") || version.startsWith("1.16") -> 17
             else -> 21
         }
 
@@ -193,9 +199,19 @@ object VersionPolicy {
         return if (useFabricLoomCommon) CommonToolchainStrategy.FABRIC_LOOM else CommonToolchainStrategy.NEOFORM
     }
 
+    fun commonToolchainStrategy(version: String, hasNeoForm: Boolean): CommonToolchainStrategy =
+        when (commonToolchainStrategy(version)) {
+            CommonToolchainStrategy.FABRIC_LOOM -> CommonToolchainStrategy.FABRIC_LOOM
+            CommonToolchainStrategy.NEOFORM -> if (hasNeoForm) CommonToolchainStrategy.NEOFORM else CommonToolchainStrategy.LEGACY_FORGE
+            CommonToolchainStrategy.LEGACY_FORGE -> CommonToolchainStrategy.LEGACY_FORGE
+        }
+
     fun fabricDependencyStrategy(version: String): FabricDependencyStrategy =
         if (useUnobfuscatedMinecraft(version)) FabricDependencyStrategy.MODERN_UNOBFUSCATED
         else FabricDependencyStrategy.OBFUSCATED_LOOM
+
+    fun fabricTeaKitRuntimeStrategy(version: String): TeaKitRuntimeStrategy =
+        if (version.startsWith("1.")) TeaKitRuntimeStrategy.FABRIC_LOCAL_RUNTIME else TeaKitRuntimeStrategy.RUNTIME_ONLY
 
     fun forgeRunStrategy(version: String): ForgeRunStrategy =
         when {
@@ -205,6 +221,20 @@ object VersionPolicy {
                 ForgeRunStrategy.UNSUPPORTED
             usesLegacyForgePlugin(version) -> ForgeRunStrategy.LEGACY_MODDEV
             else -> ForgeRunStrategy.MAINSTREAM_FORGE_GRADLE
+        }
+
+    fun isForgeConventionSupported(version: String): Boolean =
+        forgeRunStrategy(version) != ForgeRunStrategy.UNSUPPORTED
+
+    fun forgeTeaKitRuntimeStrategy(version: String, legacyForgePlugin: Boolean): TeaKitRuntimeStrategy =
+        if (legacyForgePlugin) {
+            if (version in setOf("1.16.5", "1.17.1", "1.18", "1.18.1", "1.18.2")) {
+                TeaKitRuntimeStrategy.DISABLED_FOR_LEGACY_FORGE
+            } else {
+                TeaKitRuntimeStrategy.MOD_RUNTIME_ONLY
+            }
+        } else {
+            TeaKitRuntimeStrategy.RUNTIME_ONLY
         }
 
     fun neoForgeToolchainStrategy(version: String): NeoForgeToolchainStrategy =

@@ -1,8 +1,8 @@
 package com.iamkaf.multiloader.publishing
 
-import com.iamkaf.multiloader.support.GroovyGradleDsl
-import com.iamkaf.multiloader.support.StonecutterConventionSupport
+import com.iamkaf.multiloader.support.MultiloaderProjectContext
 import com.iamkaf.multiloader.support.VersionPolicy
+import com.iamkaf.multiloader.support.adapters.ArchiveTaskAdapter
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.file.RegularFile
@@ -132,7 +132,7 @@ internal object PublicationPlanner {
     }
 
     fun optionalProperty(project: Project, name: String): String? =
-        StonecutterConventionSupport.optionalProp(project, name)
+        MultiloaderProjectContext.of(project).optionalProperty(name)
 
     fun projectProperty(project: Project, name: String): String? = optionalProperty(project, name)
 
@@ -172,13 +172,7 @@ internal object PublicationPlanner {
     }
 
     private fun asJarOutput(project: Project, task: Task): JarOutput {
-        val hasArchiveFile = (GroovyGradleDsl.invoke(task, "hasProperty", "archiveFile") as? Boolean) == true
-        if (!hasArchiveFile) {
-            throw IllegalStateException("[Publishing] Task ${project.path}:${task.name} does not expose archiveFile")
-        }
-
-        @Suppress("UNCHECKED_CAST")
-        return JarOutput(task, GroovyGradleDsl.invoke(task, "property", "archiveFile") as Provider<RegularFile>)
+        return JarOutput(task, ArchiveTaskAdapter.archiveFile(project, task))
     }
 
     private fun inferLoaders(project: Project): List<String> {

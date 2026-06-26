@@ -58,6 +58,24 @@ class VersionPolicyTest extends Specification {
     }
 
     @Unroll
+    def "#version keeps old mod bytecode separate from the modern build runtime"() {
+        when:
+        def metadata = VersionPolicy.INSTANCE.metadata(version)
+
+        then:
+        metadata.javaVersion == javaVersion
+        metadata.buildJavaVersion == 21
+
+        where:
+        version  | javaVersion
+        '1.14.4' | 8
+        '1.16.5' | 8
+        '1.17.1' | 16
+        '1.20.1' | 17
+        '1.21.1' | 21
+    }
+
+    @Unroll
     def "old Fabric lines use split API module policy for #version"() {
         expect:
         VersionPolicy.INSTANCE.usesLegacyFabricApiModules(version)

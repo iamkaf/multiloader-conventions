@@ -1,14 +1,12 @@
 package com.iamkaf.multiloader.settings
 
 import com.iamkaf.multiloader.support.BuildToolsVersions
+import com.iamkaf.multiloader.support.GroovyGradleDsl
 import com.iamkaf.multiloader.support.MultiloaderTargetScope
 import com.iamkaf.multiloader.support.VersionPolicy
-import dev.kikugie.stonecutter.settings.StonecutterSettingsExtension
-import dev.kikugie.stonecutter.settings.tree.TreeBuilder
 import org.gradle.api.Plugin
 import org.gradle.api.initialization.Settings
 import java.io.File
-import java.net.URI
 import java.util.Properties
 
 class MultiloaderSettingsPlugin : Plugin<Settings> {
@@ -34,35 +32,8 @@ class MultiloaderSettingsPlugin : Plugin<Settings> {
         includeFlatProjects(settings)
     }
 
-    private fun configurePluginRepositories(settings: Settings) {
-        settings.pluginManagement.repositories.mavenLocal()
-        settings.pluginManagement.repositories.gradlePluginPortal()
-        settings.pluginManagement.repositories.mavenCentral()
-        settings.pluginManagement.repositories.maven {
-            name = "Fabric"
-            url = URI.create("https://maven.fabricmc.net")
-        }
-        settings.pluginManagement.repositories.maven {
-            name = "Forge"
-            url = URI.create("https://maven.minecraftforge.net")
-        }
-        settings.pluginManagement.repositories.maven {
-            name = "NeoForge"
-            url = URI.create("https://maven.neoforged.net/releases")
-        }
-        settings.pluginManagement.repositories.maven {
-            name = "Sponge"
-            url = URI.create("https://repo.spongepowered.org/repository/maven-public")
-        }
-        settings.pluginManagement.repositories.maven {
-            name = "FirstDark"
-            url = URI.create("https://maven.firstdarkdev.xyz/releases")
-        }
-        settings.pluginManagement.repositories.maven {
-            name = "Kaf Maven"
-            url = URI.create("https://maven.kaf.sh")
-        }
-    }
+    private fun configurePluginRepositories(settings: Settings) =
+        SettingsRepositoryPolicy.configurePluginRepositories(settings)
 
     private fun configureConventionPluginVersions(settings: Settings) {
         val conventionsVersion = settings.providers.gradleProperty("project.plugins").orNull
@@ -105,11 +76,7 @@ class MultiloaderSettingsPlugin : Plugin<Settings> {
     }
 
     private fun configureFlatDependencyResolution(settings: Settings) {
-        settings.dependencyResolutionManagement.repositories.mavenLocal()
-        settings.dependencyResolutionManagement.repositories.maven {
-            url = URI.create("https://maven.kaf.sh")
-        }
-        settings.dependencyResolutionManagement.repositories.mavenCentral()
+        SettingsRepositoryPolicy.configureDependencyRepositories(settings)
 
         val mcVersion = settings.providers.gradleProperty("project.minecraft").orNull ?: return
         val catalogCoordinate = settings.providers.gradleProperty("project.catalog-coordinate")
@@ -122,11 +89,7 @@ class MultiloaderSettingsPlugin : Plugin<Settings> {
     }
 
     private fun configureStonecutterDependencyResolution(settings: Settings, versionDirs: List<File>) {
-        settings.dependencyResolutionManagement.repositories.mavenLocal()
-        settings.dependencyResolutionManagement.repositories.maven {
-            url = URI.create("https://maven.kaf.sh")
-        }
-        settings.dependencyResolutionManagement.repositories.mavenCentral()
+        SettingsRepositoryPolicy.configureDependencyRepositories(settings)
 
         versionDirs.forEach { dir ->
             val catalogCoordinate = catalogCoordinate(versionMetadata(settings, dir), dir.name)
@@ -182,44 +145,41 @@ class MultiloaderSettingsPlugin : Plugin<Settings> {
         val neoForgeVersions = versionsWithLoaders.filterValues { "neoforge" in it }.keys.toTypedArray()
         val allVersions = uniqueVersions.toTypedArray()
 
-        settings.extensions.configure(StonecutterSettingsExtension::class.java) {
-            create(settings.rootProject) {
-                versions(*allVersions)
-                configureBranch(this, "common", allVersions)
-                configureBranch(this, "fabric", fabricVersions)
-                configureBranch(this, "forge", forgeVersions)
-                configureBranch(this, "neoforge", neoForgeVersions)
-            }
-        }
+        val stonecutter = settings.extensions.getByName("stonecutter")
+        GroovyGradleDsl.invoke(
+            stonecutter,
+            "create",
+            settings.rootProject,
+            GroovyGradleDsl.closure { tree ->
+                GroovyGradleDsl.invoke(tree, "versions", *allVersions)
+                configureBranch(tree, "common", allVersions)
+                configureBranch(tree, "fabric", fabricVersions)
+                configureBranch(tree, "forge", forgeVersions)
+                configureBranch(tree, "neoforge", neoForgeVersions)
+            },
+        )
     }
 
-    private fun configureBranch(tree: TreeBuilder, name: String, versions: Array<String>) {
+    private fun configureBranch(tree: Any, name: String, versions: Array<String>) {
         if (versions.isEmpty()) return
-        tree.branch(name) {
-            versions(*versions)
-        }
+        GroovyGradleDsl.invoke(
+            tree,
+            "branch",
+            name,
+            GroovyGradleDsl.closure { branch ->
+                GroovyGradleDsl.invoke(branch, "versions", *versions)
+            },
+        )
     }
 
-    private fun parseEnabledLoaders(settings: Settings): List<String> {
-        val raw = settings.providers.gradleProperty("project.enabled-loaders")
-            .orElse("fabric,forge,neoforge")
-            .get()
-        val props = Properties()
-        props.setProperty("project.enabled-loaders", raw)
-        return parseEnabledLoaders(props)
-    }
+    private fun parseEnabledLoaders(settings: Settings): List<String> =
+        SettingsVersionMatrix.parseEnabledLoaders(settings)
 
     private fun enabledLoadersByVersion(settings: Settings, versionDirs: List<File>): Map<String, List<String>> =
-        versionDirs.associate { dir -> dir.name to parseEnabledLoaders(versionMetadata(settings, dir)) }
+        SettingsVersionMatrix.enabledLoadersByVersion(versionDirs)
 
     private fun parseEnabledLoaders(props: Properties): List<String> =
-        props.getProperty("project.enabled-loaders", "")
-            .split(",")
-            .map { it.trim() }
-            .filter { it.isNotBlank() }
-            .filter { LoaderIdOrNull(it) != null }
-
-    private fun LoaderIdOrNull(value: String) = com.iamkaf.multiloader.support.LoaderId.parse(value)
+        SettingsVersionMatrix.parseEnabledLoaders(props)
 
     private fun maybeInclude(settings: Settings, projectName: String) {
         val projectDir = File(settings.settingsDir, projectName)
@@ -232,33 +192,13 @@ class MultiloaderSettingsPlugin : Plugin<Settings> {
     }
 
     private fun versionDirectories(settings: Settings): List<File> {
-        val versionsDir = File(settings.settingsDir, "versions")
-        if (!versionsDir.isDirectory) return emptyList()
-
-        return versionsDir.listFiles()
-            ?.filter { it.isDirectory }
-            ?.sortedBy { it.name }
-            ?: emptyList()
+        return SettingsVersionMatrix.versionDirectories(settings)
     }
 
     private fun versionMetadata(settings: Settings, versionDir: File): Properties {
-        val metadataFile = File(versionDir, "gradle.properties")
-        if (metadataFile.isFile) {
-            return loadProperties(metadataFile)
-        }
-
-        val props = Properties()
-        props.setProperty("project.enabled-loaders", VersionPolicy.enabledLoaderIds(versionDir.name))
-        return props
+        return SettingsVersionMatrix.versionMetadata(versionDir)
     }
 
-    private fun loadProperties(file: File): Properties =
-        Properties().also { properties ->
-            file.inputStream().use(properties::load)
-        }
-
     private fun catalogCoordinate(props: Properties, mcVersion: String): String =
-        props.getProperty("project.catalog-coordinate")
-            ?.takeIf { it.isNotBlank() }
-            ?: VersionPolicy.catalogCoordinate(mcVersion)
+        SettingsVersionMatrix.catalogCoordinate(props, mcVersion)
 }
