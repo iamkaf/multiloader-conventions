@@ -74,58 +74,58 @@ class MultiloaderProjectContext private constructor(private val project: Project
     fun sharedRepositories() {
         project.repositories.mavenLocal()
         project.repositories.mavenCentral()
-        project.repositories.maven { repo ->
-            repo.name = "TerraformersMC"
-            repo.url = project.uri("https://maven.terraformersmc.com/")
-            repo.metadataSources { sources ->
-                sources.mavenPom()
-                sources.artifact()
+        project.repositories.maven {
+            name = "TerraformersMC"
+            url = project.uri("https://maven.terraformersmc.com/")
+            metadataSources {
+                mavenPom()
+                artifact()
             }
         }
-        project.repositories.maven { repo ->
-            repo.name = "Nucleoid"
-            repo.url = project.uri("https://maven.nucleoid.xyz/")
+        project.repositories.maven {
+            name = "Nucleoid"
+            url = project.uri("https://maven.nucleoid.xyz/")
         }
-        project.repositories.maven { repo ->
-            repo.name = "Sponge"
-            repo.url = project.uri("https://repo.spongepowered.org/repository/maven-public")
+        project.repositories.maven {
+            name = "Sponge"
+            url = project.uri("https://repo.spongepowered.org/repository/maven-public")
         }
-        project.repositories.maven { repo ->
-            repo.name = "ParchmentMC"
-            repo.url = project.uri("https://maven.parchmentmc.org/")
+        project.repositories.maven {
+            name = "ParchmentMC"
+            url = project.uri("https://maven.parchmentmc.org/")
         }
-        project.repositories.maven { repo ->
-            repo.name = "NeoForge"
-            repo.url = project.uri("https://maven.neoforged.net/releases")
+        project.repositories.maven {
+            name = "NeoForge"
+            url = project.uri("https://maven.neoforged.net/releases")
         }
-        project.repositories.maven { repo ->
-            repo.name = "BlameJared"
-            repo.url = project.uri("https://maven.blamejared.com")
+        project.repositories.maven {
+            name = "BlameJared"
+            url = project.uri("https://maven.blamejared.com")
         }
-        project.repositories.maven { repo ->
-            repo.name = "Modrinth"
-            repo.url = project.uri("https://api.modrinth.com/maven")
+        project.repositories.maven {
+            name = "Modrinth"
+            url = project.uri("https://api.modrinth.com/maven")
         }
-        project.repositories.maven { repo ->
-            repo.name = "Kaf Maven"
-            repo.url = project.uri("https://maven.kaf.sh")
+        project.repositories.maven {
+            name = "Kaf Maven"
+            url = project.uri("https://maven.kaf.sh")
         }
-        project.repositories.maven { repo ->
-            repo.name = "Fuzs Mod Resources"
-            repo.url = project.uri("https://raw.githubusercontent.com/Fuzss/modresources/main/maven/")
+        project.repositories.maven {
+            name = "Fuzs Mod Resources"
+            url = project.uri("https://raw.githubusercontent.com/Fuzss/modresources/main/maven/")
         }
     }
 
     fun publishingRepositories(publishing: PublishingExtension, version: String) {
-        publishing.repositories.maven { repo ->
-            repo.name = "KafMaven"
-            repo.url = URI.create(
+        publishing.repositories.maven {
+            name = "KafMaven"
+            url = URI.create(
                 if (version.endsWith("-SNAPSHOT")) "https://z.kaf.sh/snapshots"
                 else "https://z.kaf.sh/releases",
             )
-            repo.credentials { credentials ->
-                credentials.username = System.getenv("MAVEN_PUBLISH_USERNAME")
-                credentials.password = System.getenv("MAVEN_PUBLISH_PASSWORD")
+            credentials {
+                username = System.getenv("MAVEN_PUBLISH_USERNAME")
+                password = System.getenv("MAVEN_PUBLISH_PASSWORD")
             }
         }
     }

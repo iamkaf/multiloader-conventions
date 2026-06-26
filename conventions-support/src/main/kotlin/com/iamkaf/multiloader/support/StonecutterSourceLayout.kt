@@ -16,9 +16,9 @@ object StonecutterSourceLayout {
         val versionDir = project.rootProject.file("versions/$minecraftVersion")
         val sourceSets = project.extensions.getByType(SourceSetContainer::class.java)
 
-        sourceSets.named("main") { main ->
+        sourceSets.named("main") {
             if (!usesStonecutter) {
-                main.resources.srcDir(project.file("src/main/generated"))
+                resources.srcDir(project.file("src/main/generated"))
                 return@named
             }
 
@@ -27,32 +27,32 @@ object StonecutterSourceLayout {
             val mergedJavaDir = project.layout.buildDirectory.dir("generated/merged/main/java")
             val mergedResourcesDir = project.layout.buildDirectory.dir("generated/merged/main/resources")
 
-            project.tasks.register(STAGE_JAVA_TASK, Sync::class.java) { task ->
-                task.duplicatesStrategy = DuplicatesStrategy.INCLUDE
-                task.dependsOn(project.tasks.named("stonecutterGenerate"))
-                task.from(generatedJavaDir)
+            project.tasks.register(STAGE_JAVA_TASK, Sync::class.java) {
+                duplicatesStrategy = DuplicatesStrategy.INCLUDE
+                dependsOn(project.tasks.named("stonecutterGenerate"))
+                from(generatedJavaDir)
                 val versionJavaDir = versionDir.toPath().resolve("common/src/main/java").toFile()
                 if (versionJavaDir.isDirectory) {
-                    task.from(versionJavaDir)
+                    from(versionJavaDir)
                 }
-                task.into(mergedJavaDir)
+                into(mergedJavaDir)
             }
 
-            project.tasks.register(STAGE_RESOURCES_TASK, Sync::class.java) { task ->
-                task.duplicatesStrategy = DuplicatesStrategy.INCLUDE
-                task.dependsOn(project.tasks.named("stonecutterGenerate"))
-                task.from(generatedResourcesDir)
-                task.from(project.rootProject.file("common/src/main/generated"))
-                task.from(project.rootProject.file("src/main/generated"))
+            project.tasks.register(STAGE_RESOURCES_TASK, Sync::class.java) {
+                duplicatesStrategy = DuplicatesStrategy.INCLUDE
+                dependsOn(project.tasks.named("stonecutterGenerate"))
+                from(generatedResourcesDir)
+                from(project.rootProject.file("common/src/main/generated"))
+                from(project.rootProject.file("src/main/generated"))
                 val versionResourcesDir = versionDir.toPath().resolve("common/src/main/resources").toFile()
                 if (versionResourcesDir.isDirectory) {
-                    task.from(versionResourcesDir)
+                    from(versionResourcesDir)
                 }
-                task.into(mergedResourcesDir)
+                into(mergedResourcesDir)
             }
 
-            main.java.setSrcDirs(listOf(mergedJavaDir.get().asFile))
-            main.resources.setSrcDirs(listOf(mergedResourcesDir.get().asFile))
+            java.setSrcDirs(listOf(mergedJavaDir.get().asFile))
+            resources.setSrcDirs(listOf(mergedResourcesDir.get().asFile))
         }
     }
 
@@ -66,46 +66,46 @@ object StonecutterSourceLayout {
         val mergedResourcesDir = project.layout.buildDirectory.dir("generated/merged/main/resources")
         val versionDir = project.rootProject.file("versions/$minecraftVersion")
 
-        project.tasks.register(STAGE_JAVA_TASK, Sync::class.java) { task ->
-            task.duplicatesStrategy = DuplicatesStrategy.INCLUDE
-            task.dependsOn(commonProject.tasks.named("stonecutterGenerate"))
-            task.dependsOn(project.tasks.named("stonecutterGenerate"))
-            task.from(commonGeneratedJavaDir)
-            task.from(generatedJavaDir)
+        project.tasks.register(STAGE_JAVA_TASK, Sync::class.java) {
+            duplicatesStrategy = DuplicatesStrategy.INCLUDE
+            dependsOn(commonProject.tasks.named("stonecutterGenerate"))
+            dependsOn(project.tasks.named("stonecutterGenerate"))
+            from(commonGeneratedJavaDir)
+            from(generatedJavaDir)
             val versionCommonJavaDir = versionDir.toPath().resolve("common/src/main/java").toFile()
             if (versionCommonJavaDir.isDirectory) {
-                task.from(versionCommonJavaDir)
+                from(versionCommonJavaDir)
             }
             val versionLoaderJavaDir = versionDir.toPath().resolve("$loader/src/main/java").toFile()
             if (versionLoaderJavaDir.isDirectory) {
-                task.from(versionLoaderJavaDir)
+                from(versionLoaderJavaDir)
             }
-            task.into(mergedJavaDir)
+            into(mergedJavaDir)
         }
 
-        project.tasks.register(STAGE_RESOURCES_TASK, Sync::class.java) { task ->
-            task.duplicatesStrategy = DuplicatesStrategy.INCLUDE
-            task.dependsOn(commonProject.tasks.named("stonecutterGenerate"))
-            task.dependsOn(project.tasks.named("stonecutterGenerate"))
-            task.from(commonGeneratedResourcesDir)
-            task.from(generatedResourcesDir)
-            task.from(project.rootProject.file("common/src/main/generated"))
-            task.from(project.rootProject.file("src/main/generated"))
+        project.tasks.register(STAGE_RESOURCES_TASK, Sync::class.java) {
+            duplicatesStrategy = DuplicatesStrategy.INCLUDE
+            dependsOn(commonProject.tasks.named("stonecutterGenerate"))
+            dependsOn(project.tasks.named("stonecutterGenerate"))
+            from(commonGeneratedResourcesDir)
+            from(generatedResourcesDir)
+            from(project.rootProject.file("common/src/main/generated"))
+            from(project.rootProject.file("src/main/generated"))
             val versionCommonResourcesDir = versionDir.toPath().resolve("common/src/main/resources").toFile()
             if (versionCommonResourcesDir.isDirectory) {
-                task.from(versionCommonResourcesDir)
+                from(versionCommonResourcesDir)
             }
             val versionLoaderResourcesDir = versionDir.toPath().resolve("$loader/src/main/resources").toFile()
             if (versionLoaderResourcesDir.isDirectory) {
-                task.from(versionLoaderResourcesDir)
+                from(versionLoaderResourcesDir)
             }
-            task.into(mergedResourcesDir)
+            into(mergedResourcesDir)
         }
 
         val sourceSets = project.extensions.getByType(SourceSetContainer::class.java)
-        sourceSets.named("main") { main ->
-            main.java.setSrcDirs(listOf(mergedJavaDir.get().asFile))
-            main.resources.setSrcDirs(listOf(mergedResourcesDir.get().asFile))
+        sourceSets.named("main") {
+            java.setSrcDirs(listOf(mergedJavaDir.get().asFile))
+            resources.setSrcDirs(listOf(mergedResourcesDir.get().asFile))
         }
 
         attachStagingDependencies(project, commonProject)
@@ -116,50 +116,50 @@ object StonecutterSourceLayout {
         val mergedJavaDir = project.layout.buildDirectory.dir("generated/merged/main/java")
         val mergedResourcesDir = project.layout.buildDirectory.dir("generated/merged/main/resources")
 
-        project.tasks.register(STAGE_JAVA_TASK, Sync::class.java) { task ->
-            task.duplicatesStrategy = DuplicatesStrategy.INCLUDE
-            task.into(mergedJavaDir)
+        project.tasks.register(STAGE_JAVA_TASK, Sync::class.java) {
+            duplicatesStrategy = DuplicatesStrategy.INCLUDE
+            into(mergedJavaDir)
         }
 
-        project.tasks.register(STAGE_RESOURCES_TASK, Sync::class.java) { task ->
-            task.duplicatesStrategy = DuplicatesStrategy.INCLUDE
-            task.into(mergedResourcesDir)
+        project.tasks.register(STAGE_RESOURCES_TASK, Sync::class.java) {
+            duplicatesStrategy = DuplicatesStrategy.INCLUDE
+            into(mergedResourcesDir)
         }
 
         val sourceSets = project.extensions.getByType(SourceSetContainer::class.java)
-        sourceSets.named("main") { main ->
-            main.java.setSrcDirs(listOf(mergedJavaDir.get().asFile))
-            main.resources.setSrcDirs(listOf(mergedResourcesDir.get().asFile))
+        sourceSets.named("main") {
+            java.setSrcDirs(listOf(mergedJavaDir.get().asFile))
+            resources.setSrcDirs(listOf(mergedResourcesDir.get().asFile))
         }
     }
 
     @JvmStatic
     fun attachStagingDependencies(project: Project, commonProject: Project? = null) {
         listOf("compileJava", "sourcesJar", "javadoc").forEach { taskName ->
-            project.tasks.matching { it.name == taskName }.configureEach { task ->
-                commonProject?.let { task.dependsOn(it.tasks.named("stonecutterGenerate")) }
-                task.dependsOn(project.tasks.named("stonecutterGenerate"))
-                task.dependsOn(project.tasks.named(STAGE_JAVA_TASK))
+            project.tasks.matching { it.name == taskName }.configureEach {
+                commonProject?.let { dependsOn(it.tasks.named("stonecutterGenerate")) }
+                dependsOn(project.tasks.named("stonecutterGenerate"))
+                dependsOn(project.tasks.named(STAGE_JAVA_TASK))
             }
         }
         listOf("processResources", "sourcesJar").forEach { taskName ->
-            project.tasks.matching { it.name == taskName }.configureEach { task ->
-                task.dependsOn(project.tasks.named(STAGE_RESOURCES_TASK))
+            project.tasks.matching { it.name == taskName }.configureEach {
+                dependsOn(project.tasks.named(STAGE_RESOURCES_TASK))
             }
         }
-        project.tasks.matching { it.name == "createMinecraftArtifacts" }.configureEach { task ->
-            task.dependsOn(project.tasks.named(STAGE_JAVA_TASK))
-            task.dependsOn(project.tasks.named(STAGE_RESOURCES_TASK))
+        project.tasks.matching { it.name == "createMinecraftArtifacts" }.configureEach {
+            dependsOn(project.tasks.named(STAGE_JAVA_TASK))
+            dependsOn(project.tasks.named(STAGE_RESOURCES_TASK))
         }
     }
 
     @JvmStatic
     fun excludeCacheFromArchives(project: Project) {
-        project.tasks.withType(ProcessResources::class.java).configureEach { task ->
-            task.exclude(".cache/**")
+        project.tasks.withType(ProcessResources::class.java).configureEach {
+            exclude(".cache/**")
         }
-        project.tasks.withType(Jar::class.java).configureEach { task ->
-            task.exclude(".cache/**")
+        project.tasks.withType(Jar::class.java).configureEach {
+            exclude(".cache/**")
         }
     }
 }

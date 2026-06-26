@@ -45,9 +45,9 @@ class MultiloaderForgePlugin : Plugin<Project> {
         val mixinConfigs = ConventionSupport.collectMixinConfigs(project, "forge")
         val modId = ConventionSupport.requiredProperty(project, "mod.id")
 
-        project.tasks.named("jar", Jar::class.java) { task ->
+        project.tasks.named("jar", Jar::class.java) {
             if (mixinConfigs.isNotEmpty()) {
-                task.manifest.attributes(mapOf("MixinConfigs" to mixinConfigs.joinToString(",")))
+                manifest.attributes(mapOf("MixinConfigs" to mixinConfigs.joinToString(",")))
             }
         }
 
@@ -98,8 +98,8 @@ class MultiloaderForgePlugin : Plugin<Project> {
         project.group = context.requiredProperty("project.group")
         project.version = context.requiredProperty("project.version")
 
-        project.extensions.configure(BasePluginExtension::class.java) { base ->
-            base.archivesName.set("$modId-$loader")
+        project.extensions.configure(BasePluginExtension::class.java) {
+            archivesName.set("$modId-$loader")
         }
 
         context.sharedRepositories()
@@ -173,47 +173,47 @@ class MultiloaderForgePlugin : Plugin<Project> {
         project.group = context.requiredProperty("project.group")
         project.version = context.requiredProperty("project.version")
 
-        project.extensions.configure(BasePluginExtension::class.java) { base ->
-            base.archivesName.set("$modId-$loader")
+        project.extensions.configure(BasePluginExtension::class.java) {
+            archivesName.set("$modId-$loader")
         }
 
         StonecutterSourceLayout.configureGraphOnly(project)
         configureJava(project, context)
 
-        project.tasks.withType(Jar::class.java).configureEach { task ->
-            task.exclude(".cache/**")
+        project.tasks.withType(Jar::class.java).configureEach {
+            exclude(".cache/**")
         }
 
-        project.tasks.register("runClient") { task ->
-            task.group = "minecraft"
-            task.description = "Placeholder Forge client run task for graph-only $minecraftVersion builds."
+        project.tasks.register("runClient") {
+            group = "minecraft"
+            description = "Placeholder Forge client run task for graph-only $minecraftVersion builds."
         }
 
         configurePublishing(project, context)
     }
 
     private fun configureJava(project: Project, context: MultiloaderProjectContext) {
-        project.extensions.configure(JavaPluginExtension::class.java) { java ->
-            java.withSourcesJar()
-            java.withJavadocJar()
-            java.toolchain.languageVersion.set(
+        project.extensions.configure(JavaPluginExtension::class.java) {
+            withSourcesJar()
+            withJavadocJar()
+            toolchain.languageVersion.set(
                 JavaLanguageVersion.of(context.requiredProperty("project.java").toInt()),
             )
         }
 
-        project.tasks.withType(JavaCompile::class.java).configureEach { task ->
-            task.options.encoding = "UTF-8"
+        project.tasks.withType(JavaCompile::class.java).configureEach {
+            options.encoding = "UTF-8"
         }
         ConventionSupport.configureJavadoc(project)
 
-        project.tasks.withType(ProcessResources::class.java).configureEach { task ->
-            task.duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-            task.exclude(".cache/**")
+        project.tasks.withType(ProcessResources::class.java).configureEach {
+            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+            exclude(".cache/**")
         }
 
-        project.tasks.named("sourcesJar", Jar::class.java) { task ->
-            task.duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-            task.exclude(".cache/**")
+        project.tasks.named("sourcesJar", Jar::class.java) {
+            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+            exclude(".cache/**")
         }
     }
 
@@ -438,10 +438,10 @@ class MultiloaderForgePlugin : Plugin<Project> {
     }
 
     private fun configureForgeOutputDirectories(project: Project) {
-        project.extensions.getByType(SourceSetContainer::class.java).configureEach { sourceSet ->
-            val dir = project.layout.buildDirectory.dir("sourcesSets/${sourceSet.name}")
-            sourceSet.output.setResourcesDir(dir.get().asFile)
-            sourceSet.java.destinationDirectory.set(dir)
+        project.extensions.getByType(SourceSetContainer::class.java).configureEach {
+            val dir = project.layout.buildDirectory.dir("sourcesSets/$name")
+            output.setResourcesDir(dir.get().asFile)
+            java.destinationDirectory.set(dir)
         }
     }
 
@@ -457,13 +457,13 @@ class MultiloaderForgePlugin : Plugin<Project> {
             if (value is String) value.replace("\n", "\\n") else value
         }
 
-        project.tasks.named("processResources", ProcessResources::class.java) { task ->
-            task.inputs.properties(expandProps.filterValues { it != null })
-            task.filesMatching(listOf("META-INF/mods.toml")) {
-                it.expand(expandProps)
+        project.tasks.named("processResources", ProcessResources::class.java) {
+            inputs.properties(expandProps.filterValues { it != null })
+            filesMatching(listOf("META-INF/mods.toml")) {
+                expand(expandProps)
             }
-            task.filesMatching(listOf("pack.mcmeta", "*.mixins.json")) {
-                it.expand(jsonExpandProps)
+            filesMatching(listOf("pack.mcmeta", "*.mixins.json")) {
+                expand(jsonExpandProps)
             }
         }
     }
@@ -476,8 +476,8 @@ class MultiloaderForgePlugin : Plugin<Project> {
         minecraftVersion: String,
         mixinConfigs: List<String>,
     ) {
-        project.tasks.named("jar", Jar::class.java) { task ->
-            task.manifest.attributes(
+        project.tasks.named("jar", Jar::class.java) {
+            manifest.attributes(
                 mapOf(
                     "Specification-Title" to modName,
                     "Specification-Vendor" to context.optionalProperty("mod.authors"),
@@ -490,24 +490,24 @@ class MultiloaderForgePlugin : Plugin<Project> {
                 ),
             )
             if (mixinConfigs.isNotEmpty()) {
-                task.manifest.attributes(mapOf("MixinConfigs" to mixinConfigs.joinToString(",")))
+                manifest.attributes(mapOf("MixinConfigs" to mixinConfigs.joinToString(",")))
             }
         }
     }
 
     private fun configurePublishing(project: Project, context: MultiloaderProjectContext) {
-        project.extensions.configure(PublishingExtension::class.java) { publishing ->
-            publishing.publications.register("mavenJava", MavenPublication::class.java) { publication ->
-                publication.from(project.components.getByName("java"))
-                publication.artifactId = project.extensions.getByType(BasePluginExtension::class.java).archivesName.get()
+        project.extensions.configure(PublishingExtension::class.java) {
+            publications.register("mavenJava", MavenPublication::class.java) {
+                from(project.components.getByName("java"))
+                artifactId = project.extensions.getByType(BasePluginExtension::class.java).archivesName.get()
             }
-            context.publishingRepositories(publishing, project.version.toString())
+            context.publishingRepositories(this, project.version.toString())
         }
     }
 
     private fun addStrictJopt(project: Project) {
         val dependency = project.dependencies.create("net.sf.jopt-simple:jopt-simple:5.0.4") as ExternalModuleDependency
-        dependency.version { version -> version.strictly("5.0.4") }
+        dependency.version { strictly("5.0.4") }
         project.dependencies.add("implementation", dependency)
     }
 

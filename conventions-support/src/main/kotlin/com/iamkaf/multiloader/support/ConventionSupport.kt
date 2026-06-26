@@ -54,36 +54,36 @@ object ConventionSupport {
         commonResources.isCanBeConsumed = false
 
         val commonDependency = project.dependencies.project(mapOf("path" to ":common")) as ProjectDependency
-        commonDependency.capabilities { capabilities ->
-            capabilities.requireCapability("${project.group}:${requiredProperty(project, "mod.id")}")
+        commonDependency.capabilities {
+            requireCapability("${project.group}:${requiredProperty(project, "mod.id")}")
         }
         project.dependencies.add("compileOnly", commonDependency)
         project.dependencies.add("commonJava", project.dependencies.project(mapOf("path" to ":common", "configuration" to "commonJava")))
         project.dependencies.add("commonResources", project.dependencies.project(mapOf("path" to ":common", "configuration" to "commonResources")))
 
-        project.tasks.named("compileJava", JavaCompile::class.java) { task ->
-            task.dependsOn(commonJava)
-            task.source(commonJava)
+        project.tasks.named("compileJava", JavaCompile::class.java) {
+            dependsOn(commonJava)
+            source(commonJava)
         }
 
-        project.tasks.named("processResources", ProcessResources::class.java) { task ->
-            task.dependsOn(commonResources)
-            task.from(commonResources)
-            task.exclude(".cache/**")
+        project.tasks.named("processResources", ProcessResources::class.java) {
+            dependsOn(commonResources)
+            from(commonResources)
+            exclude(".cache/**")
         }
 
-        project.tasks.named("javadoc") { task ->
-            task.dependsOn(commonJava)
-            GroovyGradleDsl.invoke(task, "source", commonJava)
+        project.tasks.named("javadoc") {
+            dependsOn(commonJava)
+            GroovyGradleDsl.invoke(this, "source", commonJava)
         }
 
-        project.tasks.named("sourcesJar", Jar::class.java) { task ->
-            task.dependsOn(commonJava)
-            task.from(commonJava)
-            task.dependsOn(commonResources)
-            task.from(commonResources)
-            task.exclude(".cache/**")
-            task.duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        project.tasks.named("sourcesJar", Jar::class.java) {
+            dependsOn(commonJava)
+            from(commonJava)
+            dependsOn(commonResources)
+            from(commonResources)
+            exclude(".cache/**")
+            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         }
     }
 
@@ -112,49 +112,49 @@ object ConventionSupport {
     fun configureRepositories(project: Project) {
         project.repositories.mavenLocal()
         project.repositories.mavenCentral()
-        project.repositories.maven { repo ->
-            repo.name = "TerraformersMC"
-            repo.url = project.uri("https://maven.terraformersmc.com/")
-            repo.metadataSources { sources ->
-                sources.mavenPom()
-                sources.artifact()
+        project.repositories.maven {
+            name = "TerraformersMC"
+            url = project.uri("https://maven.terraformersmc.com/")
+            metadataSources {
+                mavenPom()
+                artifact()
             }
-            repo.content { content ->
-                content.includeGroup("com.terraformersmc")
+            content {
+                includeGroup("com.terraformersmc")
             }
         }
-        project.repositories.maven { repo ->
-            repo.name = "Nucleoid"
-            repo.url = project.uri("https://maven.nucleoid.xyz/")
-            repo.content { content -> content.includeGroup("eu.pb4") }
+        project.repositories.maven {
+            name = "Nucleoid"
+            url = project.uri("https://maven.nucleoid.xyz/")
+            content { includeGroup("eu.pb4") }
         }
-        project.repositories.maven { repo ->
-            repo.name = "Sponge"
-            repo.url = project.uri("https://repo.spongepowered.org/repository/maven-public")
+        project.repositories.maven {
+            name = "Sponge"
+            url = project.uri("https://repo.spongepowered.org/repository/maven-public")
         }
-        project.repositories.maven { repo ->
-            repo.name = "ParchmentMC"
-            repo.url = project.uri("https://maven.parchmentmc.org/")
+        project.repositories.maven {
+            name = "ParchmentMC"
+            url = project.uri("https://maven.parchmentmc.org/")
         }
-        project.repositories.maven { repo ->
-            repo.name = "NeoForge"
-            repo.url = project.uri("https://maven.neoforged.net/releases")
+        project.repositories.maven {
+            name = "NeoForge"
+            url = project.uri("https://maven.neoforged.net/releases")
         }
-        project.repositories.maven { repo ->
-            repo.name = "BlameJared"
-            repo.url = project.uri("https://maven.blamejared.com")
+        project.repositories.maven {
+            name = "BlameJared"
+            url = project.uri("https://maven.blamejared.com")
         }
-        project.repositories.maven { repo ->
-            repo.name = "Modrinth"
-            repo.url = project.uri("https://api.modrinth.com/maven")
+        project.repositories.maven {
+            name = "Modrinth"
+            url = project.uri("https://api.modrinth.com/maven")
         }
-        project.repositories.maven { repo ->
-            repo.name = "Kaf Maven"
-            repo.url = project.uri("https://maven.kaf.sh")
+        project.repositories.maven {
+            name = "Kaf Maven"
+            url = project.uri("https://maven.kaf.sh")
         }
-        project.repositories.maven { repo ->
-            repo.name = "Fuzs Mod Resources"
-            repo.url = project.uri("https://raw.githubusercontent.com/Fuzss/modresources/main/maven/")
+        project.repositories.maven {
+            name = "Fuzs Mod Resources"
+            url = project.uri("https://raw.githubusercontent.com/Fuzss/modresources/main/maven/")
         }
     }
 
@@ -166,29 +166,29 @@ object ConventionSupport {
 
     @JvmStatic
     fun configureArchiveNaming(project: Project) {
-        project.extensions.configure(BasePluginExtension::class.java) { base ->
-            base.archivesName.set("${requiredProperty(project, "mod.id")}-${project.name}")
+        project.extensions.configure(BasePluginExtension::class.java) {
+            archivesName.set("${requiredProperty(project, "mod.id")}-${project.name}")
         }
     }
 
     @JvmStatic
     fun configureJava(project: Project) {
         val javaVersion = project.findProperty("project.java")?.toString()?.toIntOrNull()
-        project.extensions.configure(JavaPluginExtension::class.java) { java ->
-            java.withSourcesJar()
-            java.withJavadocJar()
+        project.extensions.configure(JavaPluginExtension::class.java) {
+            withSourcesJar()
+            withJavadocJar()
             if (javaVersion != null) {
-                java.toolchain.languageVersion.set(JavaLanguageVersion.of(javaVersion))
+                toolchain.languageVersion.set(JavaLanguageVersion.of(javaVersion))
             }
         }
 
         project.extensions.findByType(SourceSetContainer::class.java)
-            ?.named("main") { main ->
-                main.resources.srcDir(project.file("src/main/generated"))
+            ?.named("main") {
+                resources.srcDir(project.file("src/main/generated"))
             }
 
-        project.tasks.withType(JavaCompile::class.java).configureEach { task ->
-            task.options.encoding = "UTF-8"
+        project.tasks.withType(JavaCompile::class.java).configureEach {
+            options.encoding = "UTF-8"
         }
 
         configureJavadoc(project)
@@ -196,36 +196,36 @@ object ConventionSupport {
 
     @JvmStatic
     fun configureJavadoc(project: Project) {
-        project.tasks.withType(Javadoc::class.java).configureEach { task ->
-            (task.options as StandardJavadocDocletOptions).addStringOption("Xdoclint:none", "-quiet")
+        project.tasks.withType(Javadoc::class.java).configureEach {
+            (options as StandardJavadocDocletOptions).addStringOption("Xdoclint:none", "-quiet")
         }
     }
 
     @JvmStatic
     fun configureResourceMetadata(project: Project) {
-        project.tasks.withType(ProcessResources::class.java).configureEach { task ->
+        project.tasks.withType(ProcessResources::class.java).configureEach {
             val expandProps = buildExpandProperties(project)
             val inputProps = expandProps.filterValues { it != null }
             val jsonExpandProps = expandProps.mapValues { (_, value) ->
                 if (value is String) value.replace("\n", "\\n") else value
             }
 
-            task.exclude(".cache/**")
-            task.filesMatching(listOf("META-INF/mods.toml", "META-INF/neoforge.mods.toml")) {
-                it.expand(expandProps)
+            exclude(".cache/**")
+            filesMatching(listOf("META-INF/mods.toml", "META-INF/neoforge.mods.toml")) {
+                expand(expandProps)
             }
-            task.filesMatching(listOf("pack.mcmeta", "fabric.mod.json", "*.mixins.json")) {
-                it.expand(jsonExpandProps)
+            filesMatching(listOf("pack.mcmeta", "fabric.mod.json", "*.mixins.json")) {
+                expand(jsonExpandProps)
             }
-            task.inputs.properties(inputProps)
-            task.duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+            inputs.properties(inputProps)
+            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         }
     }
 
     @JvmStatic
     fun configureManifests(project: Project) {
-        project.tasks.named("jar", Jar::class.java) { task ->
-            task.manifest.attributes(
+        project.tasks.named("jar", Jar::class.java) {
+            manifest.attributes(
                 mapOf(
                     "Specification-Title" to requiredProperty(project, "mod.name"),
                     "Specification-Vendor" to optionalProperty(project, "mod.authors"),
@@ -246,12 +246,12 @@ object ConventionSupport {
         if (!licenseFile.exists()) return
 
         listOf("jar", "sourcesJar").forEach { taskName ->
-            project.tasks.named(taskName, Jar::class.java) { task ->
-                task.from(licenseFile) { copy ->
-                    copy.rename { "${it}_${requiredProperty(project, "mod.name")}" }
+            project.tasks.named(taskName, Jar::class.java) {
+                from(licenseFile) {
+                    rename { "${it}_${requiredProperty(project, "mod.name")}" }
                 }
-                task.duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-                task.exclude(".cache/**")
+                duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+                exclude(".cache/**")
             }
         }
     }
@@ -259,17 +259,17 @@ object ConventionSupport {
     @JvmStatic
     fun configureCapabilities(project: Project) {
         listOf("apiElements", "runtimeElements", "sourcesElements", "javadocElements").forEach { variant ->
-            project.configurations.named(variant) { configuration ->
+            project.configurations.named(variant) {
                 val archivesName = project.extensions.getByType(BasePluginExtension::class.java).archivesName.get()
-                configuration.outgoing.capability("${project.group}:${project.name}:${project.version}")
-                configuration.outgoing.capability("${project.group}:$archivesName:${project.version}")
-                configuration.outgoing.capability("${project.group}:${requiredProperty(project, "mod.id")}-${project.name}-${versionAlias(project, "minecraft")}:${project.version}")
-                configuration.outgoing.capability("${project.group}:${requiredProperty(project, "mod.id")}:${project.version}")
+                outgoing.capability("${project.group}:${project.name}:${project.version}")
+                outgoing.capability("${project.group}:$archivesName:${project.version}")
+                outgoing.capability("${project.group}:${requiredProperty(project, "mod.id")}-${project.name}-${versionAlias(project, "minecraft")}:${project.version}")
+                outgoing.capability("${project.group}:${requiredProperty(project, "mod.id")}:${project.version}")
             }
 
-            project.extensions.configure(PublishingExtension::class.java) { publishing ->
-                publishing.publications.withType(MavenPublication::class.java).configureEach { publication ->
-                    publication.suppressPomMetadataWarningsFor(variant)
+            project.extensions.configure(PublishingExtension::class.java) {
+                publications.withType(MavenPublication::class.java).configureEach {
+                    suppressPomMetadataWarningsFor(variant)
                 }
             }
         }
@@ -277,21 +277,21 @@ object ConventionSupport {
 
     @JvmStatic
     fun configurePublishing(project: Project) {
-        project.extensions.configure(PublishingExtension::class.java) { publishing ->
-            publishing.publications.register("mavenJava", MavenPublication::class.java) { publication ->
-                publication.groupId = project.group.toString()
-                publication.artifactId = project.extensions.getByType(BasePluginExtension::class.java).archivesName.get()
-                publication.from(project.components.getByName("java"))
+        project.extensions.configure(PublishingExtension::class.java) {
+            publications.register("mavenJava", MavenPublication::class.java) {
+                groupId = project.group.toString()
+                artifactId = project.extensions.getByType(BasePluginExtension::class.java).archivesName.get()
+                from(project.components.getByName("java"))
             }
-            publishing.repositories.maven { repo ->
-                repo.name = "KafMaven"
-                repo.url = project.uri(
+            repositories.maven {
+                name = "KafMaven"
+                url = project.uri(
                     if (project.version.toString().endsWith("-SNAPSHOT")) "https://z.kaf.sh/snapshots"
                     else "https://z.kaf.sh/releases",
                 )
-                repo.credentials { credentials ->
-                    credentials.username = System.getenv("MAVEN_PUBLISH_USERNAME")
-                    credentials.password = System.getenv("MAVEN_PUBLISH_PASSWORD")
+                credentials {
+                    username = System.getenv("MAVEN_PUBLISH_USERNAME")
+                    password = System.getenv("MAVEN_PUBLISH_PASSWORD")
                 }
             }
         }
@@ -310,10 +310,10 @@ object ConventionSupport {
         commonResources.isCanBeConsumed = true
 
         val sourceSets = project.extensions.getByType(SourceSetContainer::class.java)
-        project.artifacts { artifacts ->
-            artifacts.add("commonJava", sourceSets.named("main").get().java.sourceDirectories.singleFile)
+        project.artifacts {
+            add("commonJava", sourceSets.named("main").get().java.sourceDirectories.singleFile)
             sourceSets.named("main").get().resources.sourceDirectories.files.forEach { directory ->
-                artifacts.add("commonResources", directory)
+                add("commonResources", directory)
             }
         }
     }

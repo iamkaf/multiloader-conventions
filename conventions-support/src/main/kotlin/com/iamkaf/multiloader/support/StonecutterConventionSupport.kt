@@ -52,15 +52,15 @@ object StonecutterConventionSupport {
 
     @JvmStatic
     fun publishingRepositories(publishing: PublishingExtension, version: String) {
-        publishing.repositories.maven { repo ->
-            repo.name = "KafMaven"
-            repo.url = URI.create(
+        publishing.repositories.maven {
+            name = "KafMaven"
+            url = URI.create(
                 if (version.endsWith("-SNAPSHOT")) "https://z.kaf.sh/snapshots"
                 else "https://z.kaf.sh/releases",
             )
-            repo.credentials { credentials ->
-                credentials.username = System.getenv("MAVEN_PUBLISH_USERNAME")
-                credentials.password = System.getenv("MAVEN_PUBLISH_PASSWORD")
+            credentials {
+                username = System.getenv("MAVEN_PUBLISH_USERNAME")
+                password = System.getenv("MAVEN_PUBLISH_PASSWORD")
             }
         }
     }

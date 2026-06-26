@@ -1,6 +1,6 @@
 plugins {
     id 'java-gradle-plugin'
-    id 'org.jetbrains.kotlin.jvm'
+    id 'org.gradle.kotlin.kotlin-dsl'
     id 'groovy'
 }
 

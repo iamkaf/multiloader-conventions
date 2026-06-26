@@ -20,13 +20,13 @@ class MultiloaderTranslationsPlugin : Plugin<Project> {
                 .orElse(project.providers.environmentVariable("I18N_TOKEN")),
         )
 
-        project.tasks.register("downloadTranslations", DownloadTranslationsTask::class.java) { task ->
-            task.group = "translations"
-            task.description = "Downloads approved non-en_us translations from the configured i18n export project."
-            task.projectSlug.convention(extension.projectSlug)
-            task.outputDir.convention(extension.outputDir)
-            task.baseUrl.convention(extension.baseUrl)
-            task.token.convention(extension.token)
+        project.tasks.register("downloadTranslations", DownloadTranslationsTask::class.java) {
+            group = "translations"
+            description = "Downloads approved non-en_us translations from the configured i18n export project."
+            projectSlug.convention(extension.projectSlug)
+            outputDir.convention(extension.outputDir)
+            baseUrl.convention(extension.baseUrl)
+            token.convention(extension.token)
         }
     }
 }

@@ -4,9 +4,7 @@ import com.iamkaf.multiloader.support.BuildToolsVersions
 import com.iamkaf.multiloader.support.MultiloaderTargetScope
 import com.iamkaf.multiloader.support.VersionPolicy
 import dev.kikugie.stonecutter.settings.StonecutterSettingsExtension
-import dev.kikugie.stonecutter.settings.tree.BranchBuilder
 import dev.kikugie.stonecutter.settings.tree.TreeBuilder
-import org.gradle.api.Action
 import org.gradle.api.Plugin
 import org.gradle.api.initialization.Settings
 import java.io.File
@@ -40,29 +38,29 @@ class MultiloaderSettingsPlugin : Plugin<Settings> {
         settings.pluginManagement.repositories.mavenLocal()
         settings.pluginManagement.repositories.gradlePluginPortal()
         settings.pluginManagement.repositories.mavenCentral()
-        settings.pluginManagement.repositories.maven { repo ->
-            repo.name = "Fabric"
-            repo.url = URI.create("https://maven.fabricmc.net")
+        settings.pluginManagement.repositories.maven {
+            name = "Fabric"
+            url = URI.create("https://maven.fabricmc.net")
         }
-        settings.pluginManagement.repositories.maven { repo ->
-            repo.name = "Forge"
-            repo.url = URI.create("https://maven.minecraftforge.net")
+        settings.pluginManagement.repositories.maven {
+            name = "Forge"
+            url = URI.create("https://maven.minecraftforge.net")
         }
-        settings.pluginManagement.repositories.maven { repo ->
-            repo.name = "NeoForge"
-            repo.url = URI.create("https://maven.neoforged.net/releases")
+        settings.pluginManagement.repositories.maven {
+            name = "NeoForge"
+            url = URI.create("https://maven.neoforged.net/releases")
         }
-        settings.pluginManagement.repositories.maven { repo ->
-            repo.name = "Sponge"
-            repo.url = URI.create("https://repo.spongepowered.org/repository/maven-public")
+        settings.pluginManagement.repositories.maven {
+            name = "Sponge"
+            url = URI.create("https://repo.spongepowered.org/repository/maven-public")
         }
-        settings.pluginManagement.repositories.maven { repo ->
-            repo.name = "FirstDark"
-            repo.url = URI.create("https://maven.firstdarkdev.xyz/releases")
+        settings.pluginManagement.repositories.maven {
+            name = "FirstDark"
+            url = URI.create("https://maven.firstdarkdev.xyz/releases")
         }
-        settings.pluginManagement.repositories.maven { repo ->
-            repo.name = "Kaf Maven"
-            repo.url = URI.create("https://maven.kaf.sh")
+        settings.pluginManagement.repositories.maven {
+            name = "Kaf Maven"
+            url = URI.create("https://maven.kaf.sh")
         }
     }
 
@@ -108,8 +106,8 @@ class MultiloaderSettingsPlugin : Plugin<Settings> {
 
     private fun configureFlatDependencyResolution(settings: Settings) {
         settings.dependencyResolutionManagement.repositories.mavenLocal()
-        settings.dependencyResolutionManagement.repositories.maven { repo ->
-            repo.url = URI.create("https://maven.kaf.sh")
+        settings.dependencyResolutionManagement.repositories.maven {
+            url = URI.create("https://maven.kaf.sh")
         }
         settings.dependencyResolutionManagement.repositories.mavenCentral()
 
@@ -118,22 +116,22 @@ class MultiloaderSettingsPlugin : Plugin<Settings> {
             .orElse(VersionPolicy.catalogCoordinate(mcVersion))
             .get()
 
-        settings.dependencyResolutionManagement.versionCatalogs.create("libs") { libs ->
-            libs.from(catalogCoordinate)
+        settings.dependencyResolutionManagement.versionCatalogs.create("libs") {
+            from(catalogCoordinate)
         }
     }
 
     private fun configureStonecutterDependencyResolution(settings: Settings, versionDirs: List<File>) {
         settings.dependencyResolutionManagement.repositories.mavenLocal()
-        settings.dependencyResolutionManagement.repositories.maven { repo ->
-            repo.url = URI.create("https://maven.kaf.sh")
+        settings.dependencyResolutionManagement.repositories.maven {
+            url = URI.create("https://maven.kaf.sh")
         }
         settings.dependencyResolutionManagement.repositories.mavenCentral()
 
         versionDirs.forEach { dir ->
             val catalogCoordinate = catalogCoordinate(versionMetadata(settings, dir), dir.name)
-            settings.dependencyResolutionManagement.versionCatalogs.create(VersionPolicy.catalogName(dir.name)) { libs ->
-                libs.from(catalogCoordinate)
+            settings.dependencyResolutionManagement.versionCatalogs.create(VersionPolicy.catalogName(dir.name)) {
+                from(catalogCoordinate)
             }
         }
     }
@@ -184,22 +182,22 @@ class MultiloaderSettingsPlugin : Plugin<Settings> {
         val neoForgeVersions = versionsWithLoaders.filterValues { "neoforge" in it }.keys.toTypedArray()
         val allVersions = uniqueVersions.toTypedArray()
 
-        settings.extensions.configure(StonecutterSettingsExtension::class.java) { stonecutter ->
-            stonecutter.create(settings.rootProject, Action<TreeBuilder> { tree ->
-                tree.versions(*allVersions)
-                configureBranch(tree, "common", allVersions)
-                configureBranch(tree, "fabric", fabricVersions)
-                configureBranch(tree, "forge", forgeVersions)
-                configureBranch(tree, "neoforge", neoForgeVersions)
-            })
+        settings.extensions.configure(StonecutterSettingsExtension::class.java) {
+            create(settings.rootProject) {
+                versions(*allVersions)
+                configureBranch(this, "common", allVersions)
+                configureBranch(this, "fabric", fabricVersions)
+                configureBranch(this, "forge", forgeVersions)
+                configureBranch(this, "neoforge", neoForgeVersions)
+            }
         }
     }
 
     private fun configureBranch(tree: TreeBuilder, name: String, versions: Array<String>) {
         if (versions.isEmpty()) return
-        tree.branch(name, Action<BranchBuilder> { branch ->
-            branch.versions(*versions)
-        })
+        tree.branch(name) {
+            versions(*versions)
+        }
     }
 
     private fun parseEnabledLoaders(settings: Settings): List<String> {

@@ -26,37 +26,37 @@ class MultiloaderPublishingPlugin : Plugin<Project> {
         )
         configureDefaults(project, extension)
 
-        val assembleAll = project.tasks.register("publishingAssemble") { task ->
-            task.group = "publishing"
-            task.description = "Aggregate all enabled artifacts for release publishing."
+        val assembleAll = project.tasks.register("publishingAssemble") {
+            group = "publishing"
+            description = "Aggregate all enabled artifacts for release publishing."
         }
 
-        val publishCurseforgeAll = project.tasks.register("publishCurseforge") { task ->
-            task.group = "publishing"
-            task.description = "Upload all enabled artifacts to CurseForge."
+        val publishCurseforgeAll = project.tasks.register("publishCurseforge") {
+            group = "publishing"
+            description = "Upload all enabled artifacts to CurseForge."
         }
 
-        val publishModrinthAll = project.tasks.register("publishModrinth") { task ->
-            task.group = "publishing"
-            task.description = "Upload all enabled artifacts to Modrinth."
+        val publishModrinthAll = project.tasks.register("publishModrinth") {
+            group = "publishing"
+            description = "Upload all enabled artifacts to Modrinth."
         }
 
-        val publishAll = project.tasks.register("publishMod") { task ->
-            task.group = "publishing"
-            task.description = "Upload all enabled artifacts to configured platforms."
-            task.dependsOn(publishCurseforgeAll, publishModrinthAll)
+        val publishAll = project.tasks.register("publishMod") {
+            group = "publishing"
+            description = "Upload all enabled artifacts to configured platforms."
+            dependsOn(publishCurseforgeAll, publishModrinthAll)
         }
 
-        project.tasks.register("publishingPublish") { task ->
-            task.group = "publishing"
-            task.description = "Compatibility aggregate for publishMod."
-            task.dependsOn(publishAll)
+        project.tasks.register("publishingPublish") {
+            group = "publishing"
+            description = "Compatibility aggregate for publishMod."
+            dependsOn(publishAll)
         }
 
-        project.tasks.register("publishingRelease") { task ->
-            task.group = "publishing"
-            task.description = "Compatibility aggregate for publishMod."
-            task.dependsOn(publishAll)
+        project.tasks.register("publishingRelease") {
+            group = "publishing"
+            description = "Compatibility aggregate for publishMod."
+            dependsOn(publishAll)
         }
 
         project.gradle.projectsEvaluated {
@@ -64,46 +64,46 @@ class MultiloaderPublishingPlugin : Plugin<Project> {
                 val taskSuffix = PublicationPlanner.taskSuffix(publicationConfig.name)
 
                 if (!publicationConfig.enabled) {
-                    val assembleTask = project.tasks.register("publishingAssemble$taskSuffix") { task ->
-                        task.group = "publishing"
-                        task.description = "Aggregate the ${publicationConfig.name} artifact for release publishing."
-                        task.onlyIf { false }
+                    val assembleTask = project.tasks.register("publishingAssemble$taskSuffix") {
+                        group = "publishing"
+                        description = "Aggregate the ${publicationConfig.name} artifact for release publishing."
+                        onlyIf { false }
                     }
-                    assembleAll.configure { task -> task.dependsOn(assembleTask) }
+                    assembleAll.configure { dependsOn(assembleTask) }
 
-                    val curseTask = project.tasks.register("publishCurseforge$taskSuffix") { task ->
-                        task.group = "publishing"
-                        task.description = "Upload the ${publicationConfig.name} artifact to CurseForge."
-                        task.dependsOn(assembleTask)
-                        task.onlyIf { false }
+                    val curseTask = project.tasks.register("publishCurseforge$taskSuffix") {
+                        group = "publishing"
+                        description = "Upload the ${publicationConfig.name} artifact to CurseForge."
+                        dependsOn(assembleTask)
+                        onlyIf { false }
                     }
-                    publishCurseforgeAll.configure { task -> task.dependsOn(curseTask) }
+                    publishCurseforgeAll.configure { dependsOn(curseTask) }
 
-                    val modrinthTask = project.tasks.register("publishModrinth$taskSuffix") { task ->
-                        task.group = "publishing"
-                        task.description = "Upload the ${publicationConfig.name} artifact to Modrinth."
-                        task.dependsOn(assembleTask)
-                        task.onlyIf { false }
+                    val modrinthTask = project.tasks.register("publishModrinth$taskSuffix") {
+                        group = "publishing"
+                        description = "Upload the ${publicationConfig.name} artifact to Modrinth."
+                        dependsOn(assembleTask)
+                        onlyIf { false }
                     }
-                    publishModrinthAll.configure { task -> task.dependsOn(modrinthTask) }
+                    publishModrinthAll.configure { dependsOn(modrinthTask) }
                     return@forEach
                 }
 
                 val spec = PublicationPlanner.plan(project, publicationConfig)
 
-                val assembleTask = project.tasks.register("publishingAssemble${spec.taskSuffix}") { task ->
-                    task.group = "publishing"
-                    task.description = "Aggregate the ${publicationConfig.name} artifact for release publishing."
+                val assembleTask = project.tasks.register("publishingAssemble${spec.taskSuffix}") {
+                    group = "publishing"
+                    description = "Aggregate the ${publicationConfig.name} artifact for release publishing."
 
                     publicationConfig.buildTasks.forEach { taskName ->
                         val extraTask = spec.project.tasks.findByName(taskName)
                         if (extraTask != null) {
-                            task.dependsOn(extraTask)
+                            dependsOn(extraTask)
                         }
                     }
-                    task.dependsOn(spec.jarOutput.task)
+                    dependsOn(spec.jarOutput.task)
 
-                    task.doFirst {
+                    doFirst {
                         project.logger.lifecycle(
                             "[Publishing] Assemble starting for ${publicationConfig.name} " +
                                 "(dryRun=${extension.getConfig().dryRun.get()}, releaseType=${extension.getConfig().releaseType.get()}, " +
@@ -111,7 +111,7 @@ class MultiloaderPublishingPlugin : Plugin<Project> {
                         )
                     }
 
-                    task.doLast {
+                    doLast {
                         val source = spec.archiveFile.get().asFile
                         if (!source.exists()) {
                             throw IllegalStateException("[Publishing] Expected jar does not exist for ${spec.project.path}: $source")
@@ -129,15 +129,15 @@ class MultiloaderPublishingPlugin : Plugin<Project> {
                     }
                 }
 
-                assembleAll.configure { task -> task.dependsOn(assembleTask) }
+                assembleAll.configure { dependsOn(assembleTask) }
 
-                val curseTask = project.tasks.register("publishCurseforge${spec.taskSuffix}") { task ->
-                    task.group = "publishing"
-                    task.description = "Upload the ${publicationConfig.name} artifact to CurseForge."
-                    task.dependsOn(assembleTask)
-                    task.onlyIf { extension.getPublish().getCurseforge().id.isPresent }
+                val curseTask = project.tasks.register("publishCurseforge${spec.taskSuffix}") {
+                    group = "publishing"
+                    description = "Upload the ${publicationConfig.name} artifact to CurseForge."
+                    dependsOn(assembleTask)
+                    onlyIf { extension.getPublish().getCurseforge().id.isPresent }
 
-                    task.doLast {
+                    doLast {
                         val isDryRun = extension.getConfig().dryRun.get()
                         if (!isDryRun && !extension.getPublish().getCurseforge().token.isPresent) {
                             throw IllegalStateException("[Publishing] CurseForge publishing requires publish.curseforge.token unless dryRun=true")
@@ -164,13 +164,13 @@ class MultiloaderPublishingPlugin : Plugin<Project> {
                     }
                 }
 
-                val modrinthTask = project.tasks.register("publishModrinth${spec.taskSuffix}") { task ->
-                    task.group = "publishing"
-                    task.description = "Upload the ${publicationConfig.name} artifact to Modrinth."
-                    task.dependsOn(assembleTask)
-                    task.onlyIf { extension.getPublish().getModrinth().id.isPresent }
+                val modrinthTask = project.tasks.register("publishModrinth${spec.taskSuffix}") {
+                    group = "publishing"
+                    description = "Upload the ${publicationConfig.name} artifact to Modrinth."
+                    dependsOn(assembleTask)
+                    onlyIf { extension.getPublish().getModrinth().id.isPresent }
 
-                    task.doLast {
+                    doLast {
                         val isDryRun = extension.getConfig().dryRun.get()
                         if (!isDryRun && !extension.getPublish().getModrinth().token.isPresent) {
                             throw IllegalStateException("[Publishing] Modrinth publishing requires publish.modrinth.token unless dryRun=true")
@@ -197,8 +197,8 @@ class MultiloaderPublishingPlugin : Plugin<Project> {
                     }
                 }
 
-                publishCurseforgeAll.configure { task -> task.dependsOn(curseTask) }
-                publishModrinthAll.configure { task -> task.dependsOn(modrinthTask) }
+                publishCurseforgeAll.configure { dependsOn(curseTask) }
+                publishModrinthAll.configure { dependsOn(modrinthTask) }
             }
         }
     }

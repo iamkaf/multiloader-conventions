@@ -53,17 +53,17 @@ class MultiloaderCommonPlugin : Plugin<Project> {
         project.group = context.requiredProperty("project.group")
         project.version = context.requiredProperty("project.version")
 
-        project.extensions.configure(BasePluginExtension::class.java) { base ->
-            base.archivesName.set("$modId-common")
+        project.extensions.configure(BasePluginExtension::class.java) {
+            archivesName.set("$modId-common")
         }
 
         context.sharedRepositories()
         StonecutterSourceLayout.configureCommon(project, minecraftVersion, usesStonecutter)
 
-        project.extensions.configure(JavaPluginExtension::class.java) { java ->
-            java.withSourcesJar()
-            java.withJavadocJar()
-            java.toolchain.languageVersion.set(
+        project.extensions.configure(JavaPluginExtension::class.java) {
+            withSourcesJar()
+            withJavadocJar()
+            toolchain.languageVersion.set(
                 JavaLanguageVersion.of(context.requiredProperty("project.java").toInt()),
             )
         }
@@ -74,35 +74,35 @@ class MultiloaderCommonPlugin : Plugin<Project> {
             else -> configureNeoFormCommon(project, context, catalog, hasParchment, accessTransformerFile)
         }
 
-        project.tasks.withType(JavaCompile::class.java).configureEach { task ->
-            task.options.encoding = "UTF-8"
+        project.tasks.withType(JavaCompile::class.java).configureEach {
+            options.encoding = "UTF-8"
         }
         ConventionSupport.configureJavadoc(project)
 
-        project.tasks.withType(ProcessResources::class.java).configureEach { task ->
-            task.duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-            task.exclude(".cache/**")
+        project.tasks.withType(ProcessResources::class.java).configureEach {
+            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+            exclude(".cache/**")
         }
 
-        project.tasks.withType(Jar::class.java).configureEach { task ->
-            task.exclude(".cache/**")
+        project.tasks.withType(Jar::class.java).configureEach {
+            exclude(".cache/**")
         }
 
-        project.tasks.named("sourcesJar", Jar::class.java) { task ->
-            task.duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        project.tasks.named("sourcesJar", Jar::class.java) {
+            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         }
 
         if (usesStonecutter) {
             StonecutterSourceLayout.attachStagingDependencies(project)
         }
 
-        val commonJava = project.configurations.create("commonJava") { configuration ->
-            configuration.isCanBeResolved = false
-            configuration.isCanBeConsumed = true
+        val commonJava = project.configurations.create("commonJava") {
+            isCanBeResolved = false
+            isCanBeConsumed = true
         }
-        val commonResources = project.configurations.create("commonResources") { configuration ->
-            configuration.isCanBeResolved = false
-            configuration.isCanBeConsumed = true
+        val commonResources = project.configurations.create("commonResources") {
+            isCanBeResolved = false
+            isCanBeConsumed = true
         }
 
         project.afterEvaluate {
@@ -122,44 +122,44 @@ class MultiloaderCommonPlugin : Plugin<Project> {
         project.dependencies.add("annotationProcessor", context.library(catalog, "mixin-extras"))
         project.dependencies.add("implementation", context.library(catalog, "gson"))
 
-        project.extensions.configure(PublishingExtension::class.java) { publishing ->
-            publishing.publications.register("mavenJava", MavenPublication::class.java) { publication ->
-                publication.artifactId = project.extensions.getByType(BasePluginExtension::class.java).archivesName.get()
+        project.extensions.configure(PublishingExtension::class.java) {
+            publications.register("mavenJava", MavenPublication::class.java) {
+                artifactId = project.extensions.getByType(BasePluginExtension::class.java).archivesName.get()
                 if (useFabricLoomCommon) {
                     val remapJar = project.tasks.named("remapJar")
-                    publication.artifact(remapJar) { artifact ->
-                        artifact.builtBy(remapJar)
+                    artifact(remapJar) {
+                        builtBy(remapJar)
                     }
                     val remapSourcesJar = project.tasks.findByName("remapSourcesJar")
                     if (remapSourcesJar != null) {
                         val remapSources = project.tasks.named("remapSourcesJar")
-                        publication.artifact(remapSources) { artifact ->
-                            artifact.builtBy(remapSources)
+                        artifact(remapSources) {
+                            builtBy(remapSources)
                         }
                     } else {
                         val sourcesJar = project.tasks.named("sourcesJar")
-                        publication.artifact(sourcesJar) { artifact ->
-                            artifact.builtBy(sourcesJar)
+                        artifact(sourcesJar) {
+                            builtBy(sourcesJar)
                         }
                     }
                     val javadocJar = project.tasks.named("javadocJar")
-                    publication.artifact(javadocJar) { artifact ->
-                        artifact.builtBy(javadocJar)
+                    artifact(javadocJar) {
+                        builtBy(javadocJar)
                     }
                 } else {
-                    publication.from(project.components.getByName("java"))
+                    from(project.components.getByName("java"))
                 }
             }
 
-            context.publishingRepositories(publishing, project.version.toString())
+            context.publishingRepositories(this, project.version.toString())
         }
 
         listOf("apiElements", "runtimeElements", "sourcesElements", "javadocElements").forEach { variant ->
-            project.configurations.named(variant) { configuration ->
-                configuration.outgoing.capability(
+            project.configurations.named(variant) {
+                outgoing.capability(
                     "${project.group}:${project.extensions.getByType(BasePluginExtension::class.java).archivesName.get()}:${project.version}",
                 )
-                configuration.outgoing.capability("${project.group}:${context.requiredProperty("mod.id")}:${project.version}")
+                outgoing.capability("${project.group}:${context.requiredProperty("mod.id")}:${project.version}")
             }
         }
     }

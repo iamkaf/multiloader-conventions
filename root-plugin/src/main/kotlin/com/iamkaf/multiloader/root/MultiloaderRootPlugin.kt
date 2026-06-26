@@ -7,7 +7,6 @@ import com.iamkaf.multiloader.support.MultiloaderTargetScope
 import com.iamkaf.multiloader.support.VersionPolicy
 import com.iamkaf.multiloader.translations.MultiloaderTranslationsExtension
 import groovy.json.JsonOutput
-import org.gradle.api.Action
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -54,12 +53,12 @@ class MultiloaderRootPlugin : Plugin<Project> {
         val versionDirs = versionDirectories(project)
         val targetScope = MultiloaderTargetScope.fromProject(project, enabledLoadersByVersion(versionDirs))
 
-        project.extensions.configure(MultiloaderTranslationsExtension::class.java) { extension ->
-            extension.projectSlug.set(project.providers.gradleProperty("mod.id"))
-            extension.outputDir.set(project.layout.projectDirectory.dir("common/src/main/resources/assets/$modId/lang"))
+        project.extensions.configure(MultiloaderTranslationsExtension::class.java) {
+            projectSlug.set(project.providers.gradleProperty("mod.id"))
+            outputDir.set(project.layout.projectDirectory.dir("common/src/main/resources/assets/$modId/lang"))
         }
 
-        project.extensions.configure(MultiloaderPublishingExtension::class.java) { extension ->
+        project.extensions.configure(MultiloaderPublishingExtension::class.java) {
             versionDirs.filter { targetScope.includesVersion(it.name) }.forEach { dir ->
                 val props = versionMetadata(dir)
                 val minecraftVersion = props.getProperty("project.minecraft")
@@ -67,7 +66,7 @@ class MultiloaderRootPlugin : Plugin<Project> {
                 val enabledLoaders = targetScope.loadersFor(dir.name)
 
                 enabledLoaders.forEach { loaderId ->
-                    val publication = extension.getPublications().maybeCreate("$minecraftVersion-$loaderId")
+                    val publication = getPublications().maybeCreate("$minecraftVersion-$loaderId")
                     publication.getProjectPath().set(":$loaderId:$minecraftVersion")
                     val artifact = when (loaderId) {
                         "fabric" -> VersionPolicy.fabricPublicationArtifact(minecraftVersion)
@@ -93,10 +92,10 @@ class MultiloaderRootPlugin : Plugin<Project> {
     }
 
     private fun registerFlatValidationTask(project: Project) {
-        project.tasks.register("validateConventionProperties") { task ->
-            task.group = "verification"
-            task.description = "Checks that the required convention properties are present."
-            task.doLast {
+        project.tasks.register("validateConventionProperties") {
+            group = "verification"
+            description = "Checks that the required convention properties are present."
+            doLast {
                 val missing = flatRequiredProperties.filter { propertyName ->
                     val value = project.findProperty(propertyName)
                     value == null || value.toString().isBlank()
@@ -110,11 +109,12 @@ class MultiloaderRootPlugin : Plugin<Project> {
     }
 
     private fun registerAggregateTask(project: Project, taskName: String, childTaskName: String) {
-        project.tasks.register(taskName) { task ->
-            task.group = "build"
-            task.description = "Runs $childTaskName on every included loader project."
+        project.tasks.register(taskName) {
+            group = "build"
+            description = "Runs $childTaskName on every included loader project."
+            val aggregateTask = this
             project.gradle.projectsEvaluated {
-                task.dependsOn(project.subprojects
+                aggregateTask.dependsOn(project.subprojects
                     .filter { child -> child.tasks.findByName(childTaskName) != null }
                     .map { child -> "${child.path}:$childTaskName" })
             }
@@ -122,28 +122,29 @@ class MultiloaderRootPlugin : Plugin<Project> {
     }
 
     private fun registerRunClientTask(project: Project, taskName: String, projectName: String) {
-        project.tasks.register(taskName) { task ->
-            task.group = "run"
-            task.description = "Runs $projectName:runClient when that project exists."
+        project.tasks.register(taskName) {
+            group = "run"
+            description = "Runs $projectName:runClient when that project exists."
+            val runClientTask = this
             project.gradle.projectsEvaluated {
                 val child = project.findProject(":$projectName")
                 if (child != null && child.tasks.findByName("runClient") != null) {
-                    task.dependsOn("${child.path}:runClient")
+                    runClientTask.dependsOn("${child.path}:runClient")
                 }
             }
         }
     }
 
     private fun configureTeaKitRunPropertyForwarding(project: Project) {
-        project.subprojects { child ->
-            child.tasks.configureEach { task ->
-                if (task.name !in teaKitRunTaskNames) return@configureEach
-                val systemPropertyMethod = task.javaClass.methods.firstOrNull { method ->
+        project.subprojects {
+            tasks.configureEach {
+                if (name !in teaKitRunTaskNames) return@configureEach
+                val systemPropertyMethod = javaClass.methods.firstOrNull { method ->
                     method.name == "systemProperty" && method.parameterCount == 2
                 } ?: return@configureEach
 
                 collectTeaKitSystemProperties(project).forEach { (propertyName, value) ->
-                    systemPropertyMethod.invoke(task, propertyName, value)
+                    systemPropertyMethod.invoke(this, propertyName, value)
                 }
             }
         }
@@ -191,11 +192,11 @@ class MultiloaderRootPlugin : Plugin<Project> {
     private fun registerBuildGraphTasks(project: Project) {
         val graphFile = project.layout.buildDirectory.file("reports/multiloader/graph.json")
 
-        project.tasks.register("writeMultiloaderGraph") { task ->
-            task.group = "help"
-            task.description = "Writes the resolved multiloader build graph as JSON."
-            task.outputs.file(graphFile)
-            task.doLast {
+        project.tasks.register("writeMultiloaderGraph") {
+            group = "help"
+            description = "Writes the resolved multiloader build graph as JSON."
+            outputs.file(graphFile)
+            doLast {
                 val outputFile = graphFile.get().asFile
                 outputFile.parentFile.mkdirs()
                 outputFile.writeText(graphJson(project) + System.lineSeparator())
@@ -203,10 +204,10 @@ class MultiloaderRootPlugin : Plugin<Project> {
             }
         }
 
-        project.tasks.register("printMultiloaderGraph") { task ->
-            task.group = "help"
-            task.description = "Prints the resolved multiloader build graph as JSON."
-            task.doLast {
+        project.tasks.register("printMultiloaderGraph") {
+            group = "help"
+            description = "Prints the resolved multiloader build graph as JSON."
+            doLast {
                 println(graphJson(project))
             }
         }
@@ -464,15 +465,14 @@ class MultiloaderRootPlugin : Plugin<Project> {
 
     private fun configureStonecutterDefaults(project: Project) {
         project.plugins.withId("dev.kikugie.stonecutter") {
-            project.extensions.configure("stonecutter", Action<Any> { stonecutter ->
-                GroovyGradleDsl.invoke(
-                    stonecutter,
-                    "handlers",
-                    GroovyGradleDsl.closure { handlers ->
-                        GroovyGradleDsl.invoke(handlers, "inherit", "json5", "json")
-                    },
-                )
-            })
+            val stonecutter = project.extensions.getByName("stonecutter")
+            GroovyGradleDsl.invoke(
+                stonecutter,
+                "handlers",
+                GroovyGradleDsl.closure { handlers ->
+                    GroovyGradleDsl.invoke(handlers, "inherit", "json5", "json")
+                },
+            )
         }
     }
 

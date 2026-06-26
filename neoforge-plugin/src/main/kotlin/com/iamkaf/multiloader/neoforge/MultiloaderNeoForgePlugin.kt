@@ -78,34 +78,34 @@ class MultiloaderNeoForgePlugin : Plugin<Project> {
         project.group = context.requiredProperty("project.group")
         project.version = context.requiredProperty("project.version")
 
-        project.extensions.configure(BasePluginExtension::class.java) { base ->
-            base.archivesName.set("$modId-$loader")
+        project.extensions.configure(BasePluginExtension::class.java) {
+            archivesName.set("$modId-$loader")
         }
 
         context.sharedRepositories()
         StonecutterSourceLayout.configureLoader(project, "neoforge", minecraftVersion, commonProject)
 
-        project.extensions.configure(JavaPluginExtension::class.java) { java ->
-            java.withSourcesJar()
-            java.withJavadocJar()
-            java.toolchain.languageVersion.set(
+        project.extensions.configure(JavaPluginExtension::class.java) {
+            withSourcesJar()
+            withJavadocJar()
+            toolchain.languageVersion.set(
                 JavaLanguageVersion.of(context.requiredProperty("project.java").toInt()),
             )
         }
 
-        project.tasks.withType(JavaCompile::class.java).configureEach { task ->
-            task.options.encoding = "UTF-8"
+        project.tasks.withType(JavaCompile::class.java).configureEach {
+            options.encoding = "UTF-8"
         }
         ConventionSupport.configureJavadoc(project)
 
-        project.tasks.withType(ProcessResources::class.java).configureEach { task ->
-            task.duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-            task.exclude(".cache/**")
+        project.tasks.withType(ProcessResources::class.java).configureEach {
+            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+            exclude(".cache/**")
         }
 
-        project.tasks.named("sourcesJar", Jar::class.java) { task ->
-            task.duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-            task.exclude(".cache/**")
+        project.tasks.named("sourcesJar", Jar::class.java) {
+            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+            exclude(".cache/**")
         }
 
         project.dependencies.add("compileOnly", context.library(catalog, "mixin"))
@@ -136,18 +136,18 @@ class MultiloaderNeoForgePlugin : Plugin<Project> {
             if (value is String) value.replace("\n", "\\n") else value
         }
 
-        project.tasks.named("processResources", ProcessResources::class.java) { task ->
-            task.inputs.properties(expandProps.filterValues { it != null })
-            task.filesMatching(listOf("META-INF/neoforge.mods.toml", "META-INF/mods.toml")) {
-                it.expand(expandProps)
+        project.tasks.named("processResources", ProcessResources::class.java) {
+            inputs.properties(expandProps.filterValues { it != null })
+            filesMatching(listOf("META-INF/neoforge.mods.toml", "META-INF/mods.toml")) {
+                expand(expandProps)
             }
-            task.filesMatching(listOf("pack.mcmeta", "*.mixins.json")) {
-                it.expand(jsonExpandProps)
+            filesMatching(listOf("pack.mcmeta", "*.mixins.json")) {
+                expand(jsonExpandProps)
             }
         }
 
-        project.tasks.named("jar", Jar::class.java) { task ->
-            task.manifest.attributes(
+        project.tasks.named("jar", Jar::class.java) {
+            manifest.attributes(
                 mapOf(
                     "Specification-Title" to modName,
                     "Specification-Vendor" to context.optionalProperty("mod.authors"),
@@ -161,12 +161,12 @@ class MultiloaderNeoForgePlugin : Plugin<Project> {
             )
         }
 
-        project.extensions.configure(PublishingExtension::class.java) { publishing ->
-            publishing.publications.register("mavenJava", MavenPublication::class.java) { publication ->
-                publication.from(project.components.getByName("java"))
-                publication.artifactId = project.extensions.getByType(BasePluginExtension::class.java).archivesName.get()
+        project.extensions.configure(PublishingExtension::class.java) {
+            publications.register("mavenJava", MavenPublication::class.java) {
+                from(project.components.getByName("java"))
+                artifactId = project.extensions.getByType(BasePluginExtension::class.java).archivesName.get()
             }
-            context.publishingRepositories(publishing, project.version.toString())
+            context.publishingRepositories(this, project.version.toString())
         }
     }
 
