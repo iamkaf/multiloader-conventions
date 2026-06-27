@@ -28,6 +28,8 @@ object StonecutterSourceLayout {
             val generatedResourcesDir = project.layout.buildDirectory.dir("generated/stonecutter/main/resources")
             val mergedJavaDir = project.layout.buildDirectory.dir("generated/merged/main/java")
             val mergedResourcesDir = project.layout.buildDirectory.dir("generated/merged/main/resources")
+            val versionGeneratedResourcesDir =
+                DatagenOutputPlanner.commonGeneratedResourcesRoot(project, minecraftVersion, true)
 
             project.tasks.register(STAGE_JAVA_TASK, Sync::class.java) {
                 duplicatesStrategy = DuplicatesStrategy.INCLUDE
@@ -44,8 +46,7 @@ object StonecutterSourceLayout {
                 duplicatesStrategy = DuplicatesStrategy.INCLUDE
                 dependsOn(project.tasks.named("stonecutterGenerate"))
                 from(generatedResourcesDir)
-                from(project.rootProject.file("common/src/main/generated"))
-                from(project.rootProject.file("src/main/generated"))
+                from(versionGeneratedResourcesDir)
                 val versionResourcesDir = versionDir.toPath().resolve("common/src/main/resources").toFile()
                 if (versionResourcesDir.isDirectory) {
                     from(versionResourcesDir)
@@ -69,6 +70,8 @@ object StonecutterSourceLayout {
         val mergedJavaDir = project.layout.buildDirectory.dir("generated/merged/main/java")
         val mergedResourcesDir = project.layout.buildDirectory.dir("generated/merged/main/resources")
         val versionDir = project.rootProject.file("versions/$minecraftVersion")
+        val versionGeneratedResourcesDir =
+            DatagenOutputPlanner.loaderGeneratedResourcesRoot(project, loader, minecraftVersion)
 
         project.tasks.register(STAGE_JAVA_TASK, Sync::class.java) {
             duplicatesStrategy = DuplicatesStrategy.INCLUDE
@@ -89,7 +92,7 @@ object StonecutterSourceLayout {
             dependsOn(project.tasks.named("stonecutterGenerate"))
             from(commonMergedResourcesDir)
             from(generatedResourcesDir)
-            from(project.rootProject.file("src/main/generated"))
+            from(versionGeneratedResourcesDir)
             val versionLoaderResourcesDir = versionDir.toPath().resolve("$loader/src/main/resources").toFile()
             if (versionLoaderResourcesDir.isDirectory) {
                 from(versionLoaderResourcesDir)

@@ -53,6 +53,35 @@ class StonecutterSourceLayoutTest extends Specification {
         main.resources.srcDirs == [project.layout.buildDirectory.dir('generated/merged/main/resources').get().asFile] as Set
     }
 
+    def "Stonecutter common layout stages versioned generated resources and ignores shared generated roots"() {
+        given:
+        def root = ProjectBuilder.builder()
+            .withName('root')
+            .withProjectDir(testProjectDir)
+            .build()
+        def common = ProjectBuilder.builder()
+            .withName('common')
+            .withParent(root)
+            .withProjectDir(new File(testProjectDir, 'common'))
+            .build()
+        common.pluginManager.apply('java-library')
+        common.tasks.register('stonecutterGenerate')
+        def versionGenerated = new File(testProjectDir, 'versions/26.2/common/src/main/generated/assets/example/generated.json')
+        versionGenerated.parentFile.mkdirs()
+        versionGenerated.text = '{}'
+        def sharedGenerated = new File(testProjectDir, 'common/src/main/generated/assets/example/stale.json')
+        sharedGenerated.parentFile.mkdirs()
+        sharedGenerated.text = '{}'
+
+        when:
+        StonecutterSourceLayout.configureCommon(common, '26.2', true)
+        def stageResources = common.tasks.named(StonecutterSourceLayout.STAGE_RESOURCES_TASK, Sync).get()
+
+        then:
+        stageResources.source.files.contains(versionGenerated)
+        !stageResources.source.files.contains(sharedGenerated)
+    }
+
     @Unroll
     def "#loader layout stages common, generated, and version overlay roots"() {
         given:
@@ -76,6 +105,12 @@ class StonecutterSourceLayoutTest extends Specification {
         project.extensions.getByType(JavaPluginExtension).withJavadocJar()
         common.tasks.register('stonecutterGenerate')
         project.tasks.register('stonecutterGenerate')
+        def versionLoaderGenerated = new File(
+            testProjectDir,
+            "versions/26.2/${loader}/src/main/generated/assets/example/${loader}.json"
+        )
+        versionLoaderGenerated.parentFile.mkdirs()
+        versionLoaderGenerated.text = '{}'
 
         when:
         StonecutterSourceLayout.configureCommon(common, '26.2', true)
@@ -96,6 +131,7 @@ class StonecutterSourceLayoutTest extends Specification {
         main.java.srcDirs == [project.layout.buildDirectory.dir('generated/merged/main/java').get().asFile] as Set
         main.resources.srcDirs == [project.layout.buildDirectory.dir('generated/merged/main/resources').get().asFile] as Set
         project.tasks.named(StonecutterSourceLayout.STAGE_RESOURCES_TASK, Sync).get().source.files.contains(commonResource)
+        project.tasks.named(StonecutterSourceLayout.STAGE_RESOURCES_TASK, Sync).get().source.files.contains(versionLoaderGenerated)
 
         where:
         loader << ['fabric', 'forge', 'neoforge']

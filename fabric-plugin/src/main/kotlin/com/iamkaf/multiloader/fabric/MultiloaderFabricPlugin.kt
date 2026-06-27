@@ -3,6 +3,7 @@ package com.iamkaf.multiloader.fabric
 import com.iamkaf.multiloader.platform.MultiloaderPlatformPlugin
 import com.iamkaf.multiloader.support.ConventionSupport
 import com.iamkaf.multiloader.support.ConsumerDslPolicy
+import com.iamkaf.multiloader.support.DatagenOutputPlanner
 import com.iamkaf.multiloader.support.FabricCompatibilityPolicy
 import com.iamkaf.multiloader.support.JavaProjectWiring
 import com.iamkaf.multiloader.support.LoaderDependencyPolicy
@@ -45,7 +46,15 @@ class MultiloaderFabricPlugin : Plugin<Project> {
 
         project.pluginManager.withPlugin(loomPluginId) {
             ConventionSupport.configureFabricBaseDependencies(project)
-            configureFabricDatagen(project, extension)
+            configureFabricDatagen(
+                project,
+                extension,
+                DatagenOutputPlanner.commonDatagenOutputDirectory(
+                    project = project,
+                    minecraftVersion = ConventionSupport.requiredProperty(project, "project.minecraft"),
+                    usesStonecutter = false,
+                ),
+            )
 
             val loom = project.extensions.getByName("loom")
             val accessWidener = ConventionSupport.commonFile(
@@ -121,7 +130,15 @@ class MultiloaderFabricPlugin : Plugin<Project> {
             strategy = VersionPolicy.fabricTeaKitRuntimeStrategy(minecraftVersion),
         )
 
-        configureFabricDatagen(project, extension)
+        configureFabricDatagen(
+            project,
+            extension,
+            DatagenOutputPlanner.commonDatagenOutputDirectory(
+                project = project,
+                minecraftVersion = minecraftVersion,
+                usesStonecutter = true,
+            ),
+        )
         FabricLoomAdapter.configureLoom(project, identity.modId, accessWidener)
 
         JavaProjectWiring.configureResourceExpansion(
@@ -134,11 +151,15 @@ class MultiloaderFabricPlugin : Plugin<Project> {
         MavenPublicationWiring.configureJavaComponentPublication(project, context)
     }
 
-    private fun configureFabricDatagen(project: Project, extension: MultiloaderFabricExtension) {
+    private fun configureFabricDatagen(
+        project: Project,
+        extension: MultiloaderFabricExtension,
+        outputDirectory: java.io.File,
+    ) {
         extension.commonDatagen.finalizeValueOnRead()
         project.afterEvaluate {
             if (!extension.commonDatagen.get()) return@afterEvaluate
-            FabricLoomAdapter.configureCommonDatagen(project)
+            FabricLoomAdapter.configureCommonDatagen(project, outputDirectory)
         }
     }
 

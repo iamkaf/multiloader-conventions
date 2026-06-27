@@ -61,7 +61,7 @@ object FabricLoomAdapter {
         }
     }
 
-    fun configureCommonDatagen(project: Project) {
+    fun configureCommonDatagen(project: Project, outputDirectory: File) {
         val fabricApi = project.extensions.findByName("fabricApi")
             ?: throw IllegalStateException("Cannot enable common Fabric datagen because the fabricApi extension is not available.")
         GroovyGradleDsl.invoke(
@@ -69,7 +69,7 @@ object FabricLoomAdapter {
             "configureDataGeneration",
             GroovyGradleDsl.closure { datagen ->
                 GroovyGradleDsl.set(datagen, "client", true)
-                GroovyGradleDsl.set(datagen, "outputDirectory", project.rootProject.file("common/src/main/generated"))
+                GroovyGradleDsl.set(datagen, "outputDirectory", outputDirectory)
             },
         )
     }
