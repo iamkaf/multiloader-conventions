@@ -1,13 +1,17 @@
 # Multiloader Conventions
 
-Gradle convention plugins for the multiloader mod workspace.
+Gradle convention plugins for Kaf's multiloader Minecraft mod workspace.
 
-This repo is the shared build layer used by the branch-based Stonecutter projects in this workspace. It centralizes the repeatable parts of the build while leaving genuinely versioned or one-off behavior explicit.
+This repository is the shared build layer for branch-based Stonecutter projects. The `3.0-SNAPSHOT` line is a porting line: the plugins are being reworked toward a Kotlin implementation with deeper, typed modules for version policy, source layout, loader toolchains, and publishing.
 
-Current release in this repo:
+## Release Status
 
 - Group: `com.iamkaf.multiloader`
-- Version: `2.4-SNAPSHOT`
+- Version: `3.0-SNAPSHOT`
+- Compatibility: porting effort for consumers
+- Consumer DSL: Kotlin DSL only
+
+The 3.0 line is allowed to break consumer build files. Mods adopting it must migrate Gradle scripts to Kotlin DSL (`settings.gradle.kts` and `build.gradle.kts`), update deliberately, and validate every supported loader and Minecraft version they ship.
 
 ## Versioning Policy
 
@@ -17,9 +21,28 @@ Minor version bumps cover feature additions, bug fixes, and minor behavior chang
 
 Patch version bumps, when used, are reserved for bug fixes and are considered non-breaking. They should be rare.
 
+## Design Direction
+
+The 3.0 rewrite has one architectural rule: the happy mainstream path should be obvious. Anything that is not the mainstream path should be separated, named, and selected intentionally.
+
+Stable build behavior belongs in convention plugins. Repeated version or loader drift belongs behind explicit strategy modules. Project-specific quirks stay in the consumer until they repeat enough to justify a convention.
+
+The main module seams for 3.0 are:
+
+- `VersionPolicy`: Minecraft-line facts, loader eligibility, Java levels, catalog names, metadata ranges, mixin compatibility, and strategy selection.
+- `MultiloaderProjectContext`: typed property, catalog, dependency, repository, and metadata expansion access.
+- `StonecutterSourceLayout`: common and loader source/resource staging, generated roots, version overlays, and graph-only layouts.
+- `FabricDependencyStrategy`: modern unobfuscated Fabric, normal obfuscated Loom, and legacy split Fabric API lanes.
+- `ForgeRunStrategy`: mainstream ForgeGradle, LegacyForge/moddev, and 1.16.5 userdev run paths.
+- `NeoForgeToolchainStrategy`: ModDev and NeoGradle userdev selection.
+- `ClientRunEnvironmentPolicy`: Forge-like client run environment normalization, including Linux/Wayland to X11 launch stability.
+- `PublicationPlanner`: release planning separate from Modrinth and CurseForge upload clients.
+
+Some of these modules may be introduced before the full Groovy-to-Kotlin migration is complete. During the transition, README claims should follow the live branch state.
+
 ## Plugin Set
 
-The live plugin family included by `settings.gradle` is:
+The plugin family is:
 
 - `com.iamkaf.multiloader.settings`
 - `com.iamkaf.multiloader.root`
@@ -32,7 +55,7 @@ The live plugin family included by `settings.gradle` is:
 - `com.iamkaf.multiloader.translations`
 - `com.iamkaf.multiloader.publishing`
 
-Included modules in this repo:
+Included Gradle modules:
 
 - `conventions-support`
 - `core-plugin`
@@ -46,91 +69,77 @@ Included modules in this repo:
 - `translations-plugin`
 - `publishing-plugin`
 
-## What Each Plugin Owns
+## Plugin Ownership
 
 `settings`
 
-- builds the Stonecutter project graph from `versions/<mc>/gradle.properties`
-- sets the root project name
-- wires repositories for dependency resolution
-- loads the shared version catalog
+- configures plugin repositories and shared plugin versions;
+- creates the Stonecutter project tree from `versions/<mc>/gradle.properties`;
+- creates version catalogs for included Minecraft lines;
+- supports target scoping for version and loader subsets.
 
 `root`
 
-- owns root-only aggregate tasks
-- owns root-level validations and top-level workflow wiring
+- owns root-only aggregate tasks and build graph reporting;
+- wires translations and publishing defaults for Stonecutter consumers;
+- forwards TeaKit runtime properties to supported run tasks;
+- registers publication plans for enabled loader/version pairs.
 
 `core`
 
-- exposes shared helpers used by the other plugins:
-  - property access
-  - catalog access
-  - repository wiring
-  - metadata expansion
-  - publishing helpers
-  - mixin compatibility expansion
+- exposes shared convention support to plugin modules;
+- is being reduced toward typed Kotlin helpers instead of dynamic Gradle extra-property closures.
 
 `common`
 
-- configures the standalone `common` artifact
-- publishes the shared common component
-- expands metadata and manifest values
-- exposes the shared common source and resource outputs to loader projects
-- selects the common tool family by Minecraft line
+- configures the `common` artifact for each Minecraft line;
+- selects the common toolchain family by version policy;
+- stages generated and version-specific common sources/resources;
+- exposes common Java and resource outputs to loader projects.
 
 `platform`
 
-- bridges loader projects to the `common` project outputs
-- keeps the common-to-loader source/resource flow consistent
+- bridges flat loader projects to a flat `common` project;
+- remains available for older flat layouts while Stonecutter consumers use branch-aware loader plugins.
 
 `fabric`
 
-- configures Fabric loader wiring
-- configures Fabric runs
-- owns current shared Fabric dependency policy
-- exposes the current helper path for Fabric datagen
+- configures Fabric Loom;
+- selects Fabric dependency lanes by version policy;
+- stages common, generated, and Fabric-specific sources/resources;
+- exposes Fabric datagen helpers.
 
 `forge`
 
-- configures Forge loader wiring
-- configures Forge run behavior
-- owns the supported Forge floor in the convention layer
+- configures ForgeGradle or LegacyForge based on version policy;
+- stages common, generated, and Forge-specific sources/resources;
+- owns Forge run setup for supported lines;
+- normalizes client run tasks on Linux/Wayland hosts for GLFW/X11 stability;
+- keeps unsupported or exceptional legacy behavior out of the mainstream path.
 
 `neoforge`
 
-- configures NeoForge loader wiring
-- configures NeoForge runs and current datagen shape
+- configures NeoForge ModDev or NeoGradle userdev based on version policy;
+- stages common, generated, and NeoForge-specific sources/resources;
+- owns NeoForge run and datagen setup;
+- normalizes client run tasks on Linux/Wayland hosts for GLFW/X11 stability.
 
 `translations`
 
-- downloads approved non-`en_us` locale JSON files from `i18n.kaf.sh`
-- writes them to the configured consumer lang directory
-- intentionally stays separate from source-locale ownership
+- downloads approved non-`en_us` locale JSON files from `i18n.kaf.sh`;
+- writes them to the configured consumer language directory;
+- keeps source-locale ownership local to the consumer.
 
 `publishing`
 
-- assembles loader outputs into release tasks
-- exposes dry-run and live Modrinth and CurseForge tasks
-- builds version-specific aggregate publish tasks
-
-## Current Version Policy
-
-The detailed policy lives in [docs/version-capability-matrix.md](docs/version-capability-matrix.md). The short version is:
-
-- stable behavior belongs in plugins
-- repeated drift belongs behind explicit strategy points
-- one-off quirks stay consumer-local until they repeat
-
-Important current boundaries:
-
-- the convention Forge plugin supports `1.16.5` and `1.17+`
-- other pre-`1.17` Forge lines stay consumer-local
-- the common plugin selects different tool families by Minecraft line
-- Fabric datagen is centralized as a helper, but still consumer opt-in
+- plans loader and platform publication tasks;
+- stages artifacts for Modrinth and CurseForge uploads;
+- supports dry-run and live publishing modes;
+- keeps platform-specific upload clients behind destination adapters.
 
 ## Expected Consumer Shape
 
-These plugins are built for the branch-based Stonecutter layout:
+The main supported shape is a branch-based Stonecutter repository:
 
 ```text
 consumer/
@@ -144,21 +153,21 @@ consumer/
 └── gradle.properties
 ```
 
+Every Gradle script in a v3 consumer must use Kotlin DSL. The settings plugin and public project plugins reject checked-in Groovy `*.gradle` scripts so legacy build glue cannot silently stay on the mainstream path.
+
+Version-local metadata lives in `versions/<mc>/gradle.properties`. Source and resource overlays live under `versions/<mc>/<root>/...` only when a version genuinely diverges.
+
 The active graph is derived from:
 
-- shared root properties
-- `versions/<mc>/gradle.properties`
-- the selected catalog coordinate
-- `project.enabled-loaders`
-
-See:
-
-- [samples/minimal](samples/minimal)
-- [samples/datagen](samples/datagen)
+- root `gradle.properties`;
+- `versions/<mc>/gradle.properties`;
+- the selected version catalog coordinate;
+- `project.enabled-loaders`;
+- optional `multiloader.target.versions` and `multiloader.target.loaders` scope properties.
 
 ## Required Consumer Properties
 
-The plugins expect these version-local properties:
+Required version-local properties:
 
 - `project.version`
 - `project.minecraft`
@@ -177,7 +186,7 @@ Common optional properties:
 - `dependencies.*`
 - `environments.*`
 
-Workspace defaults are usually supplied from the consumer root `gradle.properties`, with version overrides in `versions/<mc>/gradle.properties`.
+Consumers should treat `project.plugins=3.0-SNAPSHOT` as an intentional migration choice, not a drop-in patch update.
 
 ## Consumer Setup
 
@@ -216,35 +225,42 @@ plugins {
 }
 ```
 
-The concrete current consumer examples are the real source of truth:
+Minimal branch build files should only apply the matching plugin:
 
-- `samples/minimal`
-- `samples/datagen`
-- active consumer repos such as `multiloader-template`, `konfig`, and `teakit`
-
-## Translations Plugin
-
-Apply the translations plugin in the consumer root and configure it explicitly:
-
-```groovy
+```kotlin
 plugins {
-    id 'com.iamkaf.multiloader.root'
-    id 'com.iamkaf.multiloader.translations'
-}
-
-multiloaderTranslations {
-    projectSlug = 'liteminer'
-    outputDir = layout.projectDirectory.dir('common/src/main/resources/assets/liteminer/lang')
+    id("com.iamkaf.multiloader.fabric")
 }
 ```
 
-Private export example:
+Use the samples as executable references:
 
-```groovy
+- [samples/minimal](samples/minimal)
+- [samples/datagen](samples/datagen)
+
+## Translations
+
+Apply translations in the consumer root when remote translations are part of the project:
+
+```kotlin
+plugins {
+    id("com.iamkaf.multiloader.root")
+    id("com.iamkaf.multiloader.translations")
+}
+
 multiloaderTranslations {
-    projectSlug = 'liteminer'
-    outputDir = layout.projectDirectory.dir('common/src/main/resources/assets/liteminer/lang')
-    token = providers.gradleProperty('translations.token')
+    projectSlug.set("liteminer")
+    outputDir.set(layout.projectDirectory.dir("common/src/main/resources/assets/liteminer/lang"))
+}
+```
+
+Private exports can use a Gradle property token:
+
+```kotlin
+multiloaderTranslations {
+    projectSlug.set("liteminer")
+    outputDir.set(layout.projectDirectory.dir("common/src/main/resources/assets/liteminer/lang"))
+    token.set(providers.gradleProperty("translations.token"))
 }
 ```
 
@@ -254,30 +270,22 @@ Run it manually:
 ./gradlew downloadTranslations
 ```
 
-The translations plugin:
+The translations plugin is root-only, never treats `en_us` as remote-owned, and never deletes unrelated local language files automatically.
 
-- is root-only
-- never treats `en_us` as remote-owned
-- never deletes unrelated local lang files automatically
+## Publishing
 
-## Publishing Plugin
+The publishing plugin exposes aggregate and per-destination tasks.
 
-The publishing plugin exposes aggregate and per-loader tasks.
-
-Important tasks:
+Common tasks:
 
 - `publishMod`
 - `publishCurseforge`
 - `publishModrinth`
-- `publishCurseforgeFabric`
-- `publishCurseforgeForge`
-- `publishCurseforgeNeoforge`
-- `publishModrinthFabric`
-- `publishModrinthForge`
-- `publishModrinthNeoforge`
 - `publishingRelease`
 
-Use the aggregate tasks for normal release flows. Use the per-loader tasks when one destination or one loader upload fails and you need a targeted retry.
+Per-loader and per-version tasks are generated from the active build graph. Use aggregate tasks for normal release flows. Use targeted tasks when one destination or one loader upload needs a retry.
+
+Agent workflows may publish to Maven local for validation. Kaf Maven publishing is reserved for manual release operations.
 
 ## Validation
 
@@ -289,17 +297,17 @@ Root checks:
 ./gradlew checkSamples
 ```
 
-Important sample validations:
+Sample checks:
 
 ```bash
 ./gradlew -p samples/minimal validateConventionProperties validateSampleWiring build publishingRelease
 ./gradlew -p samples/datagen validateConventionProperties validateSampleWiring :fabric:runDatagen verifyDatagenOutput
 ```
 
-These sample consumers are the main regression harness for the plugin family.
+Consumer migration checks should start with the newest supported Minecraft line and then work backward through older lines once the mainstream path is stable.
 
-## Notes
+## Policy References
 
-- `platform-plugin` still exists in the repo and in the live build graph. It remains part of the current bridge between `common` and loader projects.
-- This repo is not trying to erase every Minecraft-version difference. It is trying to make version policy explicit and repeatable.
-- If a quirk is not standardized yet, the intended policy is to keep it in the consumer and document it in `docs/version-capability-matrix.md`.
+Detailed version capability notes live in [docs/version-capability-matrix.md](docs/version-capability-matrix.md).
+
+This repository does not try to erase every Minecraft-version difference. It makes the shared policy explicit, keeps ordinary builds boring, and labels exceptional compatibility behavior so consumers do not have to rediscover it.

@@ -1,0 +1,46 @@
+pluginManagement {
+    repositories {
+        mavenLocal()
+        maven {
+            url = uri("https://maven.kaf.sh")
+        }
+        gradlePluginPortal()
+        mavenCentral()
+        maven {
+            url = uri("https://maven.fabricmc.net")
+        }
+    }
+    plugins {
+        id("org.gradle.kotlin.kotlin-dsl") version "6.5.7"
+    }
+}
+
+dependencyResolutionManagement {
+    repositories {
+        mavenLocal()
+        maven {
+            url = uri("https://maven.kaf.sh")
+        }
+        gradlePluginPortal()
+        mavenCentral()
+    }
+    versionCatalogs {
+        create("buildTools") {
+            from("com.iamkaf.platform:build-tools:${providers.gradleProperty("build-tools.version").get()}")
+        }
+    }
+}
+
+rootProject.name = "multiloader-conventions"
+
+include("conventions-support")
+include("core-plugin")
+include("settings-plugin")
+include("root-plugin")
+include("common-plugin")
+include("platform-plugin")
+include("fabric-plugin")
+include("forge-plugin")
+include("neoforge-plugin")
+include("translations-plugin")
+include("publishing-plugin")
