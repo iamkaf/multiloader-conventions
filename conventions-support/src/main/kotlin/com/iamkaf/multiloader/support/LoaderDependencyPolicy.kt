@@ -94,12 +94,16 @@ object LoaderDependencyPolicy {
         identity: ProjectIdentity,
         minecraftVersion: String,
     ) {
-        val configuration = if (minecraftVersion in legacyForgeRuntimeModVersions) "compileOnly" else "implementation"
-        addOptional(project, context, catalog, configuration, "amber-forge", identity)
-        addOptional(project, context, catalog, configuration, "konfig-forge", identity)
-
-        if (minecraftVersion in legacyForgeRuntimeModVersions) {
-            project.dependencies.add("runtimeOnly", "org.slf4j:slf4j-simple:2.0.13")
+        when {
+            minecraftVersion in legacyForgeRuntimeModVersions -> {
+                addForgeDependencyMods(project, context, catalog, "compileOnly", identity)
+                project.dependencies.add("runtimeOnly", "org.slf4j:slf4j-simple:2.0.13")
+            }
+            VersionPolicy.usesLegacyForgePlugin(minecraftVersion) -> {
+                addForgeDependencyMods(project, context, catalog, "compileOnly", identity)
+                addForgeDependencyMods(project, context, catalog, "modRuntimeOnly", identity)
+            }
+            else -> addForgeDependencyMods(project, context, catalog, "implementation", identity)
         }
     }
 
@@ -150,6 +154,17 @@ object LoaderDependencyPolicy {
         if (isSelfDependency(alias, identity.modId)) return
         val dependency = context.libraryOrNull(catalog, alias) ?: return
         project.dependencies.add(configuration, dependency)
+    }
+
+    private fun addForgeDependencyMods(
+        project: Project,
+        context: MultiloaderProjectContext,
+        catalog: VersionCatalog,
+        configuration: String,
+        identity: ProjectIdentity,
+    ) {
+        addOptional(project, context, catalog, configuration, "amber-forge", identity)
+        addOptional(project, context, catalog, configuration, "konfig-forge", identity)
     }
 
     private fun isSelfDependency(alias: String, modId: String): Boolean =
