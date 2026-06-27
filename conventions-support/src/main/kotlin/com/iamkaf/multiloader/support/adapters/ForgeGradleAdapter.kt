@@ -1,5 +1,6 @@
 package com.iamkaf.multiloader.support.adapters
 
+import com.iamkaf.multiloader.support.ClientRunEnvironmentPolicy
 import com.iamkaf.multiloader.support.GroovyGradleDsl
 import org.gradle.api.Project
 import org.gradle.api.tasks.SourceSet
@@ -52,7 +53,14 @@ object ForgeGradleAdapter {
                     },
                 )
 
-                GroovyGradleDsl.invoke(runs, "register", "client", GroovyGradleDsl.closure { })
+                GroovyGradleDsl.invoke(
+                    runs,
+                    "register",
+                    "client",
+                    GroovyGradleDsl.closure { run ->
+                        ClientRunEnvironmentPolicy.applyToGroovyClientRun(project, run)
+                    },
+                )
                 GroovyGradleDsl.invoke(
                     runs,
                     "register",

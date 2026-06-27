@@ -35,6 +35,7 @@ The main module seams for 3.0 are:
 - `FabricDependencyStrategy`: modern unobfuscated Fabric, normal obfuscated Loom, and legacy split Fabric API lanes.
 - `ForgeRunStrategy`: mainstream ForgeGradle, LegacyForge/moddev, and 1.16.5 userdev run paths.
 - `NeoForgeToolchainStrategy`: ModDev and NeoGradle userdev selection.
+- `ClientRunEnvironmentPolicy`: Forge-like client run environment normalization, including Linux/Wayland to X11 launch stability.
 - `PublicationPlanner`: release planning separate from Modrinth and CurseForge upload clients.
 
 Some of these modules may be introduced before the full Groovy-to-Kotlin migration is complete. During the transition, README claims should follow the live branch state.
@@ -113,13 +114,15 @@ Included Gradle modules:
 - configures ForgeGradle or LegacyForge based on version policy;
 - stages common, generated, and Forge-specific sources/resources;
 - owns Forge run setup for supported lines;
+- normalizes client run tasks on Linux/Wayland hosts for GLFW/X11 stability;
 - keeps unsupported or exceptional legacy behavior out of the mainstream path.
 
 `neoforge`
 
 - configures NeoForge ModDev or NeoGradle userdev based on version policy;
 - stages common, generated, and NeoForge-specific sources/resources;
-- owns NeoForge run and datagen setup.
+- owns NeoForge run and datagen setup;
+- normalizes client run tasks on Linux/Wayland hosts for GLFW/X11 stability.
 
 `translations`
 

@@ -1,6 +1,7 @@
 package com.iamkaf.multiloader.forge
 
 import com.iamkaf.multiloader.platform.MultiloaderPlatformPlugin
+import com.iamkaf.multiloader.support.ClientRunEnvironmentPolicy
 import com.iamkaf.multiloader.support.ConventionSupport
 import com.iamkaf.multiloader.support.ConsumerDslPolicy
 import com.iamkaf.multiloader.support.JavaProjectWiring
@@ -25,6 +26,7 @@ import java.io.File
 class MultiloaderForgePlugin : Plugin<Project> {
     override fun apply(project: Project) {
         ConsumerDslPolicy.requireKotlinDsl(project)
+        ClientRunEnvironmentPolicy.configureForgeLikeClientRuns(project)
 
         if (!isStonecutterForgeProject(project)) {
             applyFlatForgePlugin(project)

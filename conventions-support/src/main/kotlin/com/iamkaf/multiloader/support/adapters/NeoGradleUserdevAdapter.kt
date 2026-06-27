@@ -1,5 +1,6 @@
 package com.iamkaf.multiloader.support.adapters
 
+import com.iamkaf.multiloader.support.ClientRunEnvironmentPolicy
 import com.iamkaf.multiloader.support.GroovyGradleDsl
 import org.gradle.api.Project
 import org.gradle.api.tasks.SourceSetContainer
@@ -24,7 +25,9 @@ object NeoGradleUserdevAdapter {
                 GroovyGradleDsl.invoke(run, "modSource", mainSourceSet)
             },
         )
-        NeoForgeModDevAdapter.configureNamedRun(runs, "client")
+        NeoForgeModDevAdapter.configureNamedRun(runs, "client") { run ->
+            ClientRunEnvironmentPolicy.applyToGroovyClientRun(project, run)
+        }
         NeoForgeModDevAdapter.configureNamedRun(runs, "data") { run ->
             val arguments = GroovyGradleDsl.get(run, "arguments")
             if (arguments != null) {

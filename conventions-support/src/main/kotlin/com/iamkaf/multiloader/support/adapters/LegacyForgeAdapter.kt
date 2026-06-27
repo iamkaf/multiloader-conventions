@@ -1,5 +1,6 @@
 package com.iamkaf.multiloader.support.adapters
 
+import com.iamkaf.multiloader.support.ClientRunEnvironmentPolicy
 import com.iamkaf.multiloader.support.GroovyGradleDsl
 import org.gradle.api.Project
 import org.gradle.api.tasks.SourceSetContainer
@@ -69,7 +70,10 @@ object LegacyForgeAdapter {
                         }
                     },
                 )
-                configureNamedRun(runs, "client") { run -> GroovyGradleDsl.invoke(run, "client") }
+                configureNamedRun(runs, "client") { run ->
+                    GroovyGradleDsl.invoke(run, "client")
+                    ClientRunEnvironmentPolicy.applyToGroovyClientRun(project, run)
+                }
                 configureNamedRun(runs, "server") { run ->
                     GroovyGradleDsl.invoke(run, "server")
                     GroovyGradleDsl.invoke(run, "programArgument", "--nogui")
