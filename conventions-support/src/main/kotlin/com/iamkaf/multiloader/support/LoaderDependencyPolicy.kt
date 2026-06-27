@@ -97,6 +97,7 @@ object LoaderDependencyPolicy {
         when {
             minecraftVersion in legacyForgeRuntimeModVersions -> {
                 addForgeDependencyMods(project, context, catalog, "compileOnly", identity)
+                addForgeDependencyMods(project, context, catalog, "modRuntimeOnly", identity)
                 project.dependencies.add("runtimeOnly", "org.slf4j:slf4j-simple:2.0.13")
             }
             VersionPolicy.usesLegacyForgePlugin(minecraftVersion) -> {

@@ -4,10 +4,13 @@ import com.iamkaf.multiloader.support.LoaderDependencyPolicy
 import com.iamkaf.multiloader.support.LoaderId
 import com.iamkaf.multiloader.support.MultiloaderProjectContext
 import com.iamkaf.multiloader.support.ProjectIdentity
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.artifacts.VersionCatalog
 import org.gradle.api.file.DuplicatesStrategy
+import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.JavaExec
 import org.gradle.api.tasks.Sync
 import org.gradle.api.tasks.TaskProvider
@@ -52,30 +55,27 @@ object LegacyForgeRuntimeAdapter {
 
         val lwjglNativesDir = project.layout.buildDirectory.dir("lwjgl-natives")
         val runModsDir = project.layout.projectDirectory.dir("run/mods")
+        if (useTeaKit) {
+            addLegacyForgeTeaKitRuntime(project, context, catalog)
+        }
+        val runtimeClasspath = mainRuntimeClasspath(project)
         val patchBootstrap = registerPatchLegacyBootstrapLauncher(project, minecraftVersion)
         val patchSecureJarHandler = registerPatchLegacySecureJarHandler(project, minecraftVersion)
         val patchSlimeMetadata = registerPatchLegacySlimeMetadata(project, minecraftVersion, forgeArtifactVersion)
         val extractNatives = registerExtractLwjglNatives(project, lwjglNativesDir)
         val stageProjectJar = registerStageProjectJar(project, identity, minecraftVersion, runModsDir)
-        val stageDependencyMods = registerStageDependencyMods(project, context, catalog, minecraftVersion, runModsDir)
-        val stageTeaKit = registerStageTeaKit(project, context, catalog, minecraftVersion, runModsDir, useTeaKit)
+        val stageDependencyMods =
+            registerStageDependencyMods(project, context, catalog, minecraftVersion, runModsDir, runtimeClasspath)
+        val stageTeaKit = registerStageTeaKit(
+            project,
+            context,
+            catalog,
+            minecraftVersion,
+            runModsDir,
+            useTeaKit,
+            runtimeClasspath,
+        )
         val clearSlimeCache = registerClearSlimeLauncherCache(project, forgeArtifactVersion, runModsDir)
-        val filteredRuntimeClasspath = project.providers.provider {
-            project.extensions.getByType(SourceSetContainer::class.java)
-                .getByName("main")
-                .runtimeClasspath
-                .files
-                .map { it.absolutePath }
-                .filterNot { path ->
-                    val fileName = File(path).name
-                    fileName.startsWith("securejarhandler-") ||
-                        fileName.startsWith("bootstraplauncher-") ||
-                        fileName.startsWith("amber-forge-") ||
-                        fileName.startsWith("konfig-forge-") ||
-                        fileName.startsWith("teakit-forge-")
-                }
-                .joinToString(File.pathSeparator)
-        }
 
         project.tasks.withType(JavaExec::class.java).matching {
             it.name == "runClient" || it.name == "runServer"
@@ -88,9 +88,13 @@ object LegacyForgeRuntimeAdapter {
                 dependsOn(patchSecureJarHandler)
                 dependsOn(patchSlimeMetadata)
                 dependsOn(clearSlimeCache)
+                jvmArgs("--add-opens", "java.base/java.lang.invoke=cpw.mods.securejarhandler")
                 doFirst {
-                    systemProperty("legacyClassPath", filteredRuntimeClasspath.get())
-                    systemProperty("ignoreList", ignoreList(minecraftVersion, forgeArtifactVersion, context, catalog, useTeaKit))
+                    patchLegacyForgeVmArgsFile(
+                        project = project,
+                        runTaskName = name,
+                        ignoreList = ignoreList(context, catalog, useTeaKit),
+                    )
                 }
             }
 
@@ -154,18 +158,13 @@ object LegacyForgeRuntimeAdapter {
             description = "Patches old LegacyForge slime launcher metadata for $minecraftVersion runs."
             onlyIf { minecraftVersion in legacySlimePatchVersions }
             doLast {
-                val source = project.rootProject.file(
-                    ".gradle/mavenizer/repo/net/minecraftforge/forge/$forgeArtifactVersion/forge-$forgeArtifactVersion-metadata.zip",
-                )
-                if (!source.isFile) {
-                    throw GradleException("Missing legacy Forge metadata zip at $source")
-                }
+                val source = materializeLegacyForgeMetadata(project, forgeArtifactVersion)
                 val backup = File(source.parentFile, "${source.name}.multiloader-backup")
                 if (!backup.exists()) {
                     Files.copy(source.toPath(), backup.toPath())
                 }
                 rewriteZipEntry(source, "launcher/runs.json") { bytes ->
-                    String(bytes, StandardCharsets.UTF_8)
+                    patchLegacyForgeRunsJson(bytes)
                         .replace("securejarhandler-0.9.44.jar", "securejarhandler-0.9.61.jar")
                         .replace("securejarhandler-0.9.54.jar", "securejarhandler-0.9.61.jar")
                         .replace(",mixin,gson", ",mixin")
@@ -174,6 +173,98 @@ object LegacyForgeRuntimeAdapter {
                 }
             }
         }
+
+    private fun materializeLegacyForgeMetadata(project: Project, forgeArtifactVersion: String): File {
+        val target = legacyForgeMetadataZip(project, forgeArtifactVersion)
+        if (target.isFile) return target
+
+        val userdev = resolveDetachedJar(
+            project,
+            "net.minecraftforge:forge:$forgeArtifactVersion:userdev",
+            "forge-$forgeArtifactVersion-userdev.jar",
+        )
+        val runsJson = legacyForgeRunsJson(userdev)
+        target.parentFile.mkdirs()
+        ZipOutputStream(FileOutputStream(target)).use { zip ->
+            zip.putNextEntry(ZipEntry("launcher/runs.json"))
+            zip.write(runsJson)
+            zip.closeEntry()
+            zip.putNextEntry(ZipEntry("version.properties"))
+            zip.write("forgeVersion=$forgeArtifactVersion\n".toByteArray(StandardCharsets.UTF_8))
+            zip.closeEntry()
+        }
+        return target
+    }
+
+    private fun legacyForgeMetadataZip(project: Project, forgeArtifactVersion: String): File =
+        project.rootProject.file(
+            ".gradle/mavenizer/repo/net/minecraftforge/forge/$forgeArtifactVersion/forge-$forgeArtifactVersion-metadata.zip",
+        )
+
+    private fun legacyForgeRunsJson(userdev: File): ByteArray =
+        ZipFile(userdev).use { zip ->
+            val entry = zip.getEntry("config.json")
+                ?: throw GradleException("Missing config.json in legacy Forge userdev jar $userdev")
+            val config = zip.getInputStream(entry).use { input ->
+                JsonSlurper().parse(input) as? Map<*, *>
+                    ?: throw GradleException("Could not parse config.json in legacy Forge userdev jar $userdev")
+            }
+            val runs = config["runs"]
+                ?: throw GradleException("Missing runs metadata in legacy Forge userdev jar $userdev")
+            JsonOutput.prettyPrint(JsonOutput.toJson(runs)).toByteArray(StandardCharsets.UTF_8)
+        }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun patchLegacyForgeRunsJson(bytes: ByteArray): String {
+        val runs = JsonSlurper().parseText(String(bytes, StandardCharsets.UTF_8)) as? MutableMap<String, Any?>
+            ?: throw GradleException("Could not parse legacy Forge launcher/runs.json")
+        runs.values.forEach { run ->
+            val runConfig = run as? MutableMap<String, Any?> ?: return@forEach
+            val props = runConfig.getOrPut("props") { mutableMapOf<String, Any?>() } as MutableMap<String, Any?>
+            if (props.containsKey("legacyClassPath") && !props.containsKey("legacyClassPath.file")) {
+                props.remove("legacyClassPath")
+                props["legacyClassPath.file"] = "{minecraft_classpath_file}"
+            }
+            val jvmArgs = runConfig.getOrPut("jvmArgs") { mutableListOf<String>() } as MutableList<Any?>
+            addJvmArgPair(jvmArgs, "--add-opens", "java.base/java.lang.invoke=cpw.mods.securejarhandler")
+        }
+        return JsonOutput.prettyPrint(JsonOutput.toJson(runs))
+    }
+
+    private fun addJvmArgPair(jvmArgs: MutableList<Any?>, flag: String, value: String) {
+        if (jvmArgs.contains(value)) return
+        jvmArgs += flag
+        jvmArgs += value
+    }
+
+    private fun legacyClasspathFile(project: Project, runTaskName: String): File {
+        val runName = if (runTaskName == "runServer") "server" else "client"
+        val file = project.layout.buildDirectory.file("moddev/${runName}LegacyClasspath.txt").get().asFile
+        if (!file.isFile) {
+            throw GradleException("Missing generated LegacyForge classpath file at $file")
+        }
+        return file
+    }
+
+    private fun patchLegacyForgeVmArgsFile(project: Project, runTaskName: String, ignoreList: String) {
+        val runName = if (runTaskName == "runServer") "server" else "client"
+        val vmArgsFile = project.layout.buildDirectory.file("moddev/${runName}RunVmArgs.txt").get().asFile
+        if (!vmArgsFile.isFile) {
+            throw GradleException("Missing generated LegacyForge VM args file at $vmArgsFile")
+        }
+
+        val legacyClasspathFile = legacyClasspathFile(project, runTaskName)
+        val patchedLines = vmArgsFile.readLines()
+            .filterNot { line ->
+                line.startsWith("-DlegacyClassPath=") ||
+                    line.startsWith("-DlegacyClassPath.file=") ||
+                    line.startsWith("-DignoreList=")
+            }
+            .toMutableList()
+        patchedLines += "-DlegacyClassPath.file=${legacyClasspathFile.absolutePath}"
+        patchedLines += "-DignoreList=$ignoreList"
+        vmArgsFile.writeText(patchedLines.joinToString(System.lineSeparator()) + System.lineSeparator())
+    }
 
     private fun registerExtractLwjglNatives(
         project: Project,
@@ -216,12 +307,14 @@ object LegacyForgeRuntimeAdapter {
         catalog: VersionCatalog,
         minecraftVersion: String,
         runModsDir: org.gradle.api.file.Directory,
+        runtimeClasspath: FileCollection,
     ): TaskProvider<*> =
         project.tasks.register("stageLegacyForgeDependencyMods") {
             group = "minecraft"
-            description = "Stages dependency mod jars into run/mods for old LegacyForge $minecraftVersion client runs."
+            description = "Stages remapped dependency mod jars into run/mods for old LegacyForge $minecraftVersion client runs."
             onlyIf { minecraftVersion in legacyRuntimeVersions }
             outputs.dir(runModsDir)
+            inputs.files(runtimeClasspath)
             doLast {
                 val modsDir = runModsDir.asFile
                 modsDir.mkdirs()
@@ -229,14 +322,11 @@ object LegacyForgeRuntimeAdapter {
                     include("amber-forge-*.jar")
                     include("konfig-forge-*.jar")
                 })
+                val runtimeFiles = runtimeClasspath.files
                 listOf("amber", "konfig").forEach { alias ->
-                    val version = LoaderDependencyPolicy.catalogModuleVersion(context, catalog, alias)
+                    LoaderDependencyPolicy.catalogModuleVersion(context, catalog, alias)
                         ?: throw GradleException("Missing $alias version for legacy Forge $minecraftVersion")
-                    val source = resolveDetachedJar(
-                        project,
-                        "com.iamkaf.$alias:$alias-forge:$version",
-                        "$alias-forge-",
-                    )
+                    val source = runtimeFiles.requiredForgeModJar(alias)
                     Files.copy(source.toPath(), File(modsDir, source.name).toPath(), StandardCopyOption.REPLACE_EXISTING)
                 }
             }
@@ -249,16 +339,18 @@ object LegacyForgeRuntimeAdapter {
         minecraftVersion: String,
         runModsDir: org.gradle.api.file.Directory,
         useTeaKit: Boolean,
+        runtimeClasspath: FileCollection,
     ): TaskProvider<*> =
         project.tasks.register("stageLegacyForgeTeaKitMod") {
             group = "minecraft"
-            description = "Stages TeaKit into run/mods for old LegacyForge $minecraftVersion client runs."
+            description = "Stages remapped TeaKit into run/mods for old LegacyForge $minecraftVersion client runs."
             onlyIf { useTeaKit }
             outputs.dir(runModsDir)
+            inputs.files(runtimeClasspath)
             doLast {
-                val version = LoaderDependencyPolicy.catalogModuleVersion(context, catalog, "teakit")
+                LoaderDependencyPolicy.catalogModuleVersion(context, catalog, "teakit")
                     ?: throw GradleException("Missing teakit version for legacy Forge $minecraftVersion")
-                val source = resolveDetachedJar(project, "com.iamkaf.teakit:teakit-forge:$version", "teakit-forge-")
+                val source = runtimeClasspath.files.requiredForgeModJar("teakit")
                 val modsDir = runModsDir.asFile
                 modsDir.mkdirs()
                 project.delete(project.fileTree(modsDir) { include("teakit-forge-*.jar") })
@@ -266,6 +358,30 @@ object LegacyForgeRuntimeAdapter {
                 copyJarWithoutMixinManifest(source, target)
             }
         }
+
+    private fun mainRuntimeClasspath(project: Project): FileCollection =
+        project.extensions.getByType(SourceSetContainer::class.java)
+            .getByName("main")
+            .runtimeClasspath
+
+    private fun addLegacyForgeTeaKitRuntime(
+        project: Project,
+        context: MultiloaderProjectContext,
+        catalog: VersionCatalog,
+    ) {
+        val dependency = context.libraryOrNull(catalog, "teakit-${LoaderId.FORGE.id}") ?: return
+        project.dependencies.add("modRuntimeOnly", dependency)
+    }
+
+    private fun Set<File>.requiredForgeModJar(alias: String): File {
+        val matches = filter { file -> file.name.startsWith("$alias-forge-") && file.name.endsWith(".jar") }
+        val transformed = matches.filter { file ->
+            file.absolutePath.contains("${File.separator}transforms${File.separator}")
+        }
+        return transformed.singleOrNull()
+            ?: matches.singleOrNull()
+            ?: throw GradleException("Missing remapped $alias-forge jar in legacy Forge runtime classpath: ${map { it.name }.sorted()}")
+    }
 
     private fun registerClearSlimeLauncherCache(
         project: Project,
@@ -319,34 +435,28 @@ object LegacyForgeRuntimeAdapter {
     }
 
     private fun ignoreList(
-        minecraftVersion: String,
-        forgeArtifactVersion: String,
         context: MultiloaderProjectContext,
         catalog: VersionCatalog,
         useTeaKit: Boolean,
     ): String {
-        val bootstrapVersion = when (minecraftVersion) {
-            "1.18.2" -> "1.0.0"
-            "1.18", "1.18.1" -> "0.1.17"
-            else -> "0.1.15"
-        }
         val amberVersion = LoaderDependencyPolicy.catalogModuleVersion(context, catalog, "amber")
         val konfigVersion = LoaderDependencyPolicy.catalogModuleVersion(context, catalog, "konfig")
         val teaKitVersion = LoaderDependencyPolicy.catalogModuleVersion(context, catalog, "teakit")
         return listOfNotNull(
-            "bootstraplauncher-$bootstrapVersion.jar",
-            "securejarhandler-0.9.61.jar",
-            "asm-commons-9.1.jar",
-            "asm-util-9.1.jar",
-            "asm-analysis-9.1.jar",
-            "asm-tree-9.1.jar",
-            "asm-9.1.jar",
+            "bootstraplauncher",
+            "securejarhandler",
+            "asm-commons",
+            "asm-util",
+            "asm-analysis",
+            "asm-tree",
+            "asm",
+            "JarJarFileSystems",
             "client-extra",
             "fmlcore",
             "javafmllanguage",
+            "lowcodelanguage",
             "mclanguage",
-            "forge-$forgeArtifactVersion",
-            forgeArtifactVersion,
+            "forge-",
             amberVersion?.let { "amber-forge-$it.jar" },
             konfigVersion?.let { "konfig-forge-$it.jar" },
             if (useTeaKit) teaKitVersion?.let { "teakit-forge-$it.jar" } else null,
