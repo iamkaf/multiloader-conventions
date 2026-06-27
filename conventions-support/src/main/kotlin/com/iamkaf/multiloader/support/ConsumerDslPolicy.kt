@@ -1,12 +1,12 @@
 package com.iamkaf.multiloader.support
 
+import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.initialization.Settings
 import java.io.File
 
 object ConsumerDslPolicy {
     private val ignoredDirectoryNames = setOf(".git", ".gradle", "build")
-    private val groovyGradleScriptNames = setOf("settings.gradle", "build.gradle")
 
     fun requireKotlinDsl(settings: Settings) {
         requireKotlinDsl(settings.settingsDir)
@@ -23,7 +23,7 @@ object ConsumerDslPolicy {
         val relativeFiles = offendingFiles.joinToString(", ") { file ->
             file.relativeTo(rootDir).invariantSeparatorsPath
         }
-        throw IllegalStateException(
+        throw GradleException(
             "Multiloader Conventions 3.0 requires Kotlin DSL build scripts. " +
                 "Rename these files to .gradle.kts or remove them: $relativeFiles",
         )
@@ -32,7 +32,7 @@ object ConsumerDslPolicy {
     private fun groovyGradleScripts(rootDir: File): List<File> =
         rootDir.walkTopDown()
             .onEnter { directory -> directory == rootDir || directory.name !in ignoredDirectoryNames }
-            .filter { file -> file.isFile && file.name in groovyGradleScriptNames }
+            .filter { file -> file.isFile && file.extension == "gradle" }
             .sortedBy { file -> file.relativeTo(rootDir).invariantSeparatorsPath }
             .toList()
 }

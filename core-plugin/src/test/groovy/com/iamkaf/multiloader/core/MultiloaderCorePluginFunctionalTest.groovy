@@ -89,4 +89,28 @@ plugins {
         result.output.contains('Multiloader Conventions 3.0 requires Kotlin DSL build scripts')
         result.output.contains('settings.gradle')
     }
+
+    def "core plugin rejects auxiliary Groovy Gradle scripts"() {
+        given:
+        new File(testProjectDir, 'settings.gradle.kts').text = 'rootProject.name = "core-test"\n'
+        new File(testProjectDir, 'build.gradle.kts').text = '''
+plugins {
+    id("com.iamkaf.multiloader.core")
+}
+'''.stripIndent()
+        def script = new File(testProjectDir, 'gradle/legacy-conventions.gradle')
+        script.parentFile.mkdirs()
+        script.text = ''
+
+        when:
+        def result = GradleRunner.create()
+            .withProjectDir(testProjectDir)
+            .withPluginClasspath()
+            .withArguments('help', '--stacktrace')
+            .buildAndFail()
+
+        then:
+        result.output.contains('Multiloader Conventions 3.0 requires Kotlin DSL build scripts')
+        result.output.contains('gradle/legacy-conventions.gradle')
+    }
 }

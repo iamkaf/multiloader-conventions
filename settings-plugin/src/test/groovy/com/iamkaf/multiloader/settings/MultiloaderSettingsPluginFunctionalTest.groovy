@@ -148,6 +148,20 @@ plugins {
         result.output.contains('settings.gradle')
     }
 
+    def "auxiliary Groovy Gradle scripts are rejected for v3 consumers"() {
+        given:
+        def script = new File(testProjectDir, 'gradle/legacy-loader-glue.gradle')
+        script.parentFile.mkdirs()
+        script.text = ''
+
+        when:
+        def result = runner('projects').buildAndFail()
+
+        then:
+        result.output.contains('Multiloader Conventions 3.0 requires Kotlin DSL build scripts')
+        result.output.contains('gradle/legacy-loader-glue.gradle')
+    }
+
     private void writeVersion(String version, String loaders) {
         def file = new File(testProjectDir, "versions/${version}/gradle.properties")
         file.parentFile.mkdirs()
