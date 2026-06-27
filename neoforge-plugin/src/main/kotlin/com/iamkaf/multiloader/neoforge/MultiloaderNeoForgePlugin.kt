@@ -2,6 +2,7 @@ package com.iamkaf.multiloader.neoforge
 
 import com.iamkaf.multiloader.platform.MultiloaderPlatformPlugin
 import com.iamkaf.multiloader.support.ConventionSupport
+import com.iamkaf.multiloader.support.ConsumerDslPolicy
 import com.iamkaf.multiloader.support.JavaProjectWiring
 import com.iamkaf.multiloader.support.LoaderDependencyPolicy
 import com.iamkaf.multiloader.support.LoaderId
@@ -19,6 +20,8 @@ import org.gradle.api.Project
 
 class MultiloaderNeoForgePlugin : Plugin<Project> {
     override fun apply(project: Project) {
+        ConsumerDslPolicy.requireKotlinDsl(project)
+
         if (!isStonecutterNeoForgeProject(project)) {
             applyFlatNeoForgePlugin(project)
             return

@@ -150,7 +150,7 @@ consumer/
 └── gradle.properties
 ```
 
-Every Gradle script in a v3 consumer must use Kotlin DSL. The settings plugin rejects Groovy `settings.gradle` and `build.gradle` files so legacy build glue cannot silently stay on the mainstream path.
+Every Gradle script in a v3 consumer must use Kotlin DSL. The settings plugin and public project plugins reject Groovy `settings.gradle` and `build.gradle` files so legacy build glue cannot silently stay on the mainstream path.
 
 Version-local metadata lives in `versions/<mc>/gradle.properties`. Source and resource overlays live under `versions/<mc>/<root>/...` only when a version genuinely diverges.
 

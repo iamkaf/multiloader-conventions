@@ -1,5 +1,6 @@
 package com.iamkaf.multiloader.translations
 
+import com.iamkaf.multiloader.support.ConsumerDslPolicy
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -9,6 +10,7 @@ class MultiloaderTranslationsPlugin : Plugin<Project> {
         if (project != project.rootProject) {
             throw GradleException("com.iamkaf.multiloader.translations must be applied to the root project only.")
         }
+        ConsumerDslPolicy.requireKotlinDsl(project)
 
         val extension = project.extensions.create(
             "multiloaderTranslations",

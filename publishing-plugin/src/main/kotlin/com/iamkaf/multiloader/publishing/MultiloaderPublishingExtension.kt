@@ -1,6 +1,7 @@
 package com.iamkaf.multiloader.publishing
 
 import groovy.lang.Closure
+import org.gradle.api.Action
 import org.gradle.api.Named
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.model.ObjectFactory
@@ -30,16 +31,31 @@ open class MultiloaderPublishingExtension @Inject constructor(objects: ObjectFac
 
     fun config(configure: Closure<*>) = configure(configObject, configure)
 
+    fun config(configure: Action<in PublishingConfig>) = configure.execute(configObject)
+
     fun metadata(configure: Closure<*>) = configure(metadataObject, configure)
+
+    fun metadata(configure: Action<in PublishingMetadata>) = configure.execute(metadataObject)
 
     fun publish(configure: Closure<*>) = configure(publishObject, configure)
 
+    fun publish(configure: Action<in Publish>) = configure.execute(publishObject)
+
     fun loaders(configure: Closure<*>) = configure(loadersObject, configure)
+
+    fun loaders(configure: Action<in Loaders>) = configure.execute(loadersObject)
 
     fun publications(configure: Closure<*>) = configure(publicationsObject, configure)
 
+    fun publications(configure: Action<in NamedDomainObjectContainer<Publication>>) =
+        configure.execute(publicationsObject)
+
     fun publication(name: String, configure: Closure<*>) {
         configure(publicationsObject.maybeCreate(name), configure)
+    }
+
+    fun publication(name: String, configure: Action<in Publication>) {
+        configure.execute(publicationsObject.maybeCreate(name))
     }
 
     open class PublishingConfig @Inject constructor(objects: ObjectFactory) {
@@ -55,6 +71,8 @@ open class MultiloaderPublishingExtension @Inject constructor(objects: ObjectFac
         val changelogFile: Property<String> = objects.property(String::class.java)
 
         fun changelog(configure: Closure<*>) = configure(this, configure)
+
+        fun changelog(configure: Action<in PublishingMetadata>) = configure.execute(this)
 
         fun fromText(text: String) {
             changelogText.set(text)
@@ -81,7 +99,11 @@ open class MultiloaderPublishingExtension @Inject constructor(objects: ObjectFac
 
         fun modrinth(configure: Closure<*>) = configure(modrinthObject, configure)
 
+        fun modrinth(configure: Action<in Modrinth>) = configure.execute(modrinthObject)
+
         fun curseforge(configure: Closure<*>) = configure(curseforgeObject, configure)
+
+        fun curseforge(configure: Action<in CurseForge>) = configure.execute(curseforgeObject)
 
         @JvmOverloads
         fun additionalFile(path: String, configure: Closure<*>? = null) {
@@ -89,6 +111,12 @@ open class MultiloaderPublishingExtension @Inject constructor(objects: ObjectFac
             if (configure != null) {
                 configure(file, configure)
             }
+            additionalFiles.add(file)
+        }
+
+        fun additionalFile(path: String, configure: Action<in AdditionalFile>) {
+            val file = AdditionalFile(path)
+            configure.execute(file)
             additionalFiles.add(file)
         }
 
@@ -100,6 +128,8 @@ open class MultiloaderPublishingExtension @Inject constructor(objects: ObjectFac
             fun getDependencies(): Dependencies = dependenciesObject
 
             fun dependencies(configure: Closure<*>) = configure(dependenciesObject, configure)
+
+            fun dependencies(configure: Action<in Dependencies>) = configure.execute(dependenciesObject)
         }
 
         open class CurseForge @Inject constructor(objects: ObjectFactory) {
@@ -112,6 +142,8 @@ open class MultiloaderPublishingExtension @Inject constructor(objects: ObjectFac
             fun getDependencies(): Dependencies = dependenciesObject
 
             fun dependencies(configure: Closure<*>) = configure(dependenciesObject, configure)
+
+            fun dependencies(configure: Action<in Dependencies>) = configure.execute(dependenciesObject)
         }
 
         open class Dependencies @Inject constructor(objects: ObjectFactory) {
@@ -180,9 +212,15 @@ open class MultiloaderPublishingExtension @Inject constructor(objects: ObjectFac
 
         fun fabric(configure: Closure<*>) = configure(fabricObject, configure)
 
+        fun fabric(configure: Action<in LoaderConfig>) = configure.execute(fabricObject)
+
         fun forge(configure: Closure<*>) = configure(forgeObject, configure)
 
+        fun forge(configure: Action<in LoaderConfig>) = configure.execute(forgeObject)
+
         fun neoforge(configure: Closure<*>) = configure(neoforgeObject, configure)
+
+        fun neoforge(configure: Action<in LoaderConfig>) = configure.execute(neoforgeObject)
     }
 
     open class LoaderConfig @Inject constructor(objects: ObjectFactory, defaultEnabled: Boolean) {

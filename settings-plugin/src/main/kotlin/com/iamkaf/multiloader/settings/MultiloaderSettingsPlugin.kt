@@ -1,6 +1,7 @@
 package com.iamkaf.multiloader.settings
 
 import com.iamkaf.multiloader.support.BuildToolsVersions
+import com.iamkaf.multiloader.support.ConsumerDslPolicy
 import com.iamkaf.multiloader.support.GroovyGradleDsl
 import com.iamkaf.multiloader.support.MultiloaderTargetScope
 import com.iamkaf.multiloader.support.VersionPolicy

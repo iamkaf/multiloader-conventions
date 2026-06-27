@@ -11,9 +11,9 @@ class MultiloaderPublishingPluginFunctionalTest extends Specification {
     File testProjectDir
 
     def setup() {
-        new File(testProjectDir, 'settings.gradle').text = '''
-rootProject.name = 'publishing-test'
-include('fabric', 'forge', 'neoforge')
+        new File(testProjectDir, 'settings.gradle.kts').text = '''
+rootProject.name = "publishing-test"
+include("fabric", "forge", "neoforge")
 '''.stripIndent()
 
         new File(testProjectDir, 'changelog.md').text = '''
@@ -45,13 +45,13 @@ environments.client=required
 environments.server=required
 '''.stripIndent()
 
-        new File(testProjectDir, 'build.gradle').text = '''
+        new File(testProjectDir, 'build.gradle.kts').text = '''
 plugins {
-    id 'com.iamkaf.multiloader.publishing'
+    id("com.iamkaf.multiloader.publishing")
 }
 
-group = 'com.example'
-version = '1.2.3'
+group = "com.example"
+version = "1.2.3"
 '''.stripIndent()
 
         createLoaderProject('fabric', '{"schemaVersion":1,"id":"testmod","version":"1.2.3"}', 'fabric.mod.json')
@@ -248,27 +248,27 @@ dependencies.curseforge.required=amber-lib,konfig
 
     def "explicit publications support matrix artifacts with per-project game and java versions"() {
         given:
-        new File(testProjectDir, 'settings.gradle').text = '''
-rootProject.name = 'publishing-matrix-test'
-include('fabric:1.21.11', 'neoforge:26.1.2')
+        new File(testProjectDir, 'settings.gradle.kts').text = '''
+rootProject.name = "publishing-matrix-test"
+include("fabric:1.21.11", "neoforge:26.1.2")
 '''.stripIndent()
 
-        new File(testProjectDir, 'build.gradle').text = '''
+        new File(testProjectDir, 'build.gradle.kts').text = '''
 plugins {
-    id 'com.iamkaf.multiloader.publishing'
+    id("com.iamkaf.multiloader.publishing")
 }
 
-group = 'com.example'
-version = '1.2.3'
+group = "com.example"
+version = "1.2.3"
 
 multiloaderPublishing {
-    publication('fabric-1.21.11') {
-        project ':fabric:1.21.11'
-        loader 'fabric'
+    publication("fabric-1.21.11") {
+        project(":fabric:1.21.11")
+        loader("fabric")
     }
-    publication('neoforge-26.1.2') {
-        project ':neoforge:26.1.2'
-        loader 'neoforge'
+    publication("neoforge-26.1.2") {
+        project(":neoforge:26.1.2")
+        loader("neoforge")
     }
 }
 '''.stripIndent()
@@ -307,16 +307,16 @@ environments.server=required
     private void createLoaderProject(String name, String metadataContents, String metadataPath) {
         def dir = new File(testProjectDir, name)
         dir.mkdirs()
-        new File(dir, 'build.gradle').text = """
+        new File(dir, 'build.gradle.kts').text = """
 plugins {
-  id 'java'
+    java
 }
 
-group = 'com.example'
-version = '1.2.3'
+group = "com.example"
+version = "1.2.3"
 
-tasks.named('jar') {
-  archiveBaseName.set('testmod-${name}')
+tasks.named<org.gradle.jvm.tasks.Jar>("jar") {
+    archiveBaseName.set("testmod-${name}")
 }
 """.stripIndent()
 
@@ -328,18 +328,18 @@ tasks.named('jar') {
     private void createNestedLoaderProject(String path, String archiveBaseName, String metadataContents, String metadataPath, String minecraftVersion, String javaVersion) {
         def dir = new File(testProjectDir, path)
         dir.mkdirs()
-        new File(dir, 'build.gradle').text = """
+        new File(dir, 'build.gradle.kts').text = """
 plugins {
-  id 'java'
+    java
 }
 
-group = 'com.example'
-version = '1.2.3'
-ext['project.minecraft'] = '${minecraftVersion}'
-ext['project.java'] = '${javaVersion}'
+group = "com.example"
+version = "1.2.3"
+extra["project.minecraft"] = "${minecraftVersion}"
+extra["project.java"] = "${javaVersion}"
 
-tasks.named('jar') {
-  archiveBaseName.set('${archiveBaseName}')
+tasks.named<org.gradle.jvm.tasks.Jar>("jar") {
+    archiveBaseName.set("${archiveBaseName}")
 }
 """.stripIndent()
 

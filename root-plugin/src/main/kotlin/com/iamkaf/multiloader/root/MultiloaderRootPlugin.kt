@@ -1,6 +1,7 @@
 package com.iamkaf.multiloader.root
 
 import com.iamkaf.multiloader.publishing.MultiloaderPublishingExtension
+import com.iamkaf.multiloader.support.ConsumerDslPolicy
 import com.iamkaf.multiloader.support.MultiloaderTargetScope
 import com.iamkaf.multiloader.translations.MultiloaderTranslationsExtension
 import org.gradle.api.GradleException
@@ -12,6 +13,7 @@ class MultiloaderRootPlugin : Plugin<Project> {
         if (project != project.rootProject) {
             throw GradleException("com.iamkaf.multiloader.root must be applied to the root project only.")
         }
+        ConsumerDslPolicy.requireKotlinDsl(project)
 
         project.extensions.create("multiloaderStonecutter", MultiloaderStonecutterExtension::class.java, project)
         TeaKitRunPropertyForwarder.configure(project)

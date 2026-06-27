@@ -1,18 +1,27 @@
-package com.iamkaf.multiloader.settings
+package com.iamkaf.multiloader.support
 
+import org.gradle.api.Project
 import org.gradle.api.initialization.Settings
 import java.io.File
 
-internal object ConsumerDslPolicy {
+object ConsumerDslPolicy {
     private val ignoredDirectoryNames = setOf(".git", ".gradle", "build")
     private val groovyGradleScriptNames = setOf("settings.gradle", "build.gradle")
 
     fun requireKotlinDsl(settings: Settings) {
-        val offendingFiles = groovyGradleScripts(settings.settingsDir)
+        requireKotlinDsl(settings.settingsDir)
+    }
+
+    fun requireKotlinDsl(project: Project) {
+        requireKotlinDsl(project.rootProject.projectDir)
+    }
+
+    private fun requireKotlinDsl(rootDir: File) {
+        val offendingFiles = groovyGradleScripts(rootDir)
         if (offendingFiles.isEmpty()) return
 
         val relativeFiles = offendingFiles.joinToString(", ") { file ->
-            file.relativeTo(settings.settingsDir).invariantSeparatorsPath
+            file.relativeTo(rootDir).invariantSeparatorsPath
         }
         throw IllegalStateException(
             "Multiloader Conventions 3.0 requires Kotlin DSL build scripts. " +
@@ -20,10 +29,10 @@ internal object ConsumerDslPolicy {
         )
     }
 
-    private fun groovyGradleScripts(settingsDir: File): List<File> =
-        settingsDir.walkTopDown()
-            .onEnter { directory -> directory == settingsDir || directory.name !in ignoredDirectoryNames }
+    private fun groovyGradleScripts(rootDir: File): List<File> =
+        rootDir.walkTopDown()
+            .onEnter { directory -> directory == rootDir || directory.name !in ignoredDirectoryNames }
             .filter { file -> file.isFile && file.name in groovyGradleScriptNames }
-            .sortedBy { file -> file.relativeTo(settingsDir).invariantSeparatorsPath }
+            .sortedBy { file -> file.relativeTo(rootDir).invariantSeparatorsPath }
             .toList()
 }

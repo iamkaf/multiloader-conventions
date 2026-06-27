@@ -12,6 +12,7 @@ java {
 
 dependencies {
     implementation(localGroovy())
+    implementation(project(":conventions-support"))
 
     testImplementation(localGroovy())
     testImplementation(gradleTestKit())

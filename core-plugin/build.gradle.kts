@@ -29,7 +29,7 @@ gradlePlugin {
             id = "com.iamkaf.multiloader.core"
             implementationClass = "com.iamkaf.multiloader.core.MultiloaderCorePlugin"
             displayName = "Multiloader Core Plugin"
-            description = "Registers shared branch-based helper APIs for Stonecutter multiloader builds."
+            description = "Marker plugin for stable multiloader convention plugin resolution."
         }
     }
 }

@@ -2,6 +2,7 @@ package com.iamkaf.multiloader.fabric
 
 import com.iamkaf.multiloader.platform.MultiloaderPlatformPlugin
 import com.iamkaf.multiloader.support.ConventionSupport
+import com.iamkaf.multiloader.support.ConsumerDslPolicy
 import com.iamkaf.multiloader.support.FabricCompatibilityPolicy
 import com.iamkaf.multiloader.support.JavaProjectWiring
 import com.iamkaf.multiloader.support.LoaderDependencyPolicy
@@ -18,6 +19,8 @@ import org.gradle.api.Project
 
 class MultiloaderFabricPlugin : Plugin<Project> {
     override fun apply(project: Project) {
+        ConsumerDslPolicy.requireKotlinDsl(project)
+
         val extension = project.extensions.create(
             "multiloaderFabric",
             MultiloaderFabricExtension::class.java,

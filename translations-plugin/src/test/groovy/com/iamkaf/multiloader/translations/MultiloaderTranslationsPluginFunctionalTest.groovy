@@ -39,13 +39,13 @@ class MultiloaderTranslationsPluginFunctionalTest extends Specification {
         routeRaw('/api/export/demo-mod/zh_cn', '{"hello":"你好"}')
         writeProject("""
 plugins {
-    id 'com.iamkaf.multiloader.translations'
+    id("com.iamkaf.multiloader.translations")
 }
 
 multiloaderTranslations {
-    projectSlug = 'demo-mod'
-    outputDir = layout.projectDirectory.dir('common/src/main/resources/assets/demo/lang')
-    baseUrl = '${baseUrl}'
+    projectSlug.set("demo-mod")
+    outputDir.set(layout.projectDirectory.dir("common/src/main/resources/assets/demo/lang"))
+    baseUrl.set("${baseUrl}")
 }
 """)
         writeLangFile('en_us.json', '{"hello":"Hello"}')
@@ -76,14 +76,14 @@ multiloaderTranslations {
         routeAuthRaw('/api/export/private-mod/pt_br', 'kaf_secret', '{"hello":"Oi"}')
         writeProject("""
 plugins {
-    id 'com.iamkaf.multiloader.translations'
+    id("com.iamkaf.multiloader.translations")
 }
 
 multiloaderTranslations {
-    projectSlug = 'private-mod'
-    outputDir = layout.projectDirectory.dir('common/src/main/resources/assets/demo/lang')
-    baseUrl = '${baseUrl}'
-    token = providers.gradleProperty('translations.token')
+    projectSlug.set("private-mod")
+    outputDir.set(layout.projectDirectory.dir("common/src/main/resources/assets/demo/lang"))
+    baseUrl.set("${baseUrl}")
+    token.set(providers.gradleProperty("translations.token"))
 }
 """)
 
@@ -102,13 +102,13 @@ multiloaderTranslations {
         routeStatus('/api/export/private-mod', 401)
         writeProject("""
 plugins {
-    id 'com.iamkaf.multiloader.translations'
+    id("com.iamkaf.multiloader.translations")
 }
 
 multiloaderTranslations {
-    projectSlug = 'private-mod'
-    outputDir = layout.projectDirectory.dir('common/src/main/resources/assets/demo/lang')
-    baseUrl = '${baseUrl}'
+    projectSlug.set("private-mod")
+    outputDir.set(layout.projectDirectory.dir("common/src/main/resources/assets/demo/lang"))
+    baseUrl.set("${baseUrl}")
 }
 """)
 
@@ -130,13 +130,13 @@ multiloaderTranslations {
         ])
         writeProject("""
 plugins {
-    id 'com.iamkaf.multiloader.translations'
+    id("com.iamkaf.multiloader.translations")
 }
 
 multiloaderTranslations {
-    projectSlug = 'demo-mod'
-    outputDir = layout.projectDirectory.dir('common/src/main/resources/assets/demo/lang')
-    baseUrl = '${baseUrl}'
+    projectSlug.set("demo-mod")
+    outputDir.set(layout.projectDirectory.dir("common/src/main/resources/assets/demo/lang"))
+    baseUrl.set("${baseUrl}")
 }
 """)
         writeLangFile('en_us.json', '{"hello":"Hello"}')
@@ -157,13 +157,13 @@ multiloaderTranslations {
         routeRaw('/api/export/demo-mod', '{not-json')
         writeProject("""
 plugins {
-    id 'com.iamkaf.multiloader.translations'
+    id("com.iamkaf.multiloader.translations")
 }
 
 multiloaderTranslations {
-    projectSlug = 'demo-mod'
-    outputDir = layout.projectDirectory.dir('common/src/main/resources/assets/demo/lang')
-    baseUrl = '${baseUrl}'
+    projectSlug.set("demo-mod")
+    outputDir.set(layout.projectDirectory.dir("common/src/main/resources/assets/demo/lang"))
+    baseUrl.set("${baseUrl}")
 }
 """)
 
@@ -188,13 +188,13 @@ multiloaderTranslations {
         routeRaw('/api/export/demo-mod/fr_fr', '{not-json')
         writeProject("""
 plugins {
-    id 'com.iamkaf.multiloader.translations'
+    id("com.iamkaf.multiloader.translations")
 }
 
 multiloaderTranslations {
-    projectSlug = 'demo-mod'
-    outputDir = layout.projectDirectory.dir('common/src/main/resources/assets/demo/lang')
-    baseUrl = '${baseUrl}'
+    projectSlug.set("demo-mod")
+    outputDir.set(layout.projectDirectory.dir("common/src/main/resources/assets/demo/lang"))
+    baseUrl.set("${baseUrl}")
 }
 """)
 
@@ -208,16 +208,16 @@ multiloaderTranslations {
 
     def "plugin fails immediately when applied to a subproject"() {
         given:
-        new File(testProjectDir, 'settings.gradle').text = '''
-rootProject.name = 'translations-subproject-test'
-include('child')
+        new File(testProjectDir, 'settings.gradle.kts').text = '''
+rootProject.name = "translations-subproject-test"
+include("child")
 '''.stripIndent()
-        new File(testProjectDir, 'build.gradle').text = ''
-        def childBuild = new File(testProjectDir, 'child/build.gradle')
+        new File(testProjectDir, 'build.gradle.kts').text = ''
+        def childBuild = new File(testProjectDir, 'child/build.gradle.kts')
         childBuild.parentFile.mkdirs()
         childBuild.text = '''
 plugins {
-    id 'com.iamkaf.multiloader.translations'
+    id("com.iamkaf.multiloader.translations")
 }
 '''.stripIndent()
 
@@ -232,11 +232,11 @@ plugins {
         given:
         writeProject("""
 plugins {
-    id 'com.iamkaf.multiloader.translations'
+    id("com.iamkaf.multiloader.translations")
 }
 
 multiloaderTranslations {
-    outputDir = layout.projectDirectory.dir('common/src/main/resources/assets/demo/lang')
+    outputDir.set(layout.projectDirectory.dir("common/src/main/resources/assets/demo/lang"))
 }
 """)
 
@@ -251,11 +251,11 @@ multiloaderTranslations {
         given:
         writeProject("""
 plugins {
-    id 'com.iamkaf.multiloader.translations'
+    id("com.iamkaf.multiloader.translations")
 }
 
 multiloaderTranslations {
-    projectSlug = 'demo-mod'
+    projectSlug.set("demo-mod")
 }
 """)
 
@@ -321,10 +321,10 @@ multiloaderTranslations {
     }
 
     private void writeProject(String buildGradle) {
-        new File(testProjectDir, 'settings.gradle').text = '''
-rootProject.name = 'translations-test'
+        new File(testProjectDir, 'settings.gradle.kts').text = '''
+rootProject.name = "translations-test"
 '''.stripIndent()
-        new File(testProjectDir, 'build.gradle').text = buildGradle.stripIndent()
+        new File(testProjectDir, 'build.gradle.kts').text = buildGradle.stripIndent()
     }
 
     private File langFile(String name) {

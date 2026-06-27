@@ -3,6 +3,7 @@ package com.iamkaf.multiloader.common
 import com.iamkaf.multiloader.support.CommonArtifacts
 import com.iamkaf.multiloader.support.CommonToolchainStrategy
 import com.iamkaf.multiloader.support.ConventionSupport
+import com.iamkaf.multiloader.support.ConsumerDslPolicy
 import com.iamkaf.multiloader.support.JavaProjectWiring
 import com.iamkaf.multiloader.support.LoaderDependencyPolicy
 import com.iamkaf.multiloader.support.MavenPublicationWiring
@@ -20,6 +21,8 @@ import java.io.File
 
 class MultiloaderCommonPlugin : Plugin<Project> {
     override fun apply(project: Project) {
+        ConsumerDslPolicy.requireKotlinDsl(project)
+
         if (!isCommonProject(project)) {
             ConventionSupport.configureCommonProject(project)
             return
