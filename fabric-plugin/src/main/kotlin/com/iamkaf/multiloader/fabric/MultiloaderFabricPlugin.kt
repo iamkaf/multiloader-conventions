@@ -45,13 +45,16 @@ class MultiloaderFabricPlugin : Plugin<Project> {
         project.pluginManager.apply(loomPluginId)
 
         project.pluginManager.withPlugin(loomPluginId) {
+            val minecraftVersion = ConventionSupport.requiredProperty(project, "project.minecraft")
+            FabricCompatibilityPolicy.configureDatagenRuntimeAvailability(project, minecraftVersion)
             ConventionSupport.configureFabricBaseDependencies(project)
             configureFabricDatagen(
                 project,
                 extension,
+                minecraftVersion,
                 DatagenOutputPlanner.commonDatagenOutputDirectory(
                     project = project,
-                    minecraftVersion = ConventionSupport.requiredProperty(project, "project.minecraft"),
+                    minecraftVersion = minecraftVersion,
                     usesStonecutter = false,
                 ),
             )
@@ -97,6 +100,7 @@ class MultiloaderFabricPlugin : Plugin<Project> {
 
         context.sharedRepositories()
         StonecutterSourceLayout.configureLoader(project, "fabric", minecraftVersion, commonProject)
+        FabricCompatibilityPolicy.configureDatagenRuntimeAvailability(project, minecraftVersion)
         FabricCompatibilityPolicy.excludeDatagenSourcesFromGameplayRuns(project, minecraftVersion)
         LoaderDependencyPolicy.configureFabricResolutionCompatibility(project, minecraftVersion)
 
@@ -133,6 +137,7 @@ class MultiloaderFabricPlugin : Plugin<Project> {
         configureFabricDatagen(
             project,
             extension,
+            minecraftVersion,
             DatagenOutputPlanner.commonDatagenOutputDirectory(
                 project = project,
                 minecraftVersion = minecraftVersion,
@@ -154,11 +159,13 @@ class MultiloaderFabricPlugin : Plugin<Project> {
     private fun configureFabricDatagen(
         project: Project,
         extension: MultiloaderFabricExtension,
+        minecraftVersion: String,
         outputDirectory: java.io.File,
     ) {
         extension.commonDatagen.finalizeValueOnRead()
         project.afterEvaluate {
             if (!extension.commonDatagen.get()) return@afterEvaluate
+            if (!FabricCompatibilityPolicy.supportsFabricApiDatagenRuntime(minecraftVersion)) return@afterEvaluate
             FabricLoomAdapter.configureCommonDatagen(project, outputDirectory)
         }
     }

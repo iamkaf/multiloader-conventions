@@ -44,6 +44,11 @@ enum class TeaKitRuntimeStrategy(val dependencyConfiguration: String?) {
     MOD_RUNTIME_ONLY("modRuntimeOnly"),
 }
 
+enum class FabricDatagenRuntimeStrategy {
+    FABRIC_API_DATAGEN,
+    CHECKED_IN_COMPATIBILITY_LANE,
+}
+
 enum class PublicationArtifactStrategy(val artifactTask: String, val fallbackArtifactTask: String?, val buildTasks: List<String>) {
     JAR("jar", null, emptyList()),
     FABRIC_REMAP_JAR("remapJar", "jar", emptyList()),
@@ -67,6 +72,7 @@ data class VersionMetadata(
     val catalogCoordinate: String,
     val commonToolchainStrategy: CommonToolchainStrategy,
     val fabricDependencyStrategy: FabricDependencyStrategy,
+    val fabricDatagenRuntimeStrategy: FabricDatagenRuntimeStrategy,
     val forgeRunStrategy: ForgeRunStrategy,
     val neoForgeToolchainStrategy: NeoForgeToolchainStrategy,
 ) {
@@ -145,6 +151,7 @@ object VersionPolicy {
             catalogCoordinate = catalogCoordinate(version),
             commonToolchainStrategy = commonToolchainStrategy(version),
             fabricDependencyStrategy = fabricDependencyStrategy(version),
+            fabricDatagenRuntimeStrategy = fabricDatagenRuntimeStrategy(version),
             forgeRunStrategy = forgeRunStrategy(version),
             neoForgeToolchainStrategy = neoForgeToolchainStrategy(version),
         )
@@ -225,6 +232,13 @@ object VersionPolicy {
     fun fabricDependencyStrategy(version: String): FabricDependencyStrategy =
         if (useUnobfuscatedMinecraft(version)) FabricDependencyStrategy.MODERN_UNOBFUSCATED
         else FabricDependencyStrategy.OBFUSCATED_LOOM
+
+    fun fabricDatagenRuntimeStrategy(version: String): FabricDatagenRuntimeStrategy =
+        if (isMinecraftVersionAtLeast(version, "1.17")) {
+            FabricDatagenRuntimeStrategy.FABRIC_API_DATAGEN
+        } else {
+            FabricDatagenRuntimeStrategy.CHECKED_IN_COMPATIBILITY_LANE
+        }
 
     fun fabricTeaKitRuntimeStrategy(version: String): TeaKitRuntimeStrategy =
         if (version.startsWith("1.")) TeaKitRuntimeStrategy.FABRIC_LOCAL_RUNTIME else TeaKitRuntimeStrategy.RUNTIME_ONLY

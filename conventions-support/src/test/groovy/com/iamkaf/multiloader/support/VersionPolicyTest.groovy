@@ -32,6 +32,7 @@ class VersionPolicyTest extends Specification {
         metadata.catalogCoordinate == 'com.iamkaf.platform:mc-26.2:26.2-SNAPSHOT'
         metadata.forgeLoaderRange == '[65,)'
         metadata.fabricDependencyStrategy == FabricDependencyStrategy.MODERN_UNOBFUSCATED
+        metadata.fabricDatagenRuntimeStrategy == FabricDatagenRuntimeStrategy.FABRIC_API_DATAGEN
         VersionPolicy.INSTANCE.fabricPublicationArtifact('26.2') == PublicationArtifactStrategy.JAR
     }
 
@@ -94,6 +95,21 @@ class VersionPolicyTest extends Specification {
 
         where:
         version << ['1.16', '1.16.1']
+    }
+
+    @Unroll
+    def "#version uses #strategy for Fabric datagen runtime"() {
+        expect:
+        VersionPolicy.INSTANCE.metadata(version).fabricDatagenRuntimeStrategy == strategy
+        VersionPolicy.INSTANCE.fabricDatagenRuntimeStrategy(version) == strategy
+
+        where:
+        version  | strategy
+        '1.14.4' | FabricDatagenRuntimeStrategy.CHECKED_IN_COMPATIBILITY_LANE
+        '1.16.5' | FabricDatagenRuntimeStrategy.CHECKED_IN_COMPATIBILITY_LANE
+        '1.17'   | FabricDatagenRuntimeStrategy.FABRIC_API_DATAGEN
+        '1.21.1' | FabricDatagenRuntimeStrategy.FABRIC_API_DATAGEN
+        '26.2'   | FabricDatagenRuntimeStrategy.FABRIC_API_DATAGEN
     }
 
     @Unroll

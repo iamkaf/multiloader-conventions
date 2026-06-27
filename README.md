@@ -107,7 +107,9 @@ Included Gradle modules:
 - configures Fabric Loom;
 - selects Fabric dependency lanes by version policy;
 - stages common, generated, and Fabric-specific sources/resources;
-- exposes Fabric datagen helpers.
+- exposes typed Fabric datagen helpers;
+- routes common datagen output into the selected Stonecutter version lane;
+- labels legacy checked-in generated-resource lanes when Fabric datagen is not a stable runtime path.
 
 `forge`
 
@@ -237,6 +239,20 @@ Use the samples as executable references:
 
 - [samples/minimal](samples/minimal)
 - [samples/datagen](samples/datagen)
+
+### Fabric Datagen
+
+Consumers opt into common generated resources with the typed Kotlin DSL:
+
+```kotlin
+multiloaderFabric {
+    commonDatagen.set(true)
+}
+```
+
+Flat projects write to `common/src/main/generated`. Stonecutter projects write to `versions/<minecraft>/common/src/main/generated`, so generated resources can follow the same version lanes as hand-written overlays.
+
+Minecraft `1.17` and newer use Fabric datagen as the mainstream path. Minecraft `1.14.4` through `1.16.5` use checked-in compatibility lanes; their `runDatagen` task reports that boundary and exits successfully instead of launching an unstable legacy Fabric datagen runtime.
 
 ## Translations
 
