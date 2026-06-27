@@ -31,18 +31,22 @@ class VersionMetadataFilesTest extends Specification {
         def versionDir = new File(tempDir, '1.14.4')
         versionDir.mkdirs()
         new File(versionDir, 'gradle.properties').text = '''\
+project.version=5.0.0+1.14.4
 project.minecraft=1.14.4
 project.java=8
 project.build-java=17
 dependencies.modrinth.required=amber
+dependencies.curseforge.required=amber-lib
+mod.neoforge-loader-range=[4,)
 custom.side-lane=keep-me
 '''.stripIndent()
 
         when:
         def differences = VersionMetadataFiles.INSTANCE.differences(versionDir)
         VersionMetadataFiles.INSTANCE.writeMaterializedMetadata(versionDir)
+        def materializedFile = new File(versionDir, 'gradle.properties')
         def materialized = new Properties()
-        new File(versionDir, 'gradle.properties').withInputStream { materialized.load(it) }
+        materializedFile.withInputStream { materialized.load(it) }
 
         then:
         differences*.key.contains('project.java')
@@ -52,5 +56,27 @@ custom.side-lane=keep-me
         materialized.getProperty('project.enabled-loaders') == 'fabric'
         materialized.getProperty('dependencies.modrinth.required') == 'amber'
         materialized.getProperty('custom.side-lane') == 'keep-me'
+        materializedFile.text == '''\
+project.version=5.0.0+1.14.4
+project.java=16
+project.build-java=21
+project.minecraft=1.14.4
+project.enabled-loaders=fabric
+project.catalog-name=libsMc1144
+project.catalog-coordinate=com.iamkaf.platform:mc-1.14.4:1.14.4-SNAPSHOT
+
+mixin.compat.common=JAVA_16
+mixin.compat.fabric=JAVA_16
+mixin.compat.forge=JAVA_16
+mixin.compat.neoforge=JAVA_16
+
+mod.minecraft-range=[1.14.4, 1.15)
+mod.fabric-range=>=1.14.4
+
+dependencies.modrinth.required=amber
+dependencies.curseforge.required=amber-lib
+
+custom.side-lane=keep-me
+'''.stripIndent()
     }
 }

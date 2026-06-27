@@ -27,6 +27,35 @@ object VersionMetadataFiles {
         "mixin.compat.neoforge",
     )
 
+    private val materializedGroups: List<List<String>> = listOf(
+        listOf(
+            "project.version",
+            "project.java",
+            "project.build-java",
+            "project.minecraft",
+            "project.enabled-loaders",
+            "project.catalog-name",
+            "project.catalog-coordinate",
+        ),
+        listOf(
+            "mixin.compat.common",
+            "mixin.compat.fabric",
+            "mixin.compat.forge",
+            "mixin.compat.neoforge",
+        ),
+        listOf(
+            "mod.minecraft-range",
+            "mod.fabric-range",
+            "mod.forge-loader-range",
+            "mod.neoforge-loader-range",
+        ),
+        listOf(
+            "publish.game-versions",
+            "dependencies.modrinth.required",
+            "dependencies.curseforge.required",
+        ),
+    )
+
     fun versionMetadata(versionDir: File): Properties {
         val props = policyMetadata(versionDir.name)
         val metadataFile = File(versionDir, "gradle.properties")
@@ -65,16 +94,28 @@ object VersionMetadataFiles {
         }
         val policy = policyMetadata(versionDir.name)
         val lines = mutableListOf<String>()
+        val emitted = mutableSetOf<String>()
 
-        managedKeys.forEach { key ->
-            val value = policy.getProperty(key)
-            if (value != null) {
-                lines += "${escape(key)}=${escape(value)}"
+        materializedGroups.forEach { group ->
+            val groupLines = group.mapNotNull { key ->
+                val value = if (key in managedKeys) policy.getProperty(key) else existing.getProperty(key)
+                if (value == null) {
+                    null
+                } else {
+                    emitted += key
+                    "${escape(key)}=${escape(value)}"
+                }
+            }
+            if (groupLines.isNotEmpty()) {
+                if (lines.isNotEmpty()) {
+                    lines += ""
+                }
+                lines += groupLines
             }
         }
 
         val unmanagedKeys = existing.stringPropertyNames()
-            .filter { it !in managedKeys }
+            .filter { it !in emitted && it !in managedKeys }
             .sorted()
         if (unmanagedKeys.isNotEmpty()) {
             lines += ""
