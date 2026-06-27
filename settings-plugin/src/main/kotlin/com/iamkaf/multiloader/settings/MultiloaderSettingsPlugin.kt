@@ -11,6 +11,7 @@ import java.util.Properties
 
 class MultiloaderSettingsPlugin : Plugin<Settings> {
     override fun apply(settings: Settings) {
+        ConsumerDslPolicy.requireKotlinDsl(settings)
         configurePluginRepositories(settings)
         configureConventionPluginVersions(settings)
         applySettingsPlugins(settings)
@@ -185,7 +186,7 @@ class MultiloaderSettingsPlugin : Plugin<Settings> {
         val projectDir = File(settings.settingsDir, projectName)
         if (!projectDir.isDirectory) return
 
-        val buildFile = File(projectDir, "build.gradle")
+        val buildFile = File(projectDir, "build.gradle.kts")
         if (!buildFile.isFile) return
 
         settings.include(projectName)

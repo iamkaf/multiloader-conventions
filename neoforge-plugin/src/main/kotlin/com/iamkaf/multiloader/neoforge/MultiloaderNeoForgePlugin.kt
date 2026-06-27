@@ -3,6 +3,8 @@ package com.iamkaf.multiloader.neoforge
 import com.iamkaf.multiloader.platform.MultiloaderPlatformPlugin
 import com.iamkaf.multiloader.support.ConventionSupport
 import com.iamkaf.multiloader.support.JavaProjectWiring
+import com.iamkaf.multiloader.support.LoaderDependencyPolicy
+import com.iamkaf.multiloader.support.LoaderId
 import com.iamkaf.multiloader.support.MavenPublicationWiring
 import com.iamkaf.multiloader.support.MultiloaderProjectContext
 import com.iamkaf.multiloader.support.MultiloaderProjectRole
@@ -53,14 +55,6 @@ class MultiloaderNeoForgePlugin : Plugin<Project> {
 
         val catalog = context.catalogFor(minecraftVersion)
         val identity = ProjectIdentity.from(context, MultiloaderProjectRole.NEOFORGE)
-        val teaKitVersion = context.versionOrNull(catalog, "teakit")
-        val teaKitLibrary = catalog.findLibrary("teakit-neoforge")
-        val hasTeaKit = teaKitLibrary.isPresent && teaKitVersion != null && teaKitVersion != "null"
-        val useTeaKit = project.providers.systemProperty("${identity.modId}.withTeaKit")
-            .orElse(project.providers.gradleProperty("${identity.modId}.withTeaKit"))
-            .map { it.toBoolean() }
-            .orElse(false)
-            .get() && identity.modId != "teakit"
         val accessTransformerFile = project.rootProject.file("common/src/main/resources/META-INF/accesstransformer.cfg")
         val commonProject = project.project(":common:$minecraftVersion")
 
@@ -74,9 +68,16 @@ class MultiloaderNeoForgePlugin : Plugin<Project> {
         JavaProjectWiring.configureArchiveAndResourceDefaults(project)
 
         JavaProjectWiring.addBaseDependencies(project, context, catalog)
-        if (useTeaKit && hasTeaKit) {
-            project.dependencies.add("runtimeOnly", teaKitLibrary.get())
-        }
+        LoaderDependencyPolicy.addNeoForgeLoaderLibraries(project, context, catalog, identity)
+        LoaderDependencyPolicy.addTeaKitRuntime(
+            project = project,
+            context = context,
+            catalog = catalog,
+            identity = identity,
+            loader = LoaderId.NEOFORGE,
+            minecraftVersion = minecraftVersion,
+            strategy = com.iamkaf.multiloader.support.TeaKitRuntimeStrategy.RUNTIME_ONLY,
+        )
 
         if (useNeoGradleUserdev) {
             NeoGradleUserdevAdapter.configure(project, context.versionOrNull(catalog, "neoforge"), identity.modId)

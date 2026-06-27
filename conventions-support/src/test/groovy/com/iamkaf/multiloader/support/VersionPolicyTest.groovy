@@ -29,6 +29,7 @@ class VersionPolicyTest extends Specification {
         metadata.buildJavaVersion == 25
         metadata.enabledLoaders*.id == ['fabric', 'forge', 'neoforge']
         metadata.catalogName == 'libsMc262'
+        metadata.catalogCoordinate == 'com.iamkaf.platform:mc-26.2:26.2-SNAPSHOT'
         metadata.forgeLoaderRange == '[65,)'
         metadata.fabricDependencyStrategy == FabricDependencyStrategy.MODERN_UNOBFUSCATED
         VersionPolicy.INSTANCE.fabricPublicationArtifact('26.2') == PublicationArtifactStrategy.JAR
@@ -68,8 +69,8 @@ class VersionPolicyTest extends Specification {
 
         where:
         version  | javaVersion
-        '1.14.4' | 8
-        '1.16.5' | 8
+        '1.14.4' | 16
+        '1.16.5' | 16
         '1.17.1' | 16
         '1.20.1' | 17
         '1.21.1' | 21
@@ -91,5 +92,19 @@ class VersionPolicyTest extends Specification {
 
         where:
         version << ['1.18.2', '1.21.11']
+    }
+
+    @Unroll
+    def "#version maps resource pack expansion defaults"() {
+        expect:
+        VersionPolicy.INSTANCE.resourcePackFormat(version) == format
+        VersionPolicy.INSTANCE.resourcePackMinMaxSnippet(version) == minMax
+
+        where:
+        version   | format | minMax
+        '1.18.2'  | '8'    | ''
+        '1.20.4'  | '15'   | ''
+        '1.21.11' | '81'   | ',\n    "min_format": 81,\n    "max_format": 81'
+        '26.2'    | '8'    | ''
     }
 }

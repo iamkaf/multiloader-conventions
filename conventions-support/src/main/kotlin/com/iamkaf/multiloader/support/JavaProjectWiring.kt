@@ -85,8 +85,15 @@ object JavaProjectWiring {
                     expand(expandProperties)
                 }
             }
-            if (jsonPatterns.isNotEmpty()) {
-                filesMatching(jsonPatterns) {
+            val rawJsonPatterns = jsonPatterns.filter { it == "pack.mcmeta" }
+            if (rawJsonPatterns.isNotEmpty()) {
+                filesMatching(rawJsonPatterns) {
+                    expand(expandProperties)
+                }
+            }
+            val safeJsonPatterns = jsonPatterns.filterNot { it == "pack.mcmeta" }
+            if (safeJsonPatterns.isNotEmpty()) {
+                filesMatching(safeJsonPatterns) {
                     expand(jsonExpandProps)
                 }
             }

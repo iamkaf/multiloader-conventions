@@ -2,6 +2,7 @@ package com.iamkaf.multiloader.settings
 
 import com.iamkaf.multiloader.support.LoaderId
 import com.iamkaf.multiloader.support.VersionPolicy
+import com.iamkaf.multiloader.support.VersionMetadataFiles
 import org.gradle.api.initialization.Settings
 import java.io.File
 import java.util.Properties
@@ -18,14 +19,7 @@ object SettingsVersionMatrix {
     }
 
     fun versionMetadata(versionDir: File): Properties {
-        val metadataFile = File(versionDir, "gradle.properties")
-        if (metadataFile.isFile) {
-            return loadProperties(metadataFile)
-        }
-
-        val props = Properties()
-        props.setProperty("project.enabled-loaders", VersionPolicy.enabledLoaderIds(versionDir.name))
-        return props
+        return VersionMetadataFiles.versionMetadata(versionDir)
     }
 
     fun parseEnabledLoaders(settings: Settings): List<String> {
@@ -52,8 +46,4 @@ object SettingsVersionMatrix {
             ?.takeIf { it.isNotBlank() }
             ?: VersionPolicy.catalogCoordinate(mcVersion)
 
-    private fun loadProperties(file: File): Properties =
-        Properties().also { properties ->
-            file.inputStream().use(properties::load)
-        }
 }

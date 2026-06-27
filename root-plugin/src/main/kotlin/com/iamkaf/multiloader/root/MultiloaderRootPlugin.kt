@@ -34,6 +34,7 @@ class MultiloaderRootPlugin : Plugin<Project> {
         project.pluginManager.apply("com.iamkaf.multiloader.publishing")
         project.pluginManager.apply("com.iamkaf.multiloader.translations")
         StonecutterRootDefaults.configure(project)
+        VersionMetadataTasks.register(project)
         applyCoordinates(project)
 
         val modId = requiredProperty(project, "mod.id")

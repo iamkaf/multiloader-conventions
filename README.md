@@ -9,8 +9,9 @@ This repository is the shared build layer for branch-based Stonecutter projects.
 - Group: `com.iamkaf.multiloader`
 - Version: `3.0-SNAPSHOT`
 - Compatibility: porting effort for consumers
+- Consumer DSL: Kotlin DSL only
 
-The 3.0 line is allowed to break consumer build files. Mods adopting it should update deliberately and validate every supported loader and Minecraft version they ship.
+The 3.0 line is allowed to break consumer build files. Mods adopting it must migrate Gradle scripts to Kotlin DSL (`settings.gradle.kts` and `build.gradle.kts`), update deliberately, and validate every supported loader and Minecraft version they ship.
 
 ## Versioning Policy
 
@@ -149,6 +150,8 @@ consumer/
 └── gradle.properties
 ```
 
+Every Gradle script in a v3 consumer must use Kotlin DSL. The settings plugin rejects Groovy `settings.gradle` and `build.gradle` files so legacy build glue cannot silently stay on the mainstream path.
+
 Version-local metadata lives in `versions/<mc>/gradle.properties`. Source and resource overlays live under `versions/<mc>/<root>/...` only when a version genuinely diverges.
 
 The active graph is derived from:
@@ -221,9 +224,9 @@ plugins {
 
 Minimal branch build files should only apply the matching plugin:
 
-```groovy
+```kotlin
 plugins {
-    id 'com.iamkaf.multiloader.fabric'
+    id("com.iamkaf.multiloader.fabric")
 }
 ```
 
@@ -236,25 +239,25 @@ Use the samples as executable references:
 
 Apply translations in the consumer root when remote translations are part of the project:
 
-```groovy
+```kotlin
 plugins {
-    id 'com.iamkaf.multiloader.root'
-    id 'com.iamkaf.multiloader.translations'
+    id("com.iamkaf.multiloader.root")
+    id("com.iamkaf.multiloader.translations")
 }
 
 multiloaderTranslations {
-    projectSlug = 'liteminer'
-    outputDir = layout.projectDirectory.dir('common/src/main/resources/assets/liteminer/lang')
+    projectSlug.set("liteminer")
+    outputDir.set(layout.projectDirectory.dir("common/src/main/resources/assets/liteminer/lang"))
 }
 ```
 
 Private exports can use a Gradle property token:
 
-```groovy
+```kotlin
 multiloaderTranslations {
-    projectSlug = 'liteminer'
-    outputDir = layout.projectDirectory.dir('common/src/main/resources/assets/liteminer/lang')
-    token = providers.gradleProperty('translations.token')
+    projectSlug.set("liteminer")
+    outputDir.set(layout.projectDirectory.dir("common/src/main/resources/assets/liteminer/lang"))
+    token.set(providers.gradleProperty("translations.token"))
 }
 ```
 

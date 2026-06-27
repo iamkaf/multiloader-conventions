@@ -67,6 +67,11 @@ class MultiloaderProjectContext private constructor(private val project: Project
         return dependency.get()
     }
 
+    fun libraryOrNull(catalog: VersionCatalog, alias: String): Any? {
+        val dependency = catalog.findLibrary(alias)
+        return if (dependency.isPresent) dependency.get() else null
+    }
+
     fun useUnobfuscatedMinecraft(minecraftVersion: String = minecraftVersion()): Boolean =
         VersionPolicy.useUnobfuscatedMinecraft(minecraftVersion)
 

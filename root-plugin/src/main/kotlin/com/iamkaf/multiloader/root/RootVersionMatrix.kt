@@ -1,6 +1,6 @@
 package com.iamkaf.multiloader.root
 
-import com.iamkaf.multiloader.support.VersionPolicy
+import com.iamkaf.multiloader.support.VersionMetadataFiles
 import org.gradle.api.Project
 import java.io.File
 import java.util.Properties
@@ -18,11 +18,7 @@ object RootVersionMatrix {
     }
 
     fun versionMetadata(versionDir: File): Properties {
-        val metadataFile = File(versionDir, "gradle.properties")
-        if (metadataFile.isFile) {
-            return loadProperties(metadataFile)
-        }
-        return VersionPolicy.metadataProperties(versionDir.name)
+        return VersionMetadataFiles.versionMetadata(versionDir)
     }
 
     fun enabledLoadersByVersion(versionDirs: List<File>): Map<String, List<String>> =
@@ -34,6 +30,7 @@ object RootVersionMatrix {
             .map { it.trim() }
             .filter { it.isNotBlank() }
 
-    private fun loadProperties(file: File): Properties =
-        Properties().also { props -> file.inputStream().use(props::load) }
+    fun metadataDifferences(versionDir: File) = VersionMetadataFiles.differences(versionDir)
+
+    fun writeMaterializedMetadata(versionDir: File) = VersionMetadataFiles.writeMaterializedMetadata(versionDir)
 }

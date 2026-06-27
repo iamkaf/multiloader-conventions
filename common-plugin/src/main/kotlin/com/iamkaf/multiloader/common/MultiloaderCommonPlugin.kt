@@ -4,6 +4,7 @@ import com.iamkaf.multiloader.support.CommonArtifacts
 import com.iamkaf.multiloader.support.CommonToolchainStrategy
 import com.iamkaf.multiloader.support.ConventionSupport
 import com.iamkaf.multiloader.support.JavaProjectWiring
+import com.iamkaf.multiloader.support.LoaderDependencyPolicy
 import com.iamkaf.multiloader.support.MavenPublicationWiring
 import com.iamkaf.multiloader.support.MultiloaderProjectContext
 import com.iamkaf.multiloader.support.MultiloaderProjectRole
@@ -87,6 +88,7 @@ class MultiloaderCommonPlugin : Plugin<Project> {
         CommonArtifacts.configureConsumableCommonArtifacts(project)
 
         JavaProjectWiring.addBaseDependencies(project, context, catalog)
+        LoaderDependencyPolicy.addCommonWorkspaceLibraries(project, context, catalog, identity, toolchainStrategy)
 
         if (toolchainStrategy == CommonToolchainStrategy.FABRIC_LOOM) {
             MavenPublicationWiring.configureFabricRemappedPublication(project, context)

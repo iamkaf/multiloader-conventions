@@ -14,6 +14,7 @@ object ForgeGradleAdapter {
         usesUnobfuscatedMinecraft: Boolean,
         accessTransformerFile: File,
         modId: String,
+        forgeArtifactVersion: String? = null,
     ) {
         val minecraft = project.extensions.getByName("minecraft")
         if (!usesUnobfuscatedMinecraft) {
@@ -80,7 +81,7 @@ object ForgeGradleAdapter {
             },
         )
 
-        configureRepositories(project, minecraft)
+        configureRepositories(project, minecraft, forgeArtifactVersion)
     }
 
     fun dependency(project: Project, forgeCoordinate: String): Any {
@@ -88,7 +89,12 @@ object ForgeGradleAdapter {
         return requireNotNull(GroovyGradleDsl.invoke(minecraft, "dependency", forgeCoordinate))
     }
 
-    fun configureRepositories(project: Project, minecraft: Any = project.extensions.getByName("minecraft")) {
+    fun configureRepositories(
+        project: Project,
+        minecraft: Any = project.extensions.getByName("minecraft"),
+        forgeArtifactVersion: String? = null,
+    ) {
+        ForgeMavenizerCacheGuard.deleteEmptyForgeArtifacts(project, forgeArtifactVersion)
         GroovyGradleDsl.invoke(minecraft, "mavenizer", project.repositories)
 
         val fg = project.extensions.findByName("fg") ?: return

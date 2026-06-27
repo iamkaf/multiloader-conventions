@@ -3,6 +3,8 @@ package com.iamkaf.multiloader.forge
 import com.iamkaf.multiloader.platform.MultiloaderPlatformPlugin
 import com.iamkaf.multiloader.support.ConventionSupport
 import com.iamkaf.multiloader.support.JavaProjectWiring
+import com.iamkaf.multiloader.support.LoaderDependencyPolicy
+import com.iamkaf.multiloader.support.LoaderId
 import com.iamkaf.multiloader.support.MavenPublicationWiring
 import com.iamkaf.multiloader.support.MultiloaderProjectContext
 import com.iamkaf.multiloader.support.MultiloaderProjectRole
@@ -11,6 +13,7 @@ import com.iamkaf.multiloader.support.StonecutterSourceLayout
 import com.iamkaf.multiloader.support.VersionPolicy
 import com.iamkaf.multiloader.support.adapters.ForgeGradleAdapter
 import com.iamkaf.multiloader.support.adapters.LegacyForgeAdapter
+import com.iamkaf.multiloader.support.adapters.LegacyForgeRuntimeAdapter
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -59,12 +62,21 @@ class MultiloaderForgePlugin : Plugin<Project> {
             )
             addStrictJopt(project)
         } else {
-            ForgeGradleAdapter.configure(project, minecraftVersion, mixinConfigs, usesUnobfuscatedMinecraft, accessTransformerFile, modId)
             val forgeVersion = ConventionSupport.versionAlias(project, "forge")
+            val forgeArtifactVersion = ForgeGradleAdapter.artifactVersion(minecraftVersion, forgeVersion)
+            ForgeGradleAdapter.configure(
+                project,
+                minecraftVersion,
+                mixinConfigs,
+                usesUnobfuscatedMinecraft,
+                accessTransformerFile,
+                modId,
+                forgeArtifactVersion,
+            )
             val forgeCoordinate = if (usesUnobfuscatedMinecraft) {
                 "net.minecraftforge:forge:$forgeVersion"
             } else {
-                "net.minecraftforge:forge:${ForgeGradleAdapter.artifactVersion(minecraftVersion, forgeVersion)}"
+                "net.minecraftforge:forge:$forgeArtifactVersion"
             }
             project.dependencies.add("implementation", ForgeGradleAdapter.dependency(project, forgeCoordinate))
             addStrictJopt(project)
@@ -92,14 +104,6 @@ class MultiloaderForgePlugin : Plugin<Project> {
         val catalog = context.catalogFor(minecraftVersion)
         val useUnobfuscatedMinecraft = context.useUnobfuscatedMinecraft(minecraftVersion)
         val identity = ProjectIdentity.from(context, MultiloaderProjectRole.FORGE)
-        val teaKitVersion = context.versionOrNull(catalog, "teakit")
-        val teaKitLibrary = catalog.findLibrary("teakit-forge")
-        val hasTeaKit = teaKitLibrary.isPresent && teaKitVersion != null && teaKitVersion != "null"
-        val useTeaKit = project.providers.systemProperty("${identity.modId}.withTeaKit")
-            .orElse(project.providers.gradleProperty("${identity.modId}.withTeaKit"))
-            .map { it.toBoolean() }
-            .orElse(false)
-            .get() && identity.modId != "teakit"
         val teaKitRuntime = VersionPolicy.forgeTeaKitRuntimeStrategy(minecraftVersion, useLegacyForgePlugin)
         val accessTransformerFile = project.rootProject.file("common/src/main/resources/META-INF/accesstransformer.cfg")
         val mixinConfigs = context.mixinConfigs(identity.loader!!)
@@ -122,15 +126,24 @@ class MultiloaderForgePlugin : Plugin<Project> {
                 mixinConfigs = mixinConfigs,
                 modId = identity.modId,
                 accessTransformerFile = accessTransformerFile,
-                useTeaKit = useTeaKit,
-                teaKitConfiguration = teaKitRuntime.dependencyConfiguration,
-                teaKitLibrary = if (hasTeaKit) teaKitLibrary.get() else null,
             )
         } else {
-            ForgeGradleAdapter.configure(project, minecraftVersion, mixinConfigs, useUnobfuscatedMinecraft, accessTransformerFile, identity.modId)
+            val forgeVersion = context.versionOrNull(catalog, "forge")
+                ?: throw GradleException("Missing Forge version for ${project.path}")
+            val forgeArtifactVersion = ForgeGradleAdapter.artifactVersion(minecraftVersion, forgeVersion)
+            ForgeGradleAdapter.configure(
+                project,
+                minecraftVersion,
+                mixinConfigs,
+                useUnobfuscatedMinecraft,
+                accessTransformerFile,
+                identity.modId,
+                forgeArtifactVersion,
+            )
         }
 
         JavaProjectWiring.addBaseDependencies(project, context, catalog)
+        LoaderDependencyPolicy.addForgeLoaderLibraries(project, context, catalog, identity, minecraftVersion)
 
         if (!useLegacyForgePlugin) {
             val forgeVersion = context.versionOrNull(catalog, "forge")
@@ -145,10 +158,15 @@ class MultiloaderForgePlugin : Plugin<Project> {
 
         addStrictJopt(project)
 
-        val teaKitConfiguration = teaKitRuntime.dependencyConfiguration
-        if (useTeaKit && hasTeaKit && teaKitConfiguration != null) {
-            project.dependencies.add(teaKitConfiguration, teaKitLibrary.get())
-        }
+        LoaderDependencyPolicy.addTeaKitRuntime(
+            project = project,
+            context = context,
+            catalog = catalog,
+            identity = identity,
+            loader = LoaderId.FORGE,
+            minecraftVersion = minecraftVersion,
+            strategy = teaKitRuntime,
+        )
 
         ForgeGradleAdapter.configureOutputDirectories(project)
         JavaProjectWiring.configureResourceExpansion(
@@ -192,9 +210,6 @@ class MultiloaderForgePlugin : Plugin<Project> {
         mixinConfigs: List<String>,
         modId: String,
         accessTransformerFile: File,
-        useTeaKit: Boolean,
-        teaKitConfiguration: String?,
-        teaKitLibrary: Any?,
     ) {
         val catalog = context.catalogFor(minecraftVersion)
         LegacyForgeAdapter.configure(
@@ -208,9 +223,7 @@ class MultiloaderForgePlugin : Plugin<Project> {
             usesUnobfuscatedMinecraft = false,
         )
 
-        if (useTeaKit && teaKitConfiguration != null && teaKitLibrary != null) {
-            project.dependencies.add(teaKitConfiguration, teaKitLibrary)
-        }
+        LegacyForgeRuntimeAdapter.configure(project, context, catalog, ProjectIdentity.from(context, MultiloaderProjectRole.FORGE), minecraftVersion)
     }
 
     private fun addStrictJopt(project: Project) {

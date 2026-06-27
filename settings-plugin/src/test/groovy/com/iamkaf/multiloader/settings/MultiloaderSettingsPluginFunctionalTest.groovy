@@ -10,16 +10,16 @@ class MultiloaderSettingsPluginFunctionalTest extends Specification {
     File testProjectDir
 
     def setup() {
-        new File(testProjectDir, 'settings.gradle').text = '''
+        new File(testProjectDir, 'settings.gradle.kts').text = '''
 plugins {
-    id 'com.iamkaf.multiloader.settings'
+    id("com.iamkaf.multiloader.settings")
 }
 '''.stripIndent()
 
-        new File(testProjectDir, 'build.gradle').text = '''
-tasks.register('printProjectPaths') {
+        new File(testProjectDir, 'build.gradle.kts').text = '''
+tasks.register("printProjectPaths") {
     doLast {
-        println(rootProject.allprojects*.path.sort().join('\\n'))
+        println(rootProject.allprojects.map { it.path }.sorted().joinToString("\\n"))
     }
 }
 '''.stripIndent()
@@ -32,7 +32,7 @@ mod.name=Settings Test
         ['common', 'fabric', 'forge', 'neoforge'].each { branch ->
             def dir = new File(testProjectDir, branch)
             dir.mkdirs()
-            new File(dir, 'build.gradle').text = ''
+            new File(dir, 'build.gradle.kts').text = ''
         }
 
         writeVersion('26.1.2', 'fabric,neoforge')
@@ -104,6 +104,48 @@ mod.name=Settings Test
 
         then:
         result.output.contains('Unknown multiloader.target.loaders: quilt')
+    }
+
+    def "Groovy build scripts are rejected for v3 consumers"() {
+        given:
+        new File(testProjectDir, 'fabric/build.gradle.kts').delete()
+        new File(testProjectDir, 'fabric/build.gradle').text = ''
+
+        when:
+        def result = runner('projects').buildAndFail()
+
+        then:
+        result.output.contains('Multiloader Conventions 3.0 requires Kotlin DSL build scripts')
+        result.output.contains('fabric/build.gradle')
+    }
+
+    def "root Groovy build script is rejected for v3 consumers"() {
+        given:
+        new File(testProjectDir, 'build.gradle').text = ''
+
+        when:
+        def result = runner('projects').buildAndFail()
+
+        then:
+        result.output.contains('Multiloader Conventions 3.0 requires Kotlin DSL build scripts')
+        result.output.contains('build.gradle')
+    }
+
+    def "Groovy settings script is rejected for v3 consumers"() {
+        given:
+        new File(testProjectDir, 'settings.gradle.kts').delete()
+        new File(testProjectDir, 'settings.gradle').text = '''
+plugins {
+    id 'com.iamkaf.multiloader.settings'
+}
+'''.stripIndent()
+
+        when:
+        def result = runner('projects').buildAndFail()
+
+        then:
+        result.output.contains('Multiloader Conventions 3.0 requires Kotlin DSL build scripts')
+        result.output.contains('settings.gradle')
     }
 
     private void writeVersion(String version, String loaders) {

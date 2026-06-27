@@ -2,7 +2,10 @@ package com.iamkaf.multiloader.fabric
 
 import com.iamkaf.multiloader.platform.MultiloaderPlatformPlugin
 import com.iamkaf.multiloader.support.ConventionSupport
+import com.iamkaf.multiloader.support.FabricCompatibilityPolicy
 import com.iamkaf.multiloader.support.JavaProjectWiring
+import com.iamkaf.multiloader.support.LoaderDependencyPolicy
+import com.iamkaf.multiloader.support.LoaderId
 import com.iamkaf.multiloader.support.MavenPublicationWiring
 import com.iamkaf.multiloader.support.MultiloaderProjectContext
 import com.iamkaf.multiloader.support.MultiloaderProjectRole
@@ -60,18 +63,9 @@ class MultiloaderFabricPlugin : Plugin<Project> {
         val catalog = context.catalogFor(minecraftVersion)
         val identity = ProjectIdentity.from(context, MultiloaderProjectRole.FABRIC)
         val useUnobfuscatedMinecraft = context.useUnobfuscatedMinecraft(minecraftVersion)
-        val useLegacyFabricApiModules = VersionPolicy.usesLegacyFabricApiModules(minecraftVersion)
         val hasParchment = context.versionOrNull(catalog, "parchment") != null
         val modMenuVersion = context.versionOrNull(catalog, "modmenu")
         val hasModMenu = modMenuVersion != null && modMenuVersion != "null"
-        val teaKitVersion = context.versionOrNull(catalog, "teakit")
-        val teaKitLibrary = catalog.findLibrary("teakit-fabric")
-        val hasTeaKit = teaKitLibrary.isPresent && teaKitVersion != null && teaKitVersion != "null"
-        val useTeaKit = project.providers.systemProperty("${identity.modId}.withTeaKit")
-            .orElse(project.providers.gradleProperty("${identity.modId}.withTeaKit"))
-            .map { it.toBoolean() }
-            .orElse(false)
-            .get() && identity.modId != "teakit"
         val commonProject = project.project(":common:$minecraftVersion")
         val versionDir = project.rootProject.file("versions/$minecraftVersion")
         val versionAccessWidener = versionDir.toPath()
@@ -91,11 +85,15 @@ class MultiloaderFabricPlugin : Plugin<Project> {
 
         context.sharedRepositories()
         StonecutterSourceLayout.configureLoader(project, "fabric", minecraftVersion, commonProject)
+        FabricCompatibilityPolicy.excludeDatagenSourcesFromGameplayRuns(project, minecraftVersion)
+        LoaderDependencyPolicy.configureFabricResolutionCompatibility(project, minecraftVersion)
 
         JavaProjectWiring.configureJavaBuild(project, identity.javaVersion)
         JavaProjectWiring.configureArchiveAndResourceDefaults(project)
 
         JavaProjectWiring.addBaseDependencies(project, context, catalog)
+        LoaderDependencyPolicy.addFabricLoaderLibraries(project, context, catalog, identity, minecraftVersion)
+        LoaderDependencyPolicy.addFabricDatagenApi(project, context, catalog, minecraftVersion)
         project.dependencies.add("minecraft", context.library(catalog, "minecraft"))
 
         if (!useUnobfuscatedMinecraft) {
@@ -105,22 +103,20 @@ class MultiloaderFabricPlugin : Plugin<Project> {
             FabricLoomAdapter.addFabricLoader(project, "implementation", context, catalog, minecraftVersion)
         }
 
-        val fabricApiConfiguration = if (useUnobfuscatedMinecraft) "implementation" else "modImplementation"
-        if (useLegacyFabricApiModules) {
-            FabricLoomAdapter.addLegacyFabricApiModules(project, fabricApiConfiguration)
-        } else {
-            project.dependencies.add(fabricApiConfiguration, context.library(catalog, "fabric-api"))
-        }
+        LoaderDependencyPolicy.addFabricApi(project, context, catalog, minecraftVersion, useUnobfuscatedMinecraft)
         if (hasModMenu && !useUnobfuscatedMinecraft) {
             project.dependencies.add("modImplementation", context.library(catalog, "modmenu"))
         }
 
-        if (useTeaKit && hasTeaKit) {
-            val configuration = VersionPolicy.fabricTeaKitRuntimeStrategy(minecraftVersion).dependencyConfiguration
-            if (configuration != null) {
-                project.dependencies.add(configuration, teaKitLibrary.get())
-            }
-        }
+        LoaderDependencyPolicy.addTeaKitRuntime(
+            project = project,
+            context = context,
+            catalog = catalog,
+            identity = identity,
+            loader = LoaderId.FABRIC,
+            minecraftVersion = minecraftVersion,
+            strategy = VersionPolicy.fabricTeaKitRuntimeStrategy(minecraftVersion),
+        )
 
         configureFabricDatagen(project, extension)
         FabricLoomAdapter.configureLoom(project, identity.modId, accessWidener)

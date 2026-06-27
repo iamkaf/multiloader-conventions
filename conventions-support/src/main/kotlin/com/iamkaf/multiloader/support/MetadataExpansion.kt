@@ -45,6 +45,9 @@ object MetadataExpansion {
             "mixin_compat_fabric" to context.requiredProperty("mixin.compat.fabric"),
             "mixin_compat_forge" to context.requiredProperty("mixin.compat.forge"),
             "mixin_compat_neoforge" to context.requiredProperty("mixin.compat.neoforge"),
+            "pack_format" to VersionPolicy.resourcePackFormat(minecraftVersion),
+            "pack_minmax" to VersionPolicy.resourcePackMinMaxSnippet(minecraftVersion),
+            "pack_description" to "${context.requiredProperty("mod.name")} resources",
         )
     }
 
@@ -73,6 +76,9 @@ object MetadataExpansion {
             "parchment_version" to FlatProjectAccess.optionalVersionAlias(project, "parchment"),
             "credits" to FlatProjectAccess.optionalProperty(project, "mod.credits"),
             "java_version" to FlatProjectAccess.requiredProperty(project, "project.java"),
+            "pack_format" to VersionPolicy.resourcePackFormat(FlatProjectAccess.versionAlias(project, "minecraft")),
+            "pack_minmax" to VersionPolicy.resourcePackMinMaxSnippet(FlatProjectAccess.versionAlias(project, "minecraft")),
+            "pack_description" to "${FlatProjectAccess.requiredProperty(project, "mod.name")} resources",
         )
 
     fun jsonSafe(expandProperties: Map<String, Any?>): Map<String, Any?> =

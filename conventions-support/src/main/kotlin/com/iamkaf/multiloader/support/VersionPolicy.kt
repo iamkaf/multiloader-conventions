@@ -77,6 +77,8 @@ data class VersionMetadata(
             props.setProperty("project.java", javaVersion.toString())
             props.setProperty("project.build-java", buildJavaVersion.toString())
             props.setProperty("project.enabled-loaders", enabledLoaders.joinToString(",") { it.id })
+            props.setProperty("project.catalog-name", catalogName)
+            props.setProperty("project.catalog-coordinate", catalogCoordinate)
             props.setProperty("mod.minecraft-range", minecraftRange)
             props.setProperty("mod.fabric-range", fabricRange)
             props.setProperty("mixin.compat.common", mixinCompatCommon)
@@ -165,8 +167,8 @@ object VersionPolicy {
     fun javaVersion(version: String): Int =
         when {
             version.startsWith("26.") -> 25
-            version.startsWith("1.14") || version.startsWith("1.15") || version.startsWith("1.16") -> 8
-            version == "1.17" || version == "1.17.1" -> 16
+            version.startsWith("1.14") || version.startsWith("1.15") || version.startsWith("1.16") ||
+                version == "1.17" || version == "1.17.1" -> 16
             version == "1.20.5" || version == "1.20.6" || version.startsWith("1.21") -> 21
             else -> 17
         }
@@ -182,6 +184,20 @@ object VersionPolicy {
 
     fun catalogCoordinate(minecraftVersion: String): String =
         "com.iamkaf.platform:mc-$minecraftVersion:$minecraftVersion-SNAPSHOT"
+
+    fun resourcePackFormat(version: String): String =
+        when {
+            version.startsWith("1.21") -> "81"
+            version.startsWith("1.20") -> "15"
+            else -> "8"
+        }
+
+    fun resourcePackMinMaxSnippet(version: String): String =
+        if (version.startsWith("1.21")) {
+            ",\n    \"min_format\": 81,\n    \"max_format\": 81"
+        } else {
+            ""
+        }
 
     fun forgeLoaderRange(version: String): String? = forgeLoaderRanges[version]
 
@@ -269,8 +285,8 @@ object VersionPolicy {
 
     private fun mixinCompat(version: String): String =
         when {
-            version.startsWith("1.14") || version.startsWith("1.15") || version.startsWith("1.16") -> "JAVA_8"
-            version == "1.17" || version == "1.17.1" -> "JAVA_16"
+            version.startsWith("1.14") || version.startsWith("1.15") || version.startsWith("1.16") ||
+                version == "1.17" || version == "1.17.1" -> "JAVA_16"
             version.startsWith("1.18") || version.startsWith("1.19") ||
                 version == "1.20" || version == "1.20.1" || version == "1.20.2" ||
                 version == "1.20.3" || version == "1.20.4" -> "JAVA_17"
