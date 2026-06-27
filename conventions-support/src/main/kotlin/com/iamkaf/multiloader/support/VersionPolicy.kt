@@ -283,6 +283,26 @@ object VersionPolicy {
         return "1.${parts[1].toInt() + 1}"
     }
 
+    fun isMinecraftVersionAtLeast(current: String, minimum: String): Boolean =
+        compareMinecraftVersions(current, minimum) >= 0
+
+    private fun compareMinecraftVersions(left: String, right: String): Int {
+        val leftParts = numericVersionParts(left)
+        val rightParts = numericVersionParts(right)
+        val size = maxOf(leftParts.size, rightParts.size)
+        for (index in 0 until size) {
+            val leftPart = leftParts.getOrElse(index) { 0 }
+            val rightPart = rightParts.getOrElse(index) { 0 }
+            if (leftPart != rightPart) return leftPart.compareTo(rightPart)
+        }
+        return 0
+    }
+
+    private fun numericVersionParts(version: String): List<Int> =
+        version.split(".").map { part ->
+            Regex("\\d+").find(part)?.value?.toInt() ?: 0
+        }
+
     private fun mixinCompat(version: String): String =
         when {
             version.startsWith("1.14") || version.startsWith("1.15") || version.startsWith("1.16") ||

@@ -35,6 +35,12 @@ class MultiloaderCommonPlugin : Plugin<Project> {
         project.pluginManager.apply("maven-publish")
 
         val minecraftVersion = context.requiredProperty("project.minecraft")
+        project.extensions.create(
+            "multiloaderCommon",
+            MultiloaderCommonExtension::class.java,
+            project,
+            minecraftVersion,
+        )
         val catalog = context.catalogFor(minecraftVersion)
         val identity = ProjectIdentity.from(context, MultiloaderProjectRole.COMMON)
         val toolchainStrategy = VersionPolicy.commonToolchainStrategy(

@@ -26,6 +26,14 @@ dependencies {
     implementation(buildTools.neoforge.legacyforge.plugin)
     implementation(project(":core-plugin"))
     implementation(project(":conventions-support"))
+
+    testImplementation(localGroovy())
+    testImplementation("org.spockframework:spock-core:2.4-M1-groovy-4.0")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.10.2")
+}
+
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
 }
 
 gradlePlugin {

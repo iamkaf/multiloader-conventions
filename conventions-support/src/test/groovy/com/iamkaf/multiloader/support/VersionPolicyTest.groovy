@@ -118,4 +118,18 @@ class VersionPolicyTest extends Specification {
         '1.21.11' | '81'   | ',\n    "min_format": 81,\n    "max_format": 81'
         '26.2'    | '8'    | ''
     }
+
+    @Unroll
+    def "#current is at least #minimum resolves to #expected"() {
+        expect:
+        VersionPolicy.INSTANCE.isMinecraftVersionAtLeast(current, minimum) == expected
+
+        where:
+        current   | minimum  | expected
+        '1.21.10' | '1.21.9' | true
+        '1.21.2'  | '1.21.10' | false
+        '1.21'    | '1.21.0' | true
+        '26.1'    | '1.21.11' | true
+        '26.1.1'  | '26.1.2' | false
+    }
 }
