@@ -2,6 +2,7 @@ package com.iamkaf.multiloader.support
 
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.plugins.JavaPluginExtension
+import org.gradle.api.tasks.Sync
 import org.gradle.testfixtures.ProjectBuilder
 import spock.lang.Specification
 import spock.lang.TempDir
@@ -77,7 +78,14 @@ class StonecutterSourceLayoutTest extends Specification {
         project.tasks.register('stonecutterGenerate')
 
         when:
+        StonecutterSourceLayout.configureCommon(common, '26.2', true)
         StonecutterSourceLayout.configureLoader(project, loader, '26.2', common)
+        def commonResource = new File(
+            common.layout.buildDirectory.dir('generated/merged/main/resources').get().asFile,
+            'common-marker.txt'
+        )
+        commonResource.parentFile.mkdirs()
+        commonResource.text = 'common'
 
         then:
         project.tasks.findByName(StonecutterSourceLayout.STAGE_JAVA_TASK) != null
@@ -87,6 +95,7 @@ class StonecutterSourceLayoutTest extends Specification {
         def main = project.extensions.getByType(SourceSetContainer).getByName('main')
         main.java.srcDirs == [project.layout.buildDirectory.dir('generated/merged/main/java').get().asFile] as Set
         main.resources.srcDirs == [project.layout.buildDirectory.dir('generated/merged/main/resources').get().asFile] as Set
+        project.tasks.named(StonecutterSourceLayout.STAGE_RESOURCES_TASK, Sync).get().source.files.contains(commonResource)
 
         where:
         loader << ['fabric', 'forge', 'neoforge']

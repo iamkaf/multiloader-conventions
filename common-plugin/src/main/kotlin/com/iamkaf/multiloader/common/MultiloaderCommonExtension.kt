@@ -1,20 +1,21 @@
 package com.iamkaf.multiloader.common
 
+import com.iamkaf.multiloader.support.StonecutterSourceLayout
 import com.iamkaf.multiloader.support.VersionPolicy
 import org.gradle.api.Action
 import org.gradle.api.Project
-import org.gradle.api.tasks.SourceSetContainer
 
 open class MultiloaderCommonExtension internal constructor(
     private val project: Project,
     private val minecraftVersion: String,
+    private val rootName: String,
 ) {
     fun resourcesFrom(path: Any) {
         resourcesFrom(path) {}
     }
 
     fun resourcesFrom(path: Any, configure: Action<MultiloaderResourceLane>) {
-        val lane = MultiloaderResourceLane(project, minecraftVersion, path)
+        val lane = MultiloaderResourceLane(project, minecraftVersion, rootName, path.toString())
         configure.execute(lane)
         lane.apply()
     }
@@ -23,7 +24,8 @@ open class MultiloaderCommonExtension internal constructor(
 open class MultiloaderResourceLane internal constructor(
     private val project: Project,
     private val minecraftVersion: String,
-    private val path: Any,
+    private val rootName: String,
+    private val path: String,
 ) {
     private var minimumMinecraftVersion: String? = null
 
@@ -37,9 +39,6 @@ open class MultiloaderResourceLane internal constructor(
             return
         }
 
-        val sourceSets = project.extensions.getByType(SourceSetContainer::class.java)
-        sourceSets.named("main").configure {
-            resources.srcDir(project.file(path))
-        }
+        StonecutterSourceLayout.addCommonResourceLane(project, rootName, path)
     }
 }

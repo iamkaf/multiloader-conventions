@@ -40,6 +40,7 @@ class MultiloaderCommonPlugin : Plugin<Project> {
             MultiloaderCommonExtension::class.java,
             project,
             minecraftVersion,
+            "common",
         )
         val catalog = context.catalogFor(minecraftVersion)
         val identity = ProjectIdentity.from(context, MultiloaderProjectRole.COMMON)
