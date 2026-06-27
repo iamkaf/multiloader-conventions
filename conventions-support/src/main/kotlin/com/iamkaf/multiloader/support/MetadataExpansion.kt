@@ -41,7 +41,7 @@ object MetadataExpansion {
             "parchment_version" to context.versionOrNull(catalog, "parchment"),
             "credits" to context.optionalProperty("mod.credits"),
             "java_version" to context.requiredProperty("project.java"),
-            "mixin_compat_common" to context.requiredProperty("mixin.compat.common"),
+            "mixin_compat_common" to commonMixinCompatibilityFor(loader, context),
             "mixin_compat_fabric" to context.requiredProperty("mixin.compat.fabric"),
             "mixin_compat_forge" to context.requiredProperty("mixin.compat.forge"),
             "mixin_compat_neoforge" to context.requiredProperty("mixin.compat.neoforge"),
@@ -88,4 +88,12 @@ object MetadataExpansion {
 
     private fun fabricMinecraftDependency(minecraftVersion: String?, configuredRange: String?): String? =
         if (minecraftVersion == null || minecraftVersion.contains("-rc-")) configuredRange else minecraftVersion
+
+    private fun commonMixinCompatibilityFor(loader: String, context: MultiloaderProjectContext): String =
+        when (loader) {
+            LoaderId.FABRIC.id -> context.requiredProperty("mixin.compat.fabric")
+            LoaderId.FORGE.id -> context.requiredProperty("mixin.compat.forge")
+            LoaderId.NEOFORGE.id -> context.requiredProperty("mixin.compat.neoforge")
+            else -> context.requiredProperty("mixin.compat.common")
+        }
 }

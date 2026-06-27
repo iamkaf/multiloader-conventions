@@ -58,6 +58,17 @@ class VersionPolicyTest extends Specification {
         VersionPolicy.INSTANCE.metadata('1.21.2').enabledLoaders*.id == ['fabric', 'neoforge']
     }
 
+    def "1.20.6 Forge uses a Mixin compatibility level supported by its bundled Mixin"() {
+        when:
+        def metadata = VersionPolicy.INSTANCE.metadata('1.20.6')
+
+        then:
+        metadata.javaVersion == 21
+        metadata.mixinCompatCommon == 'JAVA_21'
+        metadata.mixinCompatFabric == 'JAVA_21'
+        metadata.mixinCompatForge == 'JAVA_17'
+    }
+
     @Unroll
     def "#version keeps old mod bytecode separate from the modern build runtime"() {
         when:

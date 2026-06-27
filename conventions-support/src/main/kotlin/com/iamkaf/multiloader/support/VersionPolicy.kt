@@ -127,7 +127,7 @@ object VersionPolicy {
     fun metadata(version: String): VersionMetadata {
         val loaders = enabledLoaders(version)
         val java = javaVersion(version)
-        val compat = mixinCompat(version)
+        val commonMixinCompat = mixinCompat(version)
         return VersionMetadata(
             minecraftVersion = version,
             enabledLoaders = loaders,
@@ -137,10 +137,10 @@ object VersionPolicy {
             fabricRange = ">=$version",
             forgeLoaderRange = forgeLoaderRange(version),
             neoForgeLoaderRange = if (LoaderId.NEOFORGE in loaders) "[4,)" else null,
-            mixinCompatCommon = compat,
-            mixinCompatFabric = compat,
-            mixinCompatForge = compat,
-            mixinCompatNeoForge = compat,
+            mixinCompatCommon = commonMixinCompat,
+            mixinCompatFabric = commonMixinCompat,
+            mixinCompatForge = forgeMixinCompat(version),
+            mixinCompatNeoForge = commonMixinCompat,
             catalogName = catalogName(version),
             catalogCoordinate = catalogCoordinate(version),
             commonToolchainStrategy = commonToolchainStrategy(version),
@@ -291,5 +291,11 @@ object VersionPolicy {
                 version == "1.20" || version == "1.20.1" || version == "1.20.2" ||
                 version == "1.20.3" || version == "1.20.4" -> "JAVA_17"
             else -> "JAVA_21"
+        }
+
+    private fun forgeMixinCompat(version: String): String =
+        when (version) {
+            "1.20.6" -> "JAVA_17"
+            else -> mixinCompat(version)
         }
 }
