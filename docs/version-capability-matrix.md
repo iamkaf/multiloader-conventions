@@ -44,7 +44,7 @@ separate:
 | Fabric run config shape | stable | `fabric` | Loom DSL | Current `client` / `server` run wiring is shared. |
 | Forge run config and mixin arg shape | versioned | `forge` | MC line, ForgeGradle/LegacyForge behavior | Centralized now, including legacy TeaKit runtime handling on `1.16.5`, `1.17.1`, `1.18`, `1.18.1`, and `1.18.2`. |
 | NeoForge run/datagen shape | versioned | `neoforge` | MC line, ModDev behavior | Shared for current active lines, but should stay explicit as a strategy point. |
-| Fabric datagen DSL | versioned | `fabric` helper + consumer opt-in | Loom/Fabric API DSL by line | Currently centralized only as `enableCommonFabricDatagen`; consumers still opt in per line. |
+| Fabric datagen DSL | versioned | `fabric` typed extension + consumer opt-in | Loom/Fabric API DSL by line | Centralized as `multiloaderFabric.commonDatagen`; consumers still opt in per line. |
 | Fabric legacy dependency pins | versioned | `fabric` | MC line, catalog gaps | Centralized for known exceptions such as the strict `1.18.2` Fabric Loader pin and old Fabric API module set. |
 | Common-project tool plugin family | versioned | `common` | MC line, catalog | Centralized now: Fabric Loom on the old Fabric-only era, `legacyforge` on the LegacyForge window, `moddev` when NeoForm is available. |
 | Forge tool plugin family/version | versioned | `forge` | MC line, catalog | Centralized for `1.16.5` and `1.17+`. Other pre-`1.17` Forge lines stay consumer-local unless explicitly promoted. |

@@ -14,21 +14,21 @@ class MultiloaderRootPluginFunctionalTest extends Specification {
     File testProjectDir
 
     def setup() {
-        new File(testProjectDir, 'settings.gradle').text = '''
-rootProject.name = 'root-test'
-include('common:26.1.2', 'common:26.2')
-include('fabric:26.1.2', 'fabric:26.2')
-include('forge:26.2')
-include('neoforge:26.1.2', 'neoforge:26.2')
+        new File(testProjectDir, 'settings.gradle.kts').text = '''
+rootProject.name = "root-test"
+include("common:26.1.2", "common:26.2")
+include("fabric:26.1.2", "fabric:26.2")
+include("forge:26.2")
+include("neoforge:26.1.2", "neoforge:26.2")
 '''.stripIndent()
 
-        new File(testProjectDir, 'build.gradle').text = '''
+        new File(testProjectDir, 'build.gradle.kts').text = '''
 plugins {
-    id 'com.iamkaf.multiloader.root'
+    id("com.iamkaf.multiloader.root")
 }
 
-group = 'com.example'
-version = '9.9.9'
+group = "com.example"
+version = "9.9.9"
 '''.stripIndent()
 
         new File(testProjectDir, 'changelog.md').text = '''
@@ -44,7 +44,7 @@ version = '9.9.9'
         new File(testProjectDir, 'gradle.properties').text = '''
 project.group=com.example
 project.version=9.9.9
-project.plugins=2.3-SNAPSHOT
+project.plugins=3.0-SNAPSHOT
 mod.id=graphmod
 mod.name=Graph Mod
 publish.dry-run=true
@@ -98,7 +98,7 @@ tasks = [":forge:26.2:runClient"]
         graph.schemaVersion == 1
         graph.mod.id == 'graphmod'
         graph.mod.name == 'Graph Mod'
-        graph.conventions.version == '2.3-SNAPSHOT'
+        graph.conventions.version == '3.0-SNAPSHOT'
 
         version2612.enabledLoaders == ['fabric', 'neoforge']
         version2612.common.projectPath == ':common:26.1.2'
@@ -147,10 +147,10 @@ tasks = [":forge:26.2:runClient"]
 
     def "writeMultiloaderGraph does not realize unrelated lazy task providers"() {
         given:
-        new File(testProjectDir, 'common/26.1.2/build.gradle') << '''
+        new File(testProjectDir, 'common/26.1.2/build.gradle.kts') << '''
 
-tasks.register('genSourcesWithCfr') {
-    throw new GradleException('genSourcesWithCfr should not be realized while writing the graph')
+tasks.register("genSourcesWithCfr") {
+    throw org.gradle.api.GradleException("genSourcesWithCfr should not be realized while writing the graph")
 }
 '''.stripIndent()
 
@@ -239,33 +239,33 @@ mod.neoforge-loader-range=[4,)
     private void createProject(String path, String archiveBaseName, String minecraftVersion, String javaVersion, boolean addRunClient) {
         def dir = new File(testProjectDir, path)
         dir.mkdirs()
-        new File(dir, 'build.gradle').text = """
+        new File(dir, 'build.gradle.kts').text = """
 plugins {
-    id 'java'
-    id 'maven-publish'
+    java
+    `maven-publish`
 }
 
-group = 'com.example'
-version = '9.9.9'
-ext['project.minecraft'] = '${minecraftVersion}'
-ext['project.java'] = '${javaVersion}'
+group = "com.example"
+version = "9.9.9"
+extra["project.minecraft"] = "${minecraftVersion}"
+extra["project.java"] = "${javaVersion}"
 
-tasks.named('jar') {
-    archiveBaseName.set('${archiveBaseName}')
+tasks.named<org.gradle.jvm.tasks.Jar>("jar") {
+    archiveBaseName.set("${archiveBaseName}")
 }
 
-${addRunClient ? "tasks.register('runClient') {}" : ''}
+${addRunClient ? 'tasks.register("runClient") {}' : ''}
 
 publishing {
     publications {
-        mavenJava(MavenPublication) {
-            from components.java
+        create<org.gradle.api.publish.maven.MavenPublication>("mavenJava") {
+            from(components["java"])
         }
     }
     repositories {
         maven {
-            name = 'KafMaven'
-            url = layout.buildDirectory.dir('repo')
+            name = "KafMaven"
+            url = layout.buildDirectory.dir("repo").get().asFile.toURI()
         }
     }
 }
