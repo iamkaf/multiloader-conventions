@@ -223,9 +223,6 @@ pluginManagement {
 }
 ```
 
-Do not add `https://maven.kikugie.dev/snapshots` for Stonecutter in consumer settings.
-The settings convention pins Stonecutter and resolves it through the Gradle Plugin Portal.
-
 Typical root plugin application:
 
 ```kotlin
