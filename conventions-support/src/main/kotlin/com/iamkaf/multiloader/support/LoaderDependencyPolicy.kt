@@ -3,6 +3,7 @@ package com.iamkaf.multiloader.support
 import com.iamkaf.multiloader.support.adapters.FabricLoomAdapter
 import org.gradle.api.Project
 import org.gradle.api.artifacts.VersionCatalog
+import org.gradle.api.attributes.java.TargetJvmVersion
 
 object LoaderDependencyPolicy {
     fun addCommonWorkspaceLibraries(
@@ -94,6 +95,8 @@ object LoaderDependencyPolicy {
         identity: ProjectIdentity,
         minecraftVersion: String,
     ) {
+        configureLegacyForgeDependencyVariantCompatibility(project, minecraftVersion)
+
         when {
             minecraftVersion in legacyForgeRuntimeModVersions -> {
                 addForgeDependencyMods(project, context, catalog, "compileOnly", identity)
@@ -144,6 +147,16 @@ object LoaderDependencyPolicy {
     fun catalogModuleVersion(context: MultiloaderProjectContext, catalog: VersionCatalog, alias: String): String? =
         context.versionOrNull(catalog, alias)?.takeUnless { it == "null" }
 
+    fun configureLegacyForgeDependencyVariantCompatibility(project: Project, minecraftVersion: String) {
+        if (VersionPolicy.forgeRunStrategy(minecraftVersion) != ForgeRunStrategy.LEGACY_USERDEV_1165) return
+
+        project.configurations.matching {
+            it.isCanBeResolved && it.name in legacyForge1165JvmResolutionConfigurations
+        }.configureEach {
+            attributes.attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 16)
+        }
+    }
+
     private fun addOptional(
         project: Project,
         context: MultiloaderProjectContext,
@@ -175,6 +188,13 @@ object LoaderDependencyPolicy {
 
     private val fabric116DatagenVersions = setOf(
         "1.16", "1.16.1", "1.16.2", "1.16.3", "1.16.4", "1.16.5",
+    )
+
+    private val legacyForge1165JvmResolutionConfigurations = setOf(
+        "compileClasspath",
+        "runtimeClasspath",
+        "testCompileClasspath",
+        "testRuntimeClasspath",
     )
 
     val legacyForgeRuntimeModVersions: Set<String> = setOf("1.17.1", "1.18", "1.18.1", "1.18.2")

@@ -200,7 +200,12 @@ pluginManagement {
 
     repositories {
         mavenLocal()
-        maven("https://maven.kaf.sh")
+        maven("https://maven.kaf.sh") {
+            name = "Kaf Maven"
+            content {
+                includeGroupByRegex("com\\.iamkaf(\\..*)?")
+            }
+        }
         gradlePluginPortal()
         mavenCentral()
     }

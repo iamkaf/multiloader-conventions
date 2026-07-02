@@ -120,8 +120,9 @@ class MultiloaderFabricPlugin : Plugin<Project> {
         }
 
         LoaderDependencyPolicy.addFabricApi(project, context, catalog, minecraftVersion, useUnobfuscatedMinecraft)
-        if (hasModMenu && !useUnobfuscatedMinecraft) {
-            project.dependencies.add("modImplementation", context.library(catalog, "modmenu"))
+        if (hasModMenu) {
+            val modMenuConfiguration = if (useUnobfuscatedMinecraft) "implementation" else "modImplementation"
+            project.dependencies.add(modMenuConfiguration, context.library(catalog, "modmenu"))
         }
 
         LoaderDependencyPolicy.addTeaKitRuntime(

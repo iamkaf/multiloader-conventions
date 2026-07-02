@@ -106,6 +106,42 @@ mod.name=Settings Test
         result.output.contains('Unknown multiloader.target.loaders: quilt')
     }
 
+    def "legacy Kikugie plugin repository is removed after settings plugin applies"() {
+        given:
+        new File(testProjectDir, 'settings.gradle.kts').text = '''
+import org.gradle.api.artifacts.repositories.MavenArtifactRepository
+
+pluginManagement {
+    repositories {
+        maven("https://maven.kikugie.dev/snapshots") {
+            name = "KikuGie Snapshots"
+        }
+    }
+}
+
+plugins {
+    id("com.iamkaf.multiloader.settings")
+}
+
+gradle.rootProject {
+    tasks.register("printPluginRepositoryUrls") {
+        doLast {
+            println(pluginManagement.repositories
+                .filterIsInstance<MavenArtifactRepository>()
+                .joinToString("\\n") { it.url.toString() })
+        }
+    }
+}
+'''.stripIndent()
+
+        when:
+        def result = runner('printPluginRepositoryUrls').build()
+
+        then:
+        !result.output.contains('https://maven.kikugie.dev/snapshots')
+        result.output.contains('https://maven.kaf.sh')
+    }
+
     def "Groovy build scripts are rejected for v3 consumers"() {
         given:
         new File(testProjectDir, 'fabric/build.gradle.kts').delete()
