@@ -4,6 +4,9 @@ pluginManagement {
         maven {
             url = uri("https://maven.kaf.sh")
             name = "Kaf Maven"
+            content {
+                includeGroupByRegex("com\\.iamkaf(\\..*)?")
+            }
         }
         gradlePluginPortal()
         mavenCentral()

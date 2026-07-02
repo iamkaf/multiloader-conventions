@@ -200,7 +200,12 @@ pluginManagement {
 
     repositories {
         mavenLocal()
-        maven("https://maven.kaf.sh")
+        maven("https://maven.kaf.sh") {
+            name = "Kaf Maven"
+            content {
+                includeGroupByRegex("com\\.iamkaf(\\..*)?")
+            }
+        }
         gradlePluginPortal()
         mavenCentral()
     }
@@ -217,6 +222,9 @@ pluginManagement {
     }
 }
 ```
+
+Do not add `https://maven.kikugie.dev/snapshots` for Stonecutter in consumer settings.
+The settings convention pins Stonecutter and resolves it through the Gradle Plugin Portal.
 
 Typical root plugin application:
 
