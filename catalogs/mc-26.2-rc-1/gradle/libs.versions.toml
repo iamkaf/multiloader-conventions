@@ -12,9 +12,11 @@ parchment = "null"
 fabric-loader = "0.19.3"
 fabric-api = "0.152.0+26.2"
 modmenu = "20.0.0-alpha.1"
+c2me-fabric = "0.4.0-alpha.0.28+26.2-rc-1"
 
 # NeoForge
 neoforge = "null"
+c2me-neoforge = "null"
 
 # Forge
 forge = "null"
@@ -59,9 +61,11 @@ mixin-extras = { group = "io.github.llamalad7", name = "mixinextras-common", ver
 fabric-loader = { group = "net.fabricmc", name = "fabric-loader", version.ref = "fabric-loader" }
 fabric-api = { group = "net.fabricmc.fabric-api", name = "fabric-api", version.ref = "fabric-api" }
 modmenu = { group = "com.terraformersmc", name = "modmenu", version.ref = "modmenu" }
+c2me-fabric = { group = "maven.modrinth", name = "VSNURh3q", version.ref = "c2me-fabric" }
 
 # NeoForge
 neoforge = { group = "net.neoforged", name = "neoforge", version.ref = "neoforge" }
+c2me-neoforge = { group = "maven.modrinth", name = "COlSi5iR", version.ref = "c2me-neoforge" }
 
 # Forge
 forge = { group = "net.minecraftforge", name = "forge", version.ref = "forge" }
