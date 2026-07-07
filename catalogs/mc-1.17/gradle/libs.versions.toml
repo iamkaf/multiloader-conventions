@@ -8,7 +8,7 @@ parchment-minecraft = "1.17"
 parchment = "2021.07.21"
 
 # Fabric
-fabric-loader = "0.13.3"
+fabric-loader = "0.19.3"
 fabric-api = "0.36.0+1.17"
 fabric-data-generation-api = "1.1.2+4a20890318"
 modmenu = "2.0.17"
@@ -31,7 +31,7 @@ amber = "11.0.0+1.17"
 konfig = "0.6.0+1.17"
 
 # TeaKit
-teakit = "0.10.1+1.17"
+teakit = "0.11.0+1.17"
 
 # JEI
 jei = "null"

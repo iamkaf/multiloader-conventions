@@ -9,7 +9,7 @@ parchment-minecraft = "1.21.11"
 parchment = "2025.12.20"
 
 # Fabric
-fabric-loader = "0.18.4"
+fabric-loader = "0.19.3"
 fabric-api = "0.141.3+1.21.11"
 modmenu = "17.0.0-beta.2"
 c2me-fabric = "0.4.0-alpha.0.19+1.21.11"
@@ -34,7 +34,7 @@ amber = "11.1.1+1.21.11"
 konfig = "0.6.0+1.21.11"
 
 # TeaKit
-teakit = "0.10.1+1.21.11"
+teakit = "0.11.0+1.21.11"
 
 # JEI
 jei = "27.4.0.22"
