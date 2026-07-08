@@ -2,8 +2,11 @@ package com.iamkaf.multiloader.support
 
 import com.iamkaf.multiloader.support.adapters.FabricLoomAdapter
 import org.gradle.api.Project
+import org.gradle.api.artifacts.ExternalModuleDependency
+import org.gradle.api.artifacts.MinimalExternalModuleDependency
 import org.gradle.api.artifacts.VersionCatalog
 import org.gradle.api.attributes.java.TargetJvmVersion
+import org.gradle.api.provider.Provider
 
 object LoaderDependencyPolicy {
     fun addCommonWorkspaceLibraries(
@@ -69,7 +72,20 @@ object LoaderDependencyPolicy {
 
         when {
             minecraftVersion in fabric116DatagenVersions -> {
-                project.dependencies.add("compileOnly", dependency)
+                if (dependency is Provider<*>) {
+                    @Suppress("UNCHECKED_CAST")
+                    project.dependencies.addProvider<MinimalExternalModuleDependency, ExternalModuleDependency>(
+                        "compileOnly",
+                        dependency as Provider<MinimalExternalModuleDependency>,
+                    ) {
+                        isTransitive = false
+                    }
+                } else {
+                    val added = project.dependencies.add("compileOnly", dependency)
+                    if (added is ExternalModuleDependency) {
+                        added.isTransitive = false
+                    }
+                }
                 if (needsRuntime) {
                     project.dependencies.add("modImplementation", dependency)
                 }
@@ -167,7 +183,21 @@ object LoaderDependencyPolicy {
     ) {
         if (isSelfDependency(alias, identity.modId)) return
         val dependency = context.libraryOrNull(catalog, alias) ?: return
-        project.dependencies.add(configuration, dependency)
+        if (isWorkspaceLibraryDependency(alias) && dependency is Provider<*>) {
+            @Suppress("UNCHECKED_CAST")
+            project.dependencies.addProvider<MinimalExternalModuleDependency, ExternalModuleDependency>(
+                configuration,
+                dependency as Provider<MinimalExternalModuleDependency>,
+            ) {
+                excludeOptionalFabricDevDependencies(this)
+            }
+            return
+        }
+
+        val added = project.dependencies.add(configuration, dependency)
+        if (isWorkspaceLibraryDependency(alias) && added is ExternalModuleDependency) {
+            excludeOptionalFabricDevDependencies(added)
+        }
     }
 
     private fun addForgeDependencyMods(
@@ -185,6 +215,16 @@ object LoaderDependencyPolicy {
         (modId == "amber" && alias.startsWith("amber")) ||
             (modId == "konfig" && alias.startsWith("konfig")) ||
             (modId == "teakit" && alias.startsWith("teakit"))
+
+    private fun isWorkspaceLibraryDependency(alias: String): Boolean =
+        alias.startsWith("amber") ||
+            alias.startsWith("konfig") ||
+            alias.startsWith("teakit")
+
+    private fun excludeOptionalFabricDevDependencies(dependency: ExternalModuleDependency) {
+        dependency.exclude(mapOf("group" to "maven.modrinth", "module" to "mOgUt4GM"))
+        dependency.exclude(mapOf("group" to "com.terraformersmc", "module" to "modmenu"))
+    }
 
     private val fabric116DatagenVersions = setOf(
         "1.16", "1.16.1", "1.16.2", "1.16.3", "1.16.4", "1.16.5",
