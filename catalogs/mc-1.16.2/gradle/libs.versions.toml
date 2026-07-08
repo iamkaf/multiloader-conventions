@@ -25,7 +25,7 @@ gson = "2.10.1"
 forge-config-api-port = "1.0.2"
 
 # Amber
-amber = "11.0.0+1.16.2"
+amber = "11.1.2+1.16.2"
 
 # Konfig
 konfig = "0.6.0+1.16.2"
@@ -57,7 +57,7 @@ mixin-extras = { group = "io.github.llamalad7", name = "mixinextras-common", ver
 fabric-loader = { group = "net.fabricmc", name = "fabric-loader", version.ref = "fabric-loader" }
 fabric-api = { group = "net.fabricmc.fabric-api", name = "fabric-api", version.ref = "fabric-api" }
 fabric-data-generation-api-v1 = { group = "net.fabricmc.fabric-api", name = "fabric-data-generation-api-v1", version.ref = "fabric-data-generation-api" }
-modmenu = { group = "maven.modrinth", name = "mOgUt4GM", version.ref = "modmenu" }
+modmenu = { group = "com.terraformersmc", name = "modmenu", version.ref = "modmenu" }
 c2me-fabric = { group = "maven.modrinth", name = "VSNURh3q", version.ref = "c2me-fabric" }
 c2me-neoforge = { group = "maven.modrinth", name = "COlSi5iR", version.ref = "c2me-neoforge" }
 
