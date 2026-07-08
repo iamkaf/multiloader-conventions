@@ -29,6 +29,7 @@ class ClientRunEnvironmentPolicyTest extends Specification {
         )
 
         then:
+        runClient.systemProperties['java.net.preferIPv6Addresses'] == 'false'
         !runClient.environment.containsKey('WAYLAND_DISPLAY')
         runClient.environment['XDG_SESSION_TYPE'] == 'x11'
         runClient.environment['GLFW_PLATFORM'] == 'x11'
@@ -53,8 +54,35 @@ class ClientRunEnvironmentPolicyTest extends Specification {
         )
 
         then:
+        runClient.systemProperties['java.net.preferIPv6Addresses'] == 'false'
         runClient.environment['WAYLAND_DISPLAY'] == 'wayland-1'
         !runClient.environment.containsKey('GLFW_PLATFORM')
+    }
+
+    def "Forge-like client JavaExec tasks normalize ModDev IPv6 VM args"() {
+        given:
+        def project = ProjectBuilder.builder()
+            .withProjectDir(projectDir)
+            .build()
+        def runClient = project.tasks.create('runClient', JavaExec)
+        def vmArgs = new File(project.buildDir, 'moddev/clientRunVmArgs.txt')
+        vmArgs.parentFile.mkdirs()
+        vmArgs.text = '''\
+-Djava.net.preferIPv6Addresses=system
+-Dexample=true
+'''
+
+        when:
+        ClientRunEnvironmentPolicy.INSTANCE.configureForgeLikeClientRuns(
+            project,
+            new ClientRunEnvironmentPolicy.HostEnvironment('Linux', null, 'x11'),
+        )
+        runClient.actions.first().execute(runClient)
+
+        then:
+        vmArgs.readLines().contains('-Djava.net.preferIPv6Addresses=false')
+        !vmArgs.readLines().contains('-Djava.net.preferIPv6Addresses=system')
+        vmArgs.readLines().contains('-Dexample=true')
     }
 
     def "Groovy run metadata receives X11 hints on Linux Wayland hosts"() {

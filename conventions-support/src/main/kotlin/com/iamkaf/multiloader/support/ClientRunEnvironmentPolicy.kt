@@ -6,6 +6,7 @@ import java.util.Locale
 
 object ClientRunEnvironmentPolicy {
     private const val X11_ON_WAYLAND_PROPERTY = "multiloader.clientRun.x11OnWayland"
+    private const val PREFER_IPV6_PROPERTY = "java.net.preferIPv6Addresses"
 
     data class HostEnvironment(
         val osName: String,
@@ -26,14 +27,18 @@ object ClientRunEnvironmentPolicy {
         project: Project,
         hostEnvironment: HostEnvironment = HostEnvironment.current(),
     ) {
-        if (!shouldPreferX11(project, hostEnvironment)) return
+        val preferX11 = shouldPreferX11(project, hostEnvironment)
 
         project.tasks.withType(JavaExec::class.java)
             .matching { task -> isClientRunTask(task.name) }
             .configureEach {
-                environment.remove("WAYLAND_DISPLAY")
-                environment("XDG_SESSION_TYPE", "x11")
-                environment("GLFW_PLATFORM", "x11")
+                systemProperty(PREFER_IPV6_PROPERTY, "false")
+                doFirst { patchModDevVmArgs(project, name) }
+                if (preferX11) {
+                    environment.remove("WAYLAND_DISPLAY")
+                    environment("XDG_SESSION_TYPE", "x11")
+                    environment("GLFW_PLATFORM", "x11")
+                }
             }
     }
 
@@ -73,4 +78,27 @@ object ClientRunEnvironmentPolicy {
         project.providers.gradleProperty(X11_ON_WAYLAND_PROPERTY)
             .map { value -> value.toBooleanStrictOrNull() ?: !value.equals("false", ignoreCase = true) }
             .getOrElse(true)
+
+    private fun patchModDevVmArgs(project: Project, taskName: String) {
+        val runName = if (taskName == "runServer") "server" else "client"
+        val vmArgsFile = project.layout.buildDirectory.file("moddev/${runName}RunVmArgs.txt").get().asFile
+        if (!vmArgsFile.isFile) return
+
+        val existing = vmArgsFile.readLines()
+        var found = false
+        val patched = existing.map { line ->
+            if (line.startsWith("-D$PREFER_IPV6_PROPERTY=")) {
+                found = true
+                "-D$PREFER_IPV6_PROPERTY=false"
+            } else {
+                line
+            }
+        }.toMutableList()
+        if (!found) {
+            patched += "-D$PREFER_IPV6_PROPERTY=false"
+        }
+        if (patched != existing) {
+            vmArgsFile.writeText(patched.joinToString(System.lineSeparator()) + System.lineSeparator())
+        }
+    }
 }
