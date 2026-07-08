@@ -57,7 +57,10 @@ object FabricLoomAdapter {
             "net.fabricmc.fabric-api:fabric-lifecycle-events-v1:1.2.2+3cc0f0907d",
             "net.fabricmc.fabric-api:fabric-resource-loader-v0:0.4.2+ca58154a7d",
         ).forEach { dependency ->
-            project.dependencies.add(configuration, dependency)
+            val added = project.dependencies.add(configuration, dependency)
+            if (added is ExternalModuleDependency) {
+                added.exclude(mapOf("group" to "net.fabricmc", "module" to "fabric-loader"))
+            }
         }
     }
 

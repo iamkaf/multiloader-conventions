@@ -55,9 +55,9 @@ object LoaderDependencyPolicy {
             return
         }
 
-        project.dependencies.add(fabricApiConfiguration, context.library(catalog, "fabric-api"))
+        addFabricApiDependency(project, fabricApiConfiguration, context.library(catalog, "fabric-api"))
         if (!useUnobfuscatedMinecraft) {
-            project.dependencies.add("modLocalRuntime", context.library(catalog, "fabric-api"))
+            addFabricApiDependency(project, "modLocalRuntime", context.library(catalog, "fabric-api"))
         }
     }
 
@@ -222,8 +222,31 @@ object LoaderDependencyPolicy {
             alias.startsWith("teakit")
 
     private fun excludeOptionalFabricDevDependencies(dependency: ExternalModuleDependency) {
+        dependency.exclude(mapOf("group" to "net.fabricmc", "module" to "fabric-loader"))
         dependency.exclude(mapOf("group" to "maven.modrinth", "module" to "mOgUt4GM"))
         dependency.exclude(mapOf("group" to "com.terraformersmc", "module" to "modmenu"))
+    }
+
+    private fun addFabricApiDependency(project: Project, configuration: String, dependency: Any) {
+        if (dependency is Provider<*>) {
+            @Suppress("UNCHECKED_CAST")
+            project.dependencies.addProvider<MinimalExternalModuleDependency, ExternalModuleDependency>(
+                configuration,
+                dependency as Provider<MinimalExternalModuleDependency>,
+            ) {
+                excludeFabricLoader(this)
+            }
+            return
+        }
+
+        val added = project.dependencies.add(configuration, dependency)
+        if (added is ExternalModuleDependency) {
+            excludeFabricLoader(added)
+        }
+    }
+
+    private fun excludeFabricLoader(dependency: ExternalModuleDependency) {
+        dependency.exclude(mapOf("group" to "net.fabricmc", "module" to "fabric-loader"))
     }
 
     private val fabric116DatagenVersions = setOf(
