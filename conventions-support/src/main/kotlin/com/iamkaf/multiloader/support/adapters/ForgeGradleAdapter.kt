@@ -5,6 +5,9 @@ import com.iamkaf.multiloader.support.GroovyGradleDsl
 import org.gradle.api.Project
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.api.tasks.JavaExec
+import org.gradle.jvm.toolchain.JavaLanguageVersion
+import org.gradle.jvm.toolchain.JavaToolchainService
 import java.io.File
 
 object ForgeGradleAdapter {
@@ -59,6 +62,9 @@ object ForgeGradleAdapter {
                     "client",
                     GroovyGradleDsl.closure { run ->
                         ClientRunEnvironmentPolicy.applyToGroovyClientRun(project, run)
+                        if (minecraftVersion == "1.16.5") {
+                            configureLegacyForge1165ClientRun(project, run, forgeArtifactVersion)
+                        }
                     },
                 )
                 GroovyGradleDsl.invoke(
@@ -90,7 +96,57 @@ object ForgeGradleAdapter {
         )
 
         configureRepositories(project, minecraft, forgeArtifactVersion)
+        if (minecraftVersion == "1.16.5") {
+            configureLegacyForge1165RunTask(project, forgeArtifactVersion)
+        }
     }
+
+    private fun configureLegacyForge1165ClientRun(project: Project, run: Any, forgeArtifactVersion: String?) {
+        val assetsDir = legacyForge1165AssetsDir(project)
+        val nativesDir = legacyForge1165NativesDir(project, forgeArtifactVersion)
+        GroovyGradleDsl.invoke(run, "environment", "assetIndex", "1.16")
+        GroovyGradleDsl.invoke(run, "environment", "assetDirectory", assetsDir.absolutePath)
+        GroovyGradleDsl.invoke(run, "environment", "nativesDirectory", nativesDir.absolutePath)
+        GroovyGradleDsl.invoke(run, "systemProperty", "java.library.path", nativesDir.absolutePath)
+        GroovyGradleDsl.invoke(run, "systemProperty", "org.lwjgl.librarypath", nativesDir.absolutePath)
+    }
+
+    private fun configureLegacyForge1165RunTask(project: Project, forgeArtifactVersion: String?) {
+        val assetsDir = legacyForge1165AssetsDir(project)
+        val nativesDir = legacyForge1165NativesDir(project, forgeArtifactVersion)
+        val prepareEnvironment = project.tasks.register("prepareLegacyForge1165ClientEnvironment") {
+            group = "minecraft"
+            description = "Prepares directories required by the legacy Forge 1.16.5 client run."
+            outputs.dir(assetsDir)
+            outputs.dir(nativesDir)
+            doLast {
+                assetsDir.mkdirs()
+                nativesDir.mkdirs()
+            }
+        }
+        val launcher = project.extensions.getByType(JavaToolchainService::class.java).launcherFor {
+            languageVersion.set(JavaLanguageVersion.of(16))
+        }
+        project.tasks.withType(JavaExec::class.java).matching { it.name == "runClient" }.configureEach {
+            dependsOn(prepareEnvironment)
+            javaLauncher.set(launcher)
+            environment("assetIndex", "1.16")
+            environment("assetDirectory", assetsDir.absolutePath)
+            environment("nativesDirectory", nativesDir.absolutePath)
+            systemProperty("java.library.path", nativesDir.absolutePath)
+            systemProperty("org.lwjgl.librarypath", nativesDir.absolutePath)
+        }
+    }
+
+    private fun legacyForge1165AssetsDir(project: Project): File =
+        File(project.gradle.gradleUserHomeDir, "caches/fabric-loom/assets")
+
+    private fun legacyForge1165NativesDir(project: Project, forgeArtifactVersion: String?): File =
+        File(
+            project.gradle.gradleUserHomeDir,
+            "caches/minecraftforge/forgegradle/slime-launcher/cache/net/minecraftforge/forge/" +
+                "${forgeArtifactVersion ?: "1.16.5"}/natives",
+        )
 
     fun dependency(project: Project, forgeCoordinate: String): Any {
         val minecraft = project.extensions.getByName("minecraft")

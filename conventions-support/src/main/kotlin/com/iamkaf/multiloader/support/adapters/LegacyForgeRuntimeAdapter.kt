@@ -50,7 +50,7 @@ object LegacyForgeRuntimeAdapter {
         val forgeArtifactVersion = ForgeGradleAdapter.artifactVersion(minecraftVersion, forgeVersion)
         val useTeaKit = shouldUseTeaKit(project, context, catalog, identity)
         val runLauncher = project.extensions.getByType(JavaToolchainService::class.java).launcherFor {
-            languageVersion.set(JavaLanguageVersion.of(if (minecraftVersion == "1.17.1") 16 else 17))
+            languageVersion.set(JavaLanguageVersion.of(if (minecraftVersion in legacyJava16RunVersions) 16 else 17))
         }
 
         val lwjglNativesDir = project.layout.buildDirectory.dir("lwjgl-natives")
@@ -116,6 +116,8 @@ object LegacyForgeRuntimeAdapter {
             systemProperty("org.lwjgl.librarypath", lwjglNativesDir.get().asFile.absolutePath)
         }
     }
+
+    private val legacyJava16RunVersions = setOf("1.17.1")
 
     private fun registerPatchLegacyBootstrapLauncher(project: Project, minecraftVersion: String): TaskProvider<*> {
         val legacyVersion = when (minecraftVersion) {
