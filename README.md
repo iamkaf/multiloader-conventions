@@ -308,6 +308,37 @@ Per-loader and per-version tasks are generated from the active build graph. Use 
 
 Agent workflows may publish to Maven local for validation. Kaf Maven publishing is reserved for manual release operations.
 
+## Horizontal Multi-loader Jars
+
+The root plugin can opt into one merged jar per Minecraft version. This feature is off by default: disabled consumers do not get Forgix configurations, merge tasks, validation tasks, or changes to their existing raw loader builds and publications.
+
+```kotlin
+multiloaderArtifacts {
+    horizontalMerge {
+        enabled.set(true)
+        versions.addAll("1.21.1", "1.21.11", "26.1.2", "26.2")
+
+        acknowledgeUnsafeVersion("1.21.1")
+        acknowledgeUnsafeVersion("1.21.11")
+    }
+}
+```
+
+An empty `versions` set selects every complete multi-loader version in the active target scope. `version("26.2")` is available as an additive shorthand for selecting one version.
+
+Minecraft `26.1` and newer form the stable tier. Common class binary names and paths must remain identical across the input and merged jars; non-class resources must also preserve their bytes. Forgix may reserialize otherwise equivalent classfiles while merging. Minecraft `1.21.1` and `1.21.11` are an unsafe relocated tier: Forgix may suffix common classes, mixin configs, assets, and Fabric/Forge mod IDs, which can break addon dependencies and mixins. Each unsafe version requires its own `acknowledgeUnsafeVersion(...)` call. Other older versions are rejected.
+
+The root-owned tasks are:
+
+- `mergeHorizontalJar<Version>` and `validateHorizontalJar<Version>` for one version, such as `mergeHorizontalJar2612` and `validateHorizontalJar2612`;
+- `mergeHorizontalJars` and `validateHorizontalJars` for every selected version.
+
+Merged artifacts are written to `build/libs/horizontal/<minecraft>/<mod-id>-<project-version>.jar`. The merge consumes the real archive providers selected by version policy (`remapJar` where required and `jar` otherwise, plus a Forge reobfuscation lifecycle task when the loader exposes one), copies every input to disposable task-local storage, and never gives Forgix a raw build output it can mutate.
+
+Validation checks the output as a readable ZIP and verifies loader metadata, tier-appropriate mod IDs, referenced mixin configs and classes, Fabric entrypoints and access wideners, Forge-like access transformers, assets/data, stable common class paths, and exact non-class common resources.
+
+`printMultiloaderGraph` and `writeMultiloaderGraph` add a default-safe `horizontal` object to each version. It reports `enabled`, `planned`, `stabilityTier`, `unsafeAcknowledged`, `selectedLoaders`, `mergeTask`, `validateTask`, `artifactPath`, `publishable`, `nonPublishableReason`, and `platformPublishTasks`. Horizontal platform upload tasks are intentionally not registered yet because the publishing plugin cannot safely represent cross-loader dependency semantics. Raw per-loader platform and Maven publications remain unchanged.
+
 ## Validation
 
 Root checks:

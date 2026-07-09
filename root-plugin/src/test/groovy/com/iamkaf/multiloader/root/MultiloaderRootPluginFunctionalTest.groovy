@@ -101,6 +101,19 @@ tasks = [":forge:26.2:runClient"]
         graph.conventions.version == '3.0-SNAPSHOT'
 
         version2612.enabledLoaders == ['fabric', 'neoforge']
+        version2612.horizontal == [
+            enabled: false,
+            planned: false,
+            stabilityTier: null,
+            unsafeAcknowledged: false,
+            selectedLoaders: [],
+            mergeTask: null,
+            validateTask: null,
+            artifactPath: null,
+            publishable: false,
+            nonPublishableReason: null,
+            platformPublishTasks: [:],
+        ]
         version2612.common.projectPath == ':common:26.1.2'
         version2612.common.buildTask == ':common:26.1.2:build'
 
@@ -128,6 +141,72 @@ tasks = [":forge:26.2:runClient"]
         forge262.platformPublishTasks.modrinth == ':publishModrinth262Forge'
         forge262.platformPublishTasks.curseforge == ':publishCurseforge262Forge'
         forge262.scenarioNodes == ['26.2-forge']
+    }
+
+    def "horizontal merge is opt-in and uses loader archive providers from root tasks"() {
+        given:
+        new File(testProjectDir, 'build.gradle.kts') << '''
+
+multiloaderArtifacts {
+    horizontalMerge {
+        enabled.set(true)
+        version("26.2")
+    }
+}
+
+tasks.register("verifyHorizontalWiring") {
+    doLast {
+        val merge = tasks.named<com.iamkaf.multiloader.root.ForgixHorizontalMergeTask>("mergeHorizontalJar262").get()
+        check(merge.fabricJar.get().asFile.name == "fabric-provider.jar")
+        check(merge.forgeJar.get().asFile.name == "forge-provider.jar")
+        check(merge.neoForgeJar.get().asFile.name == "neoforge-provider.jar")
+    }
+}
+'''.stripIndent()
+        configureArchiveProvider('fabric/26.2', 'fabric-provider.jar')
+        configureArchiveProvider('forge/26.2', 'forge-provider.jar')
+        configureArchiveProvider('neoforge/26.2', 'neoforge-provider.jar')
+        when:
+        def result = GradleRunner.create()
+            .withProjectDir(testProjectDir)
+            .withPluginClasspath()
+            .withArguments('verifyHorizontalWiring', 'printMultiloaderGraph', '--stacktrace')
+            .build()
+        def graph = extractGraph(result.output)
+        def horizontal = graph.versions.find { it.name == '26.2' }.horizontal
+
+        then:
+        result.task(':verifyHorizontalWiring').outcome == TaskOutcome.SUCCESS
+        horizontal.enabled
+        horizontal.planned
+        horizontal.stabilityTier == 'stable'
+        !horizontal.unsafeAcknowledged
+        horizontal.selectedLoaders == ['fabric', 'forge', 'neoforge']
+        horizontal.mergeTask == ':mergeHorizontalJar262'
+        horizontal.validateTask == ':validateHorizontalJar262'
+        horizontal.artifactPath == 'build/libs/horizontal/26.2/graphmod-9.9.9+26.2.jar'
+        !horizontal.publishable
+        horizontal.platformPublishTasks == [:]
+        horizontal.nonPublishableReason.contains('dependency semantics')
+        !graph.versions.find { it.name == '26.1.2' }.horizontal.enabled
+
+        and: 'existing raw publication tasks remain present'
+        graph.versions.find { it.name == '26.2' }.loaders.every { loader ->
+            !loader.enabled || loader.platformPublishTasks.keySet() == ['modrinth', 'curseforge'] as Set
+        }
+    }
+
+    def "horizontal merge tasks do not exist by default"() {
+        when:
+        def result = GradleRunner.create()
+            .withProjectDir(testProjectDir)
+            .withPluginClasspath()
+            .withArguments('tasks', '--all', '--stacktrace')
+            .build()
+
+        then:
+        !result.output.contains('mergeHorizontalJar')
+        !result.output.contains('validateHorizontalJar')
     }
 
     def "writeMultiloaderGraph writes the graph report"() {
@@ -268,6 +347,16 @@ publishing {
             url = layout.buildDirectory.dir("repo").get().asFile.toURI()
         }
     }
+}
+""".stripIndent()
+    }
+
+    private void configureArchiveProvider(String path, String archiveFileName) {
+        new File(testProjectDir, "$path/build.gradle.kts") << """
+
+tasks.named<org.gradle.jvm.tasks.Jar>("jar") {
+    destinationDirectory.set(layout.buildDirectory.dir("provider-output"))
+    this.archiveFileName.set("${archiveFileName}")
 }
 """.stripIndent()
     }

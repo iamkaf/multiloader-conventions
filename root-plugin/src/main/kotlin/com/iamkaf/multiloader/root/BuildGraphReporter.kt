@@ -104,10 +104,62 @@ object BuildGraphReporter {
             "catalog" to catalogName(minecraftVersion),
             "enabledLoaders" to enabledLoaders,
             "ranges" to ranges,
+            "horizontal" to horizontalGraph(project, minecraftVersion, enabledLoaders, props),
             "common" to commonGraph(project, minecraftVersion),
             "loaders" to knownLoaders.map { loader ->
                 loaderGraph(project, minecraftVersion, props, loader, loader in enabledLoaders, teaKitNodes)
             },
+        )
+    }
+
+    private fun horizontalGraph(
+        project: Project,
+        minecraftVersion: String?,
+        enabledLoaders: List<String>,
+        props: Properties,
+    ): Map<String, Any?> {
+        val horizontal = project.extensions.findByType(MultiloaderArtifactsExtension::class.java)?.getHorizontalMerge()
+        val globallyEnabled = horizontal?.enabled?.orNull == true
+        val configuredVersions = horizontal?.versions?.orNull.orEmpty()
+        val enabledForVersion = globallyEnabled && minecraftVersion != null &&
+            (configuredVersions.isEmpty() || minecraftVersion in configuredVersions)
+        val suffix = minecraftVersion?.let(RootTaskNames::taskSuffix)
+        val mergeTask = suffix?.let { taskPath(project, "mergeHorizontalJar$it") }
+        val validateTask = suffix?.let { taskPath(project, "validateHorizontalJar$it") }
+        val planned = enabledForVersion && mergeTask != null && validateTask != null
+        val tier = if (planned) minecraftVersion?.let(HorizontalMergePolicy::tier) else null
+        val unsafeAcknowledged = minecraftVersion != null &&
+            minecraftVersion in horizontal?.allowUnstableVersions?.orNull.orEmpty()
+        val projectVersion = props.getProperty("project.version") ?: project.version.toString()
+        val modId = optionalProjectProperty(project, "mod.id") ?: project.name
+        val artifactPath = if (planned) {
+            project.relativePath(
+                project.layout.buildDirectory.file("libs/horizontal/$minecraftVersion/$modId-$projectVersion.jar").get().asFile,
+            )
+        } else {
+            null
+        }
+
+        return linkedMapOf(
+            "enabled" to enabledForVersion,
+            "planned" to planned,
+            "stabilityTier" to when (tier) {
+                HorizontalMergeTier.STABLE -> "stable"
+                HorizontalMergeTier.UNSTABLE_RELOCATED -> "unsafe-relocated"
+                null -> null
+            },
+            "unsafeAcknowledged" to unsafeAcknowledged,
+            "selectedLoaders" to if (planned) enabledLoaders.filter { it in knownLoaders } else emptyList<String>(),
+            "mergeTask" to mergeTask.takeIf { planned },
+            "validateTask" to validateTask.takeIf { planned },
+            "artifactPath" to artifactPath,
+            "publishable" to false,
+            "nonPublishableReason" to if (planned) {
+                "Cross-loader platform dependency semantics are not represented safely by the publishing plugin."
+            } else {
+                null
+            },
+            "platformPublishTasks" to emptyMap<String, String>(),
         )
     }
 

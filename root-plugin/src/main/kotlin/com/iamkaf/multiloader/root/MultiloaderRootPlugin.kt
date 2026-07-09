@@ -16,10 +16,15 @@ class MultiloaderRootPlugin : Plugin<Project> {
         ConsumerDslPolicy.requireKotlinDsl(project)
 
         project.extensions.create("multiloaderStonecutter", MultiloaderStonecutterExtension::class.java, project)
+        val artifacts = project.extensions.create(
+            "multiloaderArtifacts",
+            MultiloaderArtifactsExtension::class.java,
+            project.objects,
+        )
         TeaKitRunPropertyForwarder.configure(project)
 
         if (RootVersionMatrix.hasVersionMatrix(project)) {
-            applyStonecutterRootPlugin(project)
+            applyStonecutterRootPlugin(project, artifacts)
             return
         }
 
@@ -32,7 +37,7 @@ class MultiloaderRootPlugin : Plugin<Project> {
         BuildGraphReporter.registerTasks(project)
     }
 
-    private fun applyStonecutterRootPlugin(project: Project) {
+    private fun applyStonecutterRootPlugin(project: Project, artifacts: MultiloaderArtifactsExtension) {
         project.pluginManager.apply("com.iamkaf.multiloader.publishing")
         project.pluginManager.apply("com.iamkaf.multiloader.translations")
         StonecutterRootDefaults.configure(project)
@@ -54,6 +59,8 @@ class MultiloaderRootPlugin : Plugin<Project> {
         project.extensions.configure(MultiloaderPublishingExtension::class.java) {
             RootPublicationDefaults.configure(project, this, versionDirs, targetScope)
         }
+
+        HorizontalMergeTasks.register(project, artifacts, versionDirs, targetScope)
 
         BuildGraphReporter.registerTasks(project)
     }
