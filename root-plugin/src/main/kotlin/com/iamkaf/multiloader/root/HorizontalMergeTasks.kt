@@ -172,17 +172,19 @@ object HorizontalMergeTasks {
             archiveFile.set(plan.output)
             workingDirectory.set(project.layout.buildDirectory.dir("tmp/horizontalMerge/${plan.minecraftVersion}"))
 
-            val legacyArchive = project.layout.buildDirectory.file(
-                HorizontalArtifactNaming.legacyRelativePath(
-                    plan.minecraftVersion,
-                    plan.modId,
-                    plan.projectVersion,
-                ),
-            )
+            val obsoleteArchives = HorizontalArtifactNaming.obsoleteRelativePaths(
+                plan.minecraftVersion,
+                plan.modId,
+                plan.projectVersion,
+            ).map { obsoletePath ->
+                project.layout.buildDirectory.file(obsoletePath)
+            }
             doFirst {
-                val legacyFile = legacyArchive.get().asFile
-                if (legacyFile.exists() && !legacyFile.delete()) {
-                    throw GradleException("Could not remove legacy horizontal jar ${legacyFile.absolutePath}")
+                obsoleteArchives.forEach { obsoleteArchive ->
+                    val obsoleteFile = obsoleteArchive.get().asFile
+                    if (obsoleteFile.exists() && !obsoleteFile.delete()) {
+                        throw GradleException("Could not remove obsolete horizontal jar ${obsoleteFile.absolutePath}")
+                    }
                 }
             }
 

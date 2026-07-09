@@ -116,9 +116,11 @@ class HorizontalJarValidatorTest extends Specification {
     def "horizontal artifact naming distinguishes merged jars and identifies the legacy output"() {
         expect:
         HorizontalArtifactNaming.INSTANCE.relativePath('26.2', 'example', '1.0.0+26.2') ==
-            'libs/horizontal/26.2/example-1.0.0+26.2-multiloader.jar'
-        HorizontalArtifactNaming.INSTANCE.legacyRelativePath('26.2', 'example', '1.0.0+26.2') ==
-            'libs/horizontal/26.2/example-1.0.0+26.2.jar'
+            'libs/horizontal/26.2/example-multiloader-1.0.0+26.2.jar'
+        HorizontalArtifactNaming.INSTANCE.obsoleteRelativePaths('26.2', 'example', '1.0.0+26.2') == [
+            'libs/horizontal/26.2/example-1.0.0+26.2.jar',
+            'libs/horizontal/26.2/example-1.0.0+26.2-multiloader.jar',
+        ]
     }
 
     private boolean validate(File merged, Map<String, File> sources, HorizontalMergeTier tier) {
