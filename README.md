@@ -333,7 +333,7 @@ The root-owned tasks are:
 - `mergeHorizontalJar<Version>` and `validateHorizontalJar<Version>` for one version, such as `mergeHorizontalJar2612` and `validateHorizontalJar2612`;
 - `mergeHorizontalJars` and `validateHorizontalJars` for every selected version.
 
-Merged artifacts are written to `build/libs/horizontal/<minecraft>/<mod-id>-<project-version>.jar`. The merge consumes the real archive providers selected by version policy (`remapJar` where required and `jar` otherwise, plus a Forge reobfuscation lifecycle task when the loader exposes one), copies every input to disposable task-local storage, and never gives Forgix a raw build output it can mutate.
+Merged artifacts are written to `build/libs/horizontal/<minecraft>/<mod-id>-<project-version>-multiloader.jar`. The explicit `multiloader` classifier distinguishes horizontal artifacts from loader-specific jars when both coexist, including repositories where only newer Minecraft versions can be merged. The merge consumes the real archive providers selected by version policy (`remapJar` where required and `jar` otherwise, plus a Forge reobfuscation lifecycle task when the loader exposes one), copies every input to disposable task-local storage, and never gives Forgix a raw build output it can mutate.
 
 Validation checks the output as a readable ZIP and verifies loader metadata, tier-appropriate mod IDs, referenced mixin configs and classes, Fabric entrypoints and access wideners, Forge-like access transformers, assets/data, stable common class paths, and exact non-class common resources.
 

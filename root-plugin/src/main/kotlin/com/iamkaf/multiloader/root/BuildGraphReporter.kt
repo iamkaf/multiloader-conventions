@@ -134,7 +134,9 @@ object BuildGraphReporter {
         val modId = optionalProjectProperty(project, "mod.id") ?: project.name
         val artifactPath = if (planned) {
             project.relativePath(
-                project.layout.buildDirectory.file("libs/horizontal/$minecraftVersion/$modId-$projectVersion.jar").get().asFile,
+                project.layout.buildDirectory.file(
+                    HorizontalArtifactNaming.relativePath(minecraftVersion, modId, projectVersion),
+                ).get().asFile,
             )
         } else {
             null

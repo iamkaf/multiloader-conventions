@@ -112,7 +112,7 @@ object HorizontalMergeTasks {
         }
         val modId = requiredRootProperty(root, "mod.id")
         val output = root.layout.buildDirectory.file(
-            "libs/horizontal/$minecraftVersion/$modId-$projectVersion.jar",
+            HorizontalArtifactNaming.relativePath(minecraftVersion, modId, projectVersion),
         )
         return HorizontalMergePlan(minecraftVersion, projectVersion, modId, configuredLoaders, tier, archives, output)
     }
@@ -171,6 +171,20 @@ object HorizontalMergeTasks {
             mergerClasspath.from(tool)
             archiveFile.set(plan.output)
             workingDirectory.set(project.layout.buildDirectory.dir("tmp/horizontalMerge/${plan.minecraftVersion}"))
+
+            val legacyArchive = project.layout.buildDirectory.file(
+                HorizontalArtifactNaming.legacyRelativePath(
+                    plan.minecraftVersion,
+                    plan.modId,
+                    plan.projectVersion,
+                ),
+            )
+            doFirst {
+                val legacyFile = legacyArchive.get().asFile
+                if (legacyFile.exists() && !legacyFile.delete()) {
+                    throw GradleException("Could not remove legacy horizontal jar ${legacyFile.absolutePath}")
+                }
+            }
 
             plan.archives.values.forEach { archive ->
                 dependsOn(archive.archiveTask)

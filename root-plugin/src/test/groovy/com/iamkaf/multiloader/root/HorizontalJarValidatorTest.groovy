@@ -98,6 +98,27 @@ class HorizontalJarValidatorTest extends Specification {
         then:
         def error = thrown(GradleException)
         error.message.contains('acknowledgeUnsafeVersion("1.21.11")')
+        error.message.contains('ordinary Fabric, Forge, and NeoForge jars are unaffected')
+
+        when:
+        HorizontalMergePolicy.INSTANCE.requireSupported('1.20.1', [] as Set)
+
+        then:
+        def unsupported = thrown(GradleException)
+        unsupported.message.contains('Cannot create a horizontal multi-loader jar for Minecraft 1.20.1')
+        unsupported.message.contains('Minecraft 26.1 and newer')
+        unsupported.message.contains('separate Fabric, Forge, and NeoForge jars can still be')
+        unsupported.message.contains('built and published as usual')
+        unsupported.message.contains('There is no generic unsafe')
+        unsupported.message.contains('override for unknown versions')
+    }
+
+    def "horizontal artifact naming distinguishes merged jars and identifies the legacy output"() {
+        expect:
+        HorizontalArtifactNaming.INSTANCE.relativePath('26.2', 'example', '1.0.0+26.2') ==
+            'libs/horizontal/26.2/example-1.0.0+26.2-multiloader.jar'
+        HorizontalArtifactNaming.INSTANCE.legacyRelativePath('26.2', 'example', '1.0.0+26.2') ==
+            'libs/horizontal/26.2/example-1.0.0+26.2.jar'
     }
 
     private boolean validate(File merged, Map<String, File> sources, HorizontalMergeTier tier) {

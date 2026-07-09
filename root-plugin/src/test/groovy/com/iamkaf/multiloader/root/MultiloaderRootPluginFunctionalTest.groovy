@@ -184,7 +184,7 @@ tasks.register("verifyHorizontalWiring") {
         horizontal.selectedLoaders == ['fabric', 'forge', 'neoforge']
         horizontal.mergeTask == ':mergeHorizontalJar262'
         horizontal.validateTask == ':validateHorizontalJar262'
-        horizontal.artifactPath == 'build/libs/horizontal/26.2/graphmod-9.9.9+26.2.jar'
+        horizontal.artifactPath == 'build/libs/horizontal/26.2/graphmod-9.9.9+26.2-multiloader.jar'
         !horizontal.publishable
         horizontal.platformPublishTasks == [:]
         horizontal.nonPublishableReason.contains('dependency semantics')

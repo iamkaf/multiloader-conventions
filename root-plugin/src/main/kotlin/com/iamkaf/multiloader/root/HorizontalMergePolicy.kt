@@ -25,14 +25,43 @@ object HorizontalMergePolicy {
                 tier
             } else {
                 throw GradleException(
-                    "Horizontal merge for Minecraft $version may relocate common classes and break addon/mixin binary names. " +
-                        "Acknowledge this explicitly with acknowledgeUnsafeVersion(\"$version\").",
+                    """
+                    Cannot create a horizontal multi-loader jar for Minecraft $version yet.
+
+                    This version is in the experimental relocated tier. Forgix can merge its loader jars, but it may
+                    rename common classes, mixin configs, assets, and loader metadata. That can break addons, mixins,
+                    and other mods that expect the original binary names.
+
+                    Your ordinary Fabric, Forge, and NeoForge jars are unaffected and remain the recommended artifacts.
+                    If you have tested the merged jar and accept the compatibility risk, opt in explicitly:
+
+                        multiloaderArtifacts {
+                            horizontalMerge {
+                                acknowledgeUnsafeVersion("$version")
+                            }
+                        }
+
+                    The acknowledgement is intentionally required once per Minecraft version.
+                    """.trimIndent(),
                 )
             }
             null -> throw GradleException(
-                "Horizontal merge is unsupported for Minecraft $version. " +
-                    "The supported stable tier starts at 26.1; the only acknowledged experimental versions are " +
-                    provenUnstableVersions.sorted().joinToString(", ") + ".",
+                """
+                Cannot create a horizontal multi-loader jar for Minecraft $version.
+
+                Horizontal merging is deliberately restricted to version lines whose loader jars have a known-safe
+                combination strategy. Minecraft 26.1 and newer are supported as the stable tier. The only older,
+                explicitly testable experimental versions are ${provenUnstableVersions.sorted().joinToString(", ")}.
+
+                Nothing is wrong with the normal build: its separate Fabric, Forge, and NeoForge jars can still be
+                built and published as usual. Keep those loader-specific artifacts for Minecraft $version instead of
+                producing a `-multiloader.jar` whose metadata or class layout may be invalid at runtime.
+
+                If support for this Minecraft version is added after compatibility research and validation, the
+                horizontal merge policy must be updated in multiloader-conventions first. There is no generic unsafe
+                override for unknown versions, because silently producing a plausible-looking broken jar is worse than
+                stopping here with a clear error.
+                """.trimIndent(),
             )
         }
 
