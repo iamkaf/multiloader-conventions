@@ -74,6 +74,14 @@ class MultiloaderNeoForgePlugin : Plugin<Project> {
 
         JavaProjectWiring.addBaseDependencies(project, context, catalog)
         LoaderDependencyPolicy.addNeoForgeLoaderLibraries(project, context, catalog, identity)
+        LoaderDependencyPolicy.addC2meRuntime(
+            project = project,
+            context = context,
+            catalog = catalog,
+            identity = identity,
+            loader = LoaderId.NEOFORGE,
+            minecraftVersion = minecraftVersion,
+        )
         LoaderDependencyPolicy.addTeaKitRuntime(
             project = project,
             context = context,

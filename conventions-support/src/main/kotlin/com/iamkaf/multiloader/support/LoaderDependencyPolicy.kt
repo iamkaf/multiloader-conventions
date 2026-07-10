@@ -137,6 +137,28 @@ object LoaderDependencyPolicy {
         addOptional(project, context, catalog, "implementation", "konfig-neoforge", identity)
     }
 
+    fun addC2meRuntime(
+        project: Project,
+        context: MultiloaderProjectContext,
+        catalog: VersionCatalog,
+        identity: ProjectIdentity,
+        loader: LoaderId,
+        minecraftVersion: String,
+    ) {
+        val configuration = when (loader) {
+            LoaderId.FABRIC -> if (VersionPolicy.useUnobfuscatedMinecraft(minecraftVersion)) {
+                "runtimeOnly"
+            } else {
+                "modLocalRuntime"
+            }
+            LoaderId.NEOFORGE -> "runtimeOnly"
+            LoaderId.FORGE -> return
+        }
+        val alias = "c2me-${loader.id}"
+        if (catalogModuleVersion(context, catalog, alias) == null) return
+        addOptional(project, context, catalog, configuration, alias, identity)
+    }
+
     fun addTeaKitRuntime(
         project: Project,
         context: MultiloaderProjectContext,

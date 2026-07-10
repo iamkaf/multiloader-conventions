@@ -120,6 +120,14 @@ class MultiloaderFabricPlugin : Plugin<Project> {
         }
 
         LoaderDependencyPolicy.addFabricApi(project, context, catalog, minecraftVersion, useUnobfuscatedMinecraft)
+        LoaderDependencyPolicy.addC2meRuntime(
+            project = project,
+            context = context,
+            catalog = catalog,
+            identity = identity,
+            loader = LoaderId.FABRIC,
+            minecraftVersion = minecraftVersion,
+        )
         if (hasModMenu) {
             val modMenuConfiguration = if (useUnobfuscatedMinecraft) "implementation" else "modImplementation"
             project.dependencies.add(modMenuConfiguration, context.library(catalog, "modmenu"))
