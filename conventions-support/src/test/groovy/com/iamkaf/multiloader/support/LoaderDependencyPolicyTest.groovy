@@ -73,10 +73,9 @@ class LoaderDependencyPolicyTest extends Specification {
         }
     }
 
-    def "legacy Fabric adds C2ME to the Loom local-runtime classpath when catalogued"() {
+    def "legacy Fabric stages C2ME unchanged for client and server runs when catalogued"() {
         given:
         def project = javaProject()
-        project.configurations.maybeCreate('modLocalRuntime')
         def catalog = c2meCatalog(project, 'c2me-fabric', '0.2.0+alpha.11.109+1.21')
 
         when:
@@ -90,9 +89,12 @@ class LoaderDependencyPolicyTest extends Specification {
         )
 
         then:
-        project.configurations.modLocalRuntime.allDependencies.any {
+        project.configurations.multiloaderC2meFabricRuntime.allDependencies.any {
             it.group == 'example' && it.name == 'c2me-fabric'
         }
+        !project.configurations.multiloaderC2meFabricRuntime.transitive
+        project.tasks.named('stageC2meFabricClientRuntimeMod').isPresent()
+        project.tasks.named('stageC2meFabricServerRuntimeMod').isPresent()
     }
 
     def "NeoForge adds C2ME to the runtime classpath when catalogued"() {
@@ -140,7 +142,6 @@ class LoaderDependencyPolicyTest extends Specification {
     def "legacy Fabric skips a catalogued null C2ME version"() {
         given:
         def project = javaProject()
-        project.configurations.maybeCreate('modLocalRuntime')
         def catalog = Mock(VersionCatalog)
         catalog.findVersion('c2me-fabric') >> Optional.of(versionConstraint('null'))
 
@@ -155,7 +156,7 @@ class LoaderDependencyPolicyTest extends Specification {
         )
 
         then:
-        project.configurations.modLocalRuntime.allDependencies.empty
+        project.configurations.findByName('multiloaderC2meFabricRuntime') == null
         0 * catalog.findLibrary(_)
     }
 

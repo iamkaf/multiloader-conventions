@@ -7,6 +7,7 @@ import org.gradle.api.artifacts.MinimalExternalModuleDependency
 import org.gradle.api.artifacts.VersionCatalog
 import org.gradle.api.attributes.java.TargetJvmVersion
 import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.Copy
 
 object LoaderDependencyPolicy {
     fun addCommonWorkspaceLibraries(
@@ -145,18 +146,16 @@ object LoaderDependencyPolicy {
         loader: LoaderId,
         minecraftVersion: String,
     ) {
-        val configuration = when (loader) {
-            LoaderId.FABRIC -> if (VersionPolicy.useUnobfuscatedMinecraft(minecraftVersion)) {
-                "runtimeOnly"
-            } else {
-                "modLocalRuntime"
-            }
-            LoaderId.NEOFORGE -> "runtimeOnly"
-            LoaderId.FORGE -> return
-        }
+        if (loader == LoaderId.FORGE) return
         val alias = "c2me-${loader.id}"
         if (catalogModuleVersion(context, catalog, alias) == null) return
-        addOptional(project, context, catalog, configuration, alias, identity)
+
+        if (loader == LoaderId.FABRIC && !VersionPolicy.useUnobfuscatedMinecraft(minecraftVersion)) {
+            stageLegacyFabricC2meRuntime(project, context, catalog, alias)
+            return
+        }
+
+        addOptional(project, context, catalog, "runtimeOnly", alias, identity)
     }
 
     fun addTeaKitRuntime(
@@ -219,6 +218,30 @@ object LoaderDependencyPolicy {
         val added = project.dependencies.add(configuration, dependency)
         if (isWorkspaceLibraryDependency(alias) && added is ExternalModuleDependency) {
             excludeOptionalFabricDevDependencies(added)
+        }
+    }
+
+    private fun stageLegacyFabricC2meRuntime(
+        project: Project,
+        context: MultiloaderProjectContext,
+        catalog: VersionCatalog,
+        alias: String,
+    ) {
+        val configuration = project.configurations.maybeCreate("multiloaderC2meFabricRuntime").apply {
+            isCanBeConsumed = false
+            isCanBeResolved = true
+            isTransitive = false
+        }
+        project.dependencies.add(configuration.name, context.library(catalog, alias))
+
+        listOf("Client" to "client", "Server" to "server").forEach { (taskSuffix, runName) ->
+            val stageTask = project.tasks.register("stageC2meFabric${taskSuffix}RuntimeMod", Copy::class.java) {
+                from(configuration)
+                into(project.layout.projectDirectory.dir("runs/$runName/mods"))
+            }
+            project.tasks.matching { it.name == "run$taskSuffix" }.configureEach {
+                dependsOn(stageTask)
+            }
         }
     }
 
