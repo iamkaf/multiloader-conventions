@@ -46,8 +46,19 @@ class MultiloaderFabricPlugin : Plugin<Project> {
 
         project.pluginManager.withPlugin(loomPluginId) {
             val minecraftVersion = ConventionSupport.requiredProperty(project, "project.minecraft")
+            val context = MultiloaderProjectContext.of(project)
+            val catalog = context.catalogFor(minecraftVersion)
+            val identity = ProjectIdentity.from(context, MultiloaderProjectRole.FABRIC)
             FabricCompatibilityPolicy.configureDatagenRuntimeAvailability(project, minecraftVersion)
             ConventionSupport.configureFabricBaseDependencies(project)
+            LoaderDependencyPolicy.addC2meRuntime(
+                project = project,
+                context = context,
+                catalog = catalog,
+                identity = identity,
+                loader = LoaderId.FABRIC,
+                minecraftVersion = minecraftVersion,
+            )
             configureFabricDatagen(
                 project,
                 extension,

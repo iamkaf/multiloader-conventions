@@ -36,6 +36,19 @@ class MultiloaderNeoForgePlugin : Plugin<Project> {
         project.pluginManager.apply(MultiloaderPlatformPlugin::class.java)
         project.pluginManager.apply("net.neoforged.moddev")
 
+        val context = MultiloaderProjectContext.of(project)
+        val minecraftVersion = context.minecraftVersion()
+        val catalog = context.catalogFor(minecraftVersion)
+        val identity = ProjectIdentity.from(context, MultiloaderProjectRole.NEOFORGE)
+        LoaderDependencyPolicy.addC2meRuntime(
+            project = project,
+            context = context,
+            catalog = catalog,
+            identity = identity,
+            loader = LoaderId.NEOFORGE,
+            minecraftVersion = minecraftVersion,
+        )
+
         NeoForgeModDevAdapter.configure(
             project = project,
             neoforgeVersion = ConventionSupport.versionAlias(project, "neoforge"),
