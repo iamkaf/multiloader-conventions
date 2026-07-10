@@ -18,7 +18,7 @@ separate:
 3. Keep major tool-family selection consumer-local unless the workspace has
    fully standardized it.
 4. Every extracted strategy needs fixture coverage in
-   [samples/minimal](/home/kaf/code/mods/multiloader-conventions/samples/minimal)
+   [samples/minimal](../samples/minimal)
    or another dedicated sample.
 5. If a quirk is not yet standardized, document it here and keep it local.
 
@@ -64,7 +64,7 @@ more drift appears.
 Current state:
 
 - centralized helper in
-  [ConventionSupport.groovy](/home/kaf/code/mods/multiloader-conventions/conventions-support/src/main/groovy/com/iamkaf/multiloader/support/ConventionSupport.groovy)
+  [ConventionSupport.kt](../conventions-support/src/main/kotlin/com/iamkaf/multiloader/support/ConventionSupport.kt)
 - consumer opt-in in loader build files
 - covered by the `samples/datagen` fixture on `1.21.11`
 
@@ -167,8 +167,8 @@ verification command to this section.
 
 Current proving-ground consumers:
 
-- [multiloader-template](/home/kaf/code/mods/multiloader-template)
-- [mochila2](/home/kaf/code/mods/mochila2)
+- [multiloader-template](https://github.com/iamkaf/multiloader-template)
+- [mochila](https://github.com/iamkaf/mochila)
 
 ## Extraction Policy
 
