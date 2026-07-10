@@ -12,7 +12,7 @@ parchment = "2025.12.20"
 fabric-loader = "0.19.3"
 fabric-api = "0.141.3+1.21.11"
 modmenu = "17.0.0-beta.2"
-c2me-fabric = "0.4.0-alpha.0.19+1.21.11"
+c2me-fabric = "null"
 
 # NeoForge
 neoforge = "21.11.38-beta"
