@@ -137,6 +137,28 @@ class LoaderDependencyPolicyTest extends Specification {
         0 * catalog.findLibrary(_)
     }
 
+    def "legacy Fabric skips a catalogued null C2ME version"() {
+        given:
+        def project = javaProject()
+        project.configurations.maybeCreate('modLocalRuntime')
+        def catalog = Mock(VersionCatalog)
+        catalog.findVersion('c2me-fabric') >> Optional.of(versionConstraint('null'))
+
+        when:
+        LoaderDependencyPolicy.INSTANCE.addC2meRuntime(
+            project,
+            MultiloaderProjectContext.of(project),
+            catalog,
+            identity(MultiloaderProjectRole.FABRIC),
+            LoaderId.FABRIC,
+            '1.16.5',
+        )
+
+        then:
+        project.configurations.modLocalRuntime.allDependencies.empty
+        0 * catalog.findLibrary(_)
+    }
+
     private def javaProject() {
         def project = ProjectBuilder.builder()
             .withProjectDir(projectDir)
