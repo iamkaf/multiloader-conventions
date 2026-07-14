@@ -62,8 +62,13 @@ class MultiloaderTargetScope private constructor(
                 ?: emptyList()
 
         private fun optionalProperty(settings: Settings, name: String): String? {
-            val value = settings.providers.gradleProperty(name).orNull
-            return value?.takeUnless { it.isBlank() }
+            val providerValue = settings.providers.gradleProperty(name).orNull
+            if (!providerValue.isNullOrBlank()) {
+                return providerValue
+            }
+            val extras = settings.extensions.extraProperties
+            val inferredValue = if (extras.has(name)) extras.get(name)?.toString() else null
+            return inferredValue?.takeUnless { it.isBlank() }
         }
 
         private fun optionalProperty(project: Project, name: String): String? {

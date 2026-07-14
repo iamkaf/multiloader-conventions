@@ -74,6 +74,30 @@ mod.name=Settings Test
         !paths.contains(':neoforge:26.1.2')
     }
 
+    def "settings integrations can infer a target before applying the plugin"() {
+        given:
+        new File(testProjectDir, 'settings.gradle.kts').text = '''
+plugins {
+    id("com.iamkaf.multiloader.settings") apply false
+}
+
+extensions.extraProperties.set("multiloader.target.versions", "26.2")
+extensions.extraProperties.set("multiloader.target.loaders", "fabric")
+pluginManager.apply("com.iamkaf.multiloader.settings")
+'''.stripIndent()
+
+        when:
+        def result = runner('printProjectPaths').build()
+        def paths = projectPaths(result.output)
+
+        then:
+        paths.contains(':common:26.2')
+        paths.contains(':fabric:26.2')
+        !paths.contains(':forge:26.2')
+        !paths.contains(':neoforge:26.2')
+        !paths.contains(':common:26.1.2')
+    }
+
     def "loader filter ignores loaders unavailable for the selected version"() {
         when:
         def result = runner(
