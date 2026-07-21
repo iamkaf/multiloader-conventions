@@ -60,7 +60,7 @@ mixin-extras = { group = "io.github.llamalad7", name = "mixinextras-common", ver
 # Fabric
 fabric-loader = { group = "net.fabricmc", name = "fabric-loader", version.ref = "fabric-loader" }
 fabric-api = { group = "net.fabricmc.fabric-api", name = "fabric-api", version.ref = "fabric-api" }
-modmenu = { group = "com.terraformersmc", name = "modmenu", version.ref = "modmenu" }
+modmenu = { group = "maven.modrinth", name = "modmenu", version.ref = "modmenu" }
 c2me-fabric = { group = "maven.modrinth", name = "VSNURh3q", version.ref = "c2me-fabric" }
 
 # NeoForge
