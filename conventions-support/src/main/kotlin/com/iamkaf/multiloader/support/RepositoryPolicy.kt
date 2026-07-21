@@ -11,6 +11,9 @@ object RepositoryPolicy {
         project.repositories.maven {
             name = "TerraformersMC"
             url = project.uri("https://maven.terraformersmc.com/")
+            content {
+                includeGroupByRegex("com\\.terraformersmc(\\..*)?")
+            }
             metadataSources {
                 mavenPom()
                 artifact()
