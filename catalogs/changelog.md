@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Catalog coverage for every Konfig and TeaKit Minecraft line from `1.14.4` through `26.2`.
 - Added the `mc-26.2` catalog for the final Minecraft 26.2 release train.
+- Added Fabric and NeoForge Patchouli runtime aliases for Minecraft 26.1 through 26.1.2.
 
 ### Changed
 

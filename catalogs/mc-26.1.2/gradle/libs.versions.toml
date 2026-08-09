@@ -41,6 +41,10 @@ teakit = "0.13.2+26.1.2"
 jei = "29.6.2.31"
 jei-api = "29.6.2.31"
 
+# Patchouli
+patchouli-fabric = "AveV4Tjn"
+patchouli-neoforge = "2CsnFLom"
+
 # Gradle Plugins
 fabric-loom-plugin = "1.17-SNAPSHOT"
 neoforge-moddev-plugin = "2.0.141"
@@ -106,6 +110,10 @@ jei-forge-api = { group = "mezz.jei", name = "jei-26.1.2-forge-api", version.ref
 jei-forge = { group = "mezz.jei", name = "jei-26.1.2-forge", version.ref = "jei-api" }
 jei-neoforge-api = { group = "mezz.jei", name = "jei-26.1.2-neoforge-api", version.ref = "jei-api" }
 jei-neoforge = { group = "mezz.jei", name = "jei-26.1.2-neoforge", version.ref = "jei-api" }
+
+# Patchouli
+patchouli-fabric = { group = "maven.modrinth", name = "patchouli", version.ref = "patchouli-fabric" }
+patchouli-neoforge = { group = "maven.modrinth", name = "patchouli", version.ref = "patchouli-neoforge" }
 
 [plugins]
 fabric-loom = { id = "net.fabricmc.fabric-loom", version.ref = "fabric-loom-plugin" }
