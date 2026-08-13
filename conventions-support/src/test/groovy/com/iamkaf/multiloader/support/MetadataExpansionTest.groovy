@@ -49,6 +49,41 @@ class MetadataExpansionTest extends Specification {
         expanded.mixin_compat_fabric == 'JAVA_21'
     }
 
+    def "published Fabric loader minimum can differ from the build loader"() {
+        given:
+        def root = ProjectBuilder.builder()
+            .withName('root')
+            .withProjectDir(testProjectDir)
+            .build()
+        def fabric = ProjectBuilder.builder()
+            .withName('fabric')
+            .withParent(root)
+            .withProjectDir(new File(testProjectDir, 'fabric'))
+            .build()
+        def project = ProjectBuilder.builder()
+            .withName('1.21.1')
+            .withParent(fabric)
+            .withProjectDir(new File(testProjectDir, 'fabric/versions/1.21.1'))
+            .build()
+        new File(testProjectDir, 'versions/1.21.1').mkdirs()
+        root.extensions.extraProperties.set('project.group', 'com.example')
+        root.extensions.extraProperties.set('project.version', '1.0.0+1.21.1')
+        root.extensions.extraProperties.set('mod.id', 'examplemod')
+        root.extensions.extraProperties.set('mod.name', 'Example Mod')
+        root.extensions.extraProperties.set('mod.fabric-loader-min', '0.18.4')
+
+        when:
+        def expanded = MetadataExpansion.INSTANCE.stonecutter(
+            MultiloaderProjectContext.of(project),
+            '1.21.1',
+            'fabric',
+            emptyCatalog(),
+        )
+
+        then:
+        expanded.fabric_loader_version == '0.18.4'
+    }
+
     private static VersionCatalog emptyCatalog() {
         Proxy.newProxyInstance(
             VersionCatalog.classLoader,

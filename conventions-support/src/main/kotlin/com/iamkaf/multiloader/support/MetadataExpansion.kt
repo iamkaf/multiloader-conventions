@@ -24,7 +24,11 @@ object MetadataExpansion {
             "minecraft_version_range" to minecraftVersionRange,
             "fabric_version_range" to context.optionalProperty("mod.fabric-range"),
             "fabric_version" to context.versionOrNull(catalog, "fabric-api"),
-            "fabric_loader_version" to fabricLoaderVersion(minecraftVersion, context.versionOrNull(catalog, "fabric-loader")),
+            "fabric_loader_version" to fabricLoaderVersion(
+                minecraftVersion,
+                context.versionOrNull(catalog, "fabric-loader"),
+                context.optionalProperty("mod.fabric-loader-min"),
+            ),
             "mod_menu_version" to context.versionOrNull(catalog, "modmenu"),
             "mod_name" to context.requiredProperty("mod.name"),
             "mod_author" to context.optionalProperty("mod.authors"),
@@ -62,6 +66,7 @@ object MetadataExpansion {
             "fabric_loader_version" to fabricLoaderVersion(
                 FlatProjectAccess.versionAlias(project, "minecraft"),
                 FlatProjectAccess.optionalVersionAlias(project, "fabric-loader"),
+                FlatProjectAccess.optionalProperty(project, "mod.fabric-loader-min"),
             ),
             "mod_menu_version" to FlatProjectAccess.optionalVersionAlias(project, "modmenu"),
             "mod_name" to FlatProjectAccess.requiredProperty(project, "mod.name"),
@@ -92,8 +97,11 @@ object MetadataExpansion {
     private fun fabricMinecraftDependency(minecraftVersion: String?, configuredRange: String?): String? =
         if (minecraftVersion == null || minecraftVersion.contains("-rc-")) configuredRange else minecraftVersion
 
-    private fun fabricLoaderVersion(minecraftVersion: String?, catalogVersion: String?): String? =
-        if (minecraftVersion == "1.18.2") "0.14.9" else catalogVersion
+    private fun fabricLoaderVersion(
+        minecraftVersion: String?,
+        catalogVersion: String?,
+        publishedMinimum: String?,
+    ): String? = publishedMinimum ?: if (minecraftVersion == "1.18.2") "0.14.9" else catalogVersion
 
     private fun commonMixinCompatibilityFor(loader: String, context: MultiloaderProjectContext): String =
         when (loader) {
