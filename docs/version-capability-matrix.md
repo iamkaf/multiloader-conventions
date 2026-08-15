@@ -167,7 +167,6 @@ verification command to this section.
 
 Current proving-ground consumers:
 
-- [multiloader-template](https://github.com/iamkaf/multiloader-template)
 - [mochila](https://github.com/iamkaf/mochila)
 
 ## Extraction Policy
