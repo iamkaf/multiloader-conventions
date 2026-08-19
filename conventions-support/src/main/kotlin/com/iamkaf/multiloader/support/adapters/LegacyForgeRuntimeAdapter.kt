@@ -65,7 +65,7 @@ object LegacyForgeRuntimeAdapter {
         val extractNatives = registerExtractLwjglNatives(project, lwjglNativesDir)
         val stageProjectJar = registerStageProjectJar(project, identity, minecraftVersion, runModsDir)
         val stageDependencyMods =
-            registerStageDependencyMods(project, context, catalog, minecraftVersion, runModsDir, runtimeClasspath)
+            registerStageDependencyMods(project, context, catalog, identity, minecraftVersion, runModsDir, runtimeClasspath)
         val stageTeaKit = registerStageTeaKit(
             project,
             context,
@@ -307,6 +307,7 @@ object LegacyForgeRuntimeAdapter {
         project: Project,
         context: MultiloaderProjectContext,
         catalog: VersionCatalog,
+        identity: ProjectIdentity,
         minecraftVersion: String,
         runModsDir: org.gradle.api.file.Directory,
         runtimeClasspath: FileCollection,
@@ -325,7 +326,7 @@ object LegacyForgeRuntimeAdapter {
                     include("konfig-forge-*.jar")
                 })
                 val runtimeFiles = runtimeClasspath.files
-                listOf("amber", "konfig").forEach { alias ->
+                listOf("amber", "konfig").filterNot { it == identity.modId }.forEach { alias ->
                     LoaderDependencyPolicy.catalogModuleVersion(context, catalog, alias)
                         ?: throw GradleException("Missing $alias version for legacy Forge $minecraftVersion")
                     val source = runtimeFiles.requiredForgeModJar(alias)
