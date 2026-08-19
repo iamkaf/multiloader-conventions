@@ -16,7 +16,7 @@ c2me-fabric = "0.4.0-alpha.0.19+1.21.1"
 
 # NeoForge
 neoforge = "21.1.62"
-c2me-neoforge = "0.4.0-alpha.0.113+1.21.1"
+c2me-neoforge = "null"
 
 # Forge
 forge = "52.1.10"
