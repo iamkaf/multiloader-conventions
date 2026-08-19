@@ -11,7 +11,7 @@ parchment = "2021.12.12"
 fabric-loader = "0.19.3"
 fabric-api = "0.44.0+1.18"
 modmenu = "3.0.1"
-c2me-fabric = "0.2.0+alpha.5.96 1.18.1-pre1"
+c2me-fabric = "null"
 c2me-neoforge = "null"
 
 # Forge
