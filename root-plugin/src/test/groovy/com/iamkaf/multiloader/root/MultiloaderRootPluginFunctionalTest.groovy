@@ -121,8 +121,9 @@ tasks = [":forge:26.2:runClient"]
         fabric2612.projectPath == ':fabric:26.1.2'
         fabric2612.buildTask == ':fabric:26.1.2:build'
         fabric2612.runClientTask == ':fabric:26.1.2:runClient'
+        fabric2612.runDatagenTask == ':fabric:26.1.2:runDatagen'
         fabric2612.artifactTask == ':fabric:26.1.2:jar'
-        fabric2612.artifactPath.endsWith('fabric/26.1.2/build/libs/graphmod-fabric-9.9.9+26.1.2.jar')
+        fabric2612.artifactPath.replace('\\', '/').endsWith('fabric/26.1.2/build/libs/graphmod-fabric-9.9.9+26.1.2.jar')
         fabric2612.mavenPublishTasks == [
             ':fabric:26.1.2:publishMavenJavaPublicationToKafMavenRepository',
             ':fabric:26.1.2:publishMavenJavaPublicationToMavenLocal',
@@ -184,7 +185,7 @@ tasks.register("verifyHorizontalWiring") {
         horizontal.selectedLoaders == ['fabric', 'forge', 'neoforge']
         horizontal.mergeTask == ':mergeHorizontalJar262'
         horizontal.validateTask == ':validateHorizontalJar262'
-        horizontal.artifactPath == 'build/libs/horizontal/26.2/graphmod-multiloader-9.9.9+26.2.jar'
+        horizontal.artifactPath.replace('\\', '/') == 'build/libs/horizontal/26.2/graphmod-multiloader-9.9.9+26.2.jar'
         !horizontal.publishable
         horizontal.platformPublishTasks == [:]
         horizontal.nonPublishableReason.contains('dependency semantics')
@@ -333,7 +334,7 @@ tasks.named<org.gradle.jvm.tasks.Jar>("jar") {
     archiveBaseName.set("${archiveBaseName}")
 }
 
-${addRunClient ? 'tasks.register("runClient") {}' : ''}
+${addRunClient ? 'tasks.register("runClient") {}\ntasks.register("runDatagen") {}' : ''}
 
 publishing {
     publications {

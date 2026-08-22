@@ -204,6 +204,7 @@ object BuildGraphReporter {
             "loaderRootExists" to project.file(loader).isDirectory,
             "buildTask" to taskPath(loaderProject, "build"),
             "runClientTask" to taskPath(loaderProject, "runClient"),
+            "runDatagenTask" to taskPath(loaderProject, "runDatagen"),
             "artifactTask" to artifactTaskPath,
             "artifactPath" to artifactPath,
             "mavenPublishTasks" to publishTasks(loaderProject, "publish", "PublicationTo"),
