@@ -10,7 +10,7 @@ parchment = "null"
 
 # Fabric
 fabric-loader = "0.19.3"
-fabric-api = "0.152.1+26.2"
+fabric-api = "0.155.2+26.2"
 modmenu = "20.0.0-alpha.1"
 c2me-fabric = "0.4.2-alpha.0.12+26.2"
 
@@ -36,6 +36,28 @@ konfig = "0.7.0+26.2"
 
 # TeaKit
 teakit = "0.14.0+26.2"
+
+# Bonded Compatibility Fixtures
+basic-weapons-fabric = "null"
+basic-weapons-neoforge = "null"
+basic-weapons-forge = "null"
+advanced-netherite-fabric = "5lXHbz4w"
+advanced-netherite-neoforge = "JBg5bHJd"
+advanced-netherite-forge = "null"
+immersive-armors-fabric = "rjh6c2Ms"
+immersive-armors-neoforge = "JJlWSXdS"
+immersive-armors-forge = "null"
+betterend-fabric = "VD4qwVUF"
+betterend-neoforge = "null"
+betterend-forge = "null"
+betternether-fabric = "iBR9QMPF"
+betternether-neoforge = "null"
+betternether-forge = "null"
+khazodacore-fabric = "null"
+khazodacore-neoforge = "null"
+khazodacore-forge = "null"
+bclib-fabric = "7BfGRji6"
+worldweaver-fabric = "GHdiOIsp"
 
 # JEI
 jei = "29.6.2.31"
@@ -95,6 +117,28 @@ teakit = { group = "com.iamkaf.teakit", name = "teakit-common", version.ref = "t
 teakit-fabric = { group = "com.iamkaf.teakit", name = "teakit-fabric", version.ref = "teakit" }
 teakit-neoforge = { group = "com.iamkaf.teakit", name = "teakit-neoforge", version.ref = "teakit" }
 teakit-forge = { group = "com.iamkaf.teakit", name = "teakit-forge", version.ref = "teakit" }
+
+# Bonded Compatibility Fixtures
+basic-weapons-fabric = { group = "maven.modrinth", name = "basicweapons", version.ref = "basic-weapons-fabric" }
+basic-weapons-neoforge = { group = "maven.modrinth", name = "basicweapons", version.ref = "basic-weapons-neoforge" }
+basic-weapons-forge = { group = "maven.modrinth", name = "basicweapons", version.ref = "basic-weapons-forge" }
+advanced-netherite-fabric = { group = "maven.modrinth", name = "advanced-netherite", version.ref = "advanced-netherite-fabric" }
+advanced-netherite-neoforge = { group = "maven.modrinth", name = "advanced-netherite", version.ref = "advanced-netherite-neoforge" }
+advanced-netherite-forge = { group = "maven.modrinth", name = "advanced-netherite", version.ref = "advanced-netherite-forge" }
+immersive-armors-fabric = { group = "maven.modrinth", name = "immersive-armors", version.ref = "immersive-armors-fabric" }
+immersive-armors-neoforge = { group = "maven.modrinth", name = "immersive-armors", version.ref = "immersive-armors-neoforge" }
+immersive-armors-forge = { group = "maven.modrinth", name = "immersive-armors", version.ref = "immersive-armors-forge" }
+betterend-fabric = { group = "maven.modrinth", name = "betterend", version.ref = "betterend-fabric" }
+betterend-neoforge = { group = "maven.modrinth", name = "betterend", version.ref = "betterend-neoforge" }
+betterend-forge = { group = "maven.modrinth", name = "betterend", version.ref = "betterend-forge" }
+betternether-fabric = { group = "maven.modrinth", name = "betternether", version.ref = "betternether-fabric" }
+betternether-neoforge = { group = "maven.modrinth", name = "betternether", version.ref = "betternether-neoforge" }
+betternether-forge = { group = "maven.modrinth", name = "betternether", version.ref = "betternether-forge" }
+khazodacore-fabric = { group = "maven.modrinth", name = "khazodacore", version.ref = "khazodacore-fabric" }
+khazodacore-neoforge = { group = "maven.modrinth", name = "khazodacore", version.ref = "khazodacore-neoforge" }
+khazodacore-forge = { group = "maven.modrinth", name = "khazodacore", version.ref = "khazodacore-forge" }
+bclib-fabric = { group = "maven.modrinth", name = "bclib", version.ref = "bclib-fabric" }
+worldweaver-fabric = { group = "maven.modrinth", name = "worldweaver", version.ref = "worldweaver-fabric" }
 
 # JEI
 jei = { group = "maven.modrinth", name = "jei", version.ref = "jei" }
