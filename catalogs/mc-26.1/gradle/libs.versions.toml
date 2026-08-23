@@ -32,7 +32,7 @@ forge-config-api-port-forge = "26.1.0.2"
 amber = "11.2.0+26.1"
 
 # Konfig
-konfig = "0.5.0+26.1"
+konfig = "0.7.0+26.1"
 
 # TeaKit
 teakit = "0.14.0+26.1"
