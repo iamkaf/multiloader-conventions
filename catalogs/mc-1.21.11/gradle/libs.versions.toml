@@ -28,7 +28,7 @@ gson = "2.10.1"
 forge-config-api-port = "21.11.1"
 
 # Amber
-amber = "11.2.0+1.21.11"
+amber = "11.2.1+1.21.11"
 
 # Konfig
 konfig = "0.7.0+1.21.11"
