@@ -210,14 +210,14 @@ object LoaderDependencyPolicy {
                 configuration,
                 dependency as Provider<MinimalExternalModuleDependency>,
             ) {
-                excludeOptionalFabricDevDependencies(this)
+                excludeOptionalWorkspaceDevDependencies(this, alias)
             }
             return
         }
 
         val added = project.dependencies.add(configuration, dependency)
         if (isWorkspaceLibraryDependency(alias) && added is ExternalModuleDependency) {
-            excludeOptionalFabricDevDependencies(added)
+            excludeOptionalWorkspaceDevDependencies(added, alias)
         }
     }
 
@@ -266,10 +266,14 @@ object LoaderDependencyPolicy {
             alias.startsWith("konfig") ||
             alias.startsWith("teakit")
 
-    private fun excludeOptionalFabricDevDependencies(dependency: ExternalModuleDependency) {
+    private fun excludeOptionalWorkspaceDevDependencies(dependency: ExternalModuleDependency, alias: String) {
         dependency.exclude(mapOf("group" to "net.fabricmc", "module" to "fabric-loader"))
         dependency.exclude(mapOf("group" to "maven.modrinth", "module" to "mOgUt4GM"))
         dependency.exclude(mapOf("group" to "com.terraformersmc", "module" to "modmenu"))
+        if (alias.startsWith("teakit-")) {
+            dependency.exclude(mapOf("group" to "maven.modrinth", "module" to "VSNURh3q"))
+            dependency.exclude(mapOf("group" to "maven.modrinth", "module" to "COlSi5iR"))
+        }
     }
 
     private fun addFabricApiDependency(project: Project, configuration: String, dependency: Any) {

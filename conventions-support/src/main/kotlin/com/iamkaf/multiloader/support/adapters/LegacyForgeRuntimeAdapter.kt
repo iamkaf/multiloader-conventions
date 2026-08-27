@@ -23,10 +23,6 @@ import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
-import java.util.jar.Attributes
-import java.util.jar.JarEntry
-import java.util.jar.JarFile
-import java.util.jar.JarOutputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
@@ -358,7 +354,7 @@ object LegacyForgeRuntimeAdapter {
                 modsDir.mkdirs()
                 project.delete(project.fileTree(modsDir) { include("teakit-forge-*.jar") })
                 val target = File(modsDir, source.name)
-                copyJarWithoutMixinManifest(source, target)
+                Files.copy(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING)
             }
         }
 
@@ -530,24 +526,4 @@ object LegacyForgeRuntimeAdapter {
         Files.move(tempFile.toPath(), source.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
     }
 
-    private fun copyJarWithoutMixinManifest(source: File, target: File) {
-        JarFile(source).use { jarFile ->
-            val manifest = jarFile.manifest ?: java.util.jar.Manifest()
-            manifest.mainAttributes.remove(Attributes.Name("MixinConfigs"))
-            val tempFile = File(target.parentFile, "${target.name}.temp")
-            JarOutputStream(FileOutputStream(tempFile), manifest).use { out ->
-                jarFile.entries().asSequence().forEach { entry ->
-                    if (entry.name == "META-INF/MANIFEST.MF") return@forEach
-                    val newEntry = JarEntry(entry.name)
-                    newEntry.time = entry.time
-                    out.putNextEntry(newEntry)
-                    if (!entry.isDirectory) {
-                        jarFile.getInputStream(entry).use { it.copyTo(out) }
-                    }
-                    out.closeEntry()
-                }
-            }
-            Files.move(tempFile.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
-        }
-    }
 }
