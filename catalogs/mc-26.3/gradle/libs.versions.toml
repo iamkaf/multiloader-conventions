@@ -11,7 +11,7 @@ parchment = "null"
 # Fabric
 fabric-loader = "0.19.3"
 fabric-api = "0.159.1+26.3"
-modmenu = "20.0.0-alpha.1"
+modmenu = "null"
 c2me-fabric = "null"
 
 # NeoForge
