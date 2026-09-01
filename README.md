@@ -159,9 +159,28 @@ baseline.
 Frequently used optional property groups include:
 
 - `project.catalog-coordinate` and `project.build-java`
+- `<modId>.withAmber`, `<modId>.withKonfig`, and `<modId>.withTeaKit`
 - `dependencies.*` and `environments.*`
 - `translations.token`
 - `publish.*`
+
+Workspace libraries are opt-in. A published mod normally opts in through its
+required Modrinth dependency list:
+
+```properties
+dependencies.modrinth.required=amber,konfig
+```
+
+Private tools and other non-published projects can use per-project switches:
+
+```properties
+examplemod.withAmber=true
+examplemod.withKonfig=true
+```
+
+An explicit `false` switch overrides publication metadata. The shared version
+catalog only supplies coordinates. Its presence does not add either library to
+compile or runtime classpaths.
 
 ## Plugin reference
 

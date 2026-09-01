@@ -52,6 +52,92 @@ class LoaderDependencyPolicyTest extends Specification {
             .getAttribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE) == runtimeJvm
     }
 
+    def "workspace libraries are absent by default even when catalogued"() {
+        given:
+        def project = javaProject()
+        def catalog = workspaceLibraryCatalog(project)
+
+        when:
+        LoaderDependencyPolicy.INSTANCE.addCommonWorkspaceLibraries(
+            project,
+            MultiloaderProjectContext.of(project),
+            catalog,
+            identity(MultiloaderProjectRole.COMMON),
+            CommonToolchainStrategy.NEOFORM,
+        )
+
+        then:
+        project.configurations.implementation.allDependencies.empty
+        project.configurations.compileOnly.allDependencies.empty
+    }
+
+    def "workspace libraries can be opted in independently"() {
+        given:
+        System.setProperty('example.withAmber', 'true')
+        def project = javaProject()
+        def catalog = workspaceLibraryCatalog(project)
+
+        when:
+        LoaderDependencyPolicy.INSTANCE.addCommonWorkspaceLibraries(
+            project,
+            MultiloaderProjectContext.of(project),
+            catalog,
+            identity(MultiloaderProjectRole.COMMON),
+            CommonToolchainStrategy.NEOFORM,
+        )
+
+        then:
+        project.configurations.implementation.allDependencies*.name == ['amber']
+        project.configurations.compileOnly.allDependencies.empty
+
+        cleanup:
+        System.clearProperty('example.withAmber')
+    }
+
+    def "required publication dependencies opt workspace libraries in"() {
+        given:
+        def project = javaProject()
+        project.extensions.extraProperties.set('dependencies.modrinth.required', 'amber,konfig')
+        def catalog = workspaceLibraryCatalog(project)
+
+        when:
+        LoaderDependencyPolicy.INSTANCE.addCommonWorkspaceLibraries(
+            project,
+            MultiloaderProjectContext.of(project),
+            catalog,
+            identity(MultiloaderProjectRole.COMMON),
+            CommonToolchainStrategy.NEOFORM,
+        )
+
+        then:
+        project.configurations.implementation.allDependencies*.name == ['amber']
+        project.configurations.compileOnly.allDependencies*.name == ['konfig']
+    }
+
+    def "explicit false workspace library switch overrides publication metadata"() {
+        given:
+        System.setProperty('example.withKonfig', 'false')
+        def project = javaProject()
+        project.extensions.extraProperties.set('dependencies.modrinth.required', 'amber,konfig')
+        def catalog = workspaceLibraryCatalog(project)
+
+        when:
+        LoaderDependencyPolicy.INSTANCE.addCommonWorkspaceLibraries(
+            project,
+            MultiloaderProjectContext.of(project),
+            catalog,
+            identity(MultiloaderProjectRole.COMMON),
+            CommonToolchainStrategy.NEOFORM,
+        )
+
+        then:
+        project.configurations.implementation.allDependencies*.name == ['amber']
+        project.configurations.compileOnly.allDependencies.empty
+
+        cleanup:
+        System.clearProperty('example.withKonfig')
+    }
+
     def "modern Fabric adds C2ME to the ordinary runtime classpath when catalogued"() {
         given:
         def project = javaProject()
@@ -174,6 +260,16 @@ class LoaderDependencyPolicyTest extends Specification {
         catalog.findLibrary(alias) >> Optional.of(project.providers.provider {
             project.dependencies.create("example:$alias:$version")
         })
+        catalog
+    }
+
+    private VersionCatalog workspaceLibraryCatalog(def project) {
+        def catalog = Mock(VersionCatalog)
+        ['amber', 'konfig'].each { alias ->
+            catalog.findLibrary(alias) >> Optional.of(project.providers.provider {
+                project.dependencies.create("com.iamkaf.$alias:$alias:1.0.0")
+            })
+        }
         catalog
     }
 

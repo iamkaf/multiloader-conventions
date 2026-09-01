@@ -18,11 +18,11 @@ object LoaderDependencyPolicy {
         toolchainStrategy: CommonToolchainStrategy,
     ) {
         if (toolchainStrategy == CommonToolchainStrategy.FABRIC_LOOM) {
-            addOptional(project, context, catalog, "modImplementation", "amber-fabric", identity)
-            addOptional(project, context, catalog, "modCompileOnly", "konfig-fabric", identity)
+            addWorkspaceLibraryIfEnabled(project, context, catalog, "modImplementation", "amber-fabric", identity)
+            addWorkspaceLibraryIfEnabled(project, context, catalog, "modCompileOnly", "konfig-fabric", identity)
         } else {
-            addOptional(project, context, catalog, "implementation", "amber", identity)
-            addOptional(project, context, catalog, "compileOnly", "konfig", identity)
+            addWorkspaceLibraryIfEnabled(project, context, catalog, "implementation", "amber", identity)
+            addWorkspaceLibraryIfEnabled(project, context, catalog, "compileOnly", "konfig", identity)
         }
     }
 
@@ -34,12 +34,12 @@ object LoaderDependencyPolicy {
         minecraftVersion: String,
     ) {
         if (VersionPolicy.useUnobfuscatedMinecraft(minecraftVersion)) {
-            addOptional(project, context, catalog, "compileOnly", "amber", identity)
-            addOptional(project, context, catalog, "runtimeOnly", "amber-fabric", identity)
-            addOptional(project, context, catalog, "implementation", "konfig-fabric", identity)
+            addWorkspaceLibraryIfEnabled(project, context, catalog, "compileOnly", "amber", identity)
+            addWorkspaceLibraryIfEnabled(project, context, catalog, "runtimeOnly", "amber-fabric", identity)
+            addWorkspaceLibraryIfEnabled(project, context, catalog, "implementation", "konfig-fabric", identity)
         } else {
-            addOptional(project, context, catalog, "modImplementation", "amber-fabric", identity)
-            addOptional(project, context, catalog, "modImplementation", "konfig-fabric", identity)
+            addWorkspaceLibraryIfEnabled(project, context, catalog, "modImplementation", "amber-fabric", identity)
+            addWorkspaceLibraryIfEnabled(project, context, catalog, "modImplementation", "konfig-fabric", identity)
         }
     }
 
@@ -134,8 +134,8 @@ object LoaderDependencyPolicy {
         catalog: VersionCatalog,
         identity: ProjectIdentity,
     ) {
-        addOptional(project, context, catalog, "implementation", "amber-neoforge", identity)
-        addOptional(project, context, catalog, "implementation", "konfig-neoforge", identity)
+        addWorkspaceLibraryIfEnabled(project, context, catalog, "implementation", "amber-neoforge", identity)
+        addWorkspaceLibraryIfEnabled(project, context, catalog, "implementation", "konfig-neoforge", identity)
     }
 
     fun addC2meRuntime(
@@ -191,6 +191,42 @@ object LoaderDependencyPolicy {
             it.isCanBeResolved && it.name in legacyForge1165JvmResolutionConfigurations
         }.configureEach {
             attributes.attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 16)
+        }
+    }
+
+    fun usesWorkspaceLibrary(
+        project: Project,
+        context: MultiloaderProjectContext,
+        identity: ProjectIdentity,
+        library: String,
+    ): Boolean {
+        val explicit = project.providers.systemProperty("${identity.modId}.with$library")
+            .orElse(project.providers.gradleProperty("${identity.modId}.with$library"))
+            .orNull
+        if (explicit != null) return explicit.toBoolean()
+
+        val modrinthSlug = library.lowercase()
+        return context.optionalProperty("dependencies.modrinth.required")
+            ?.split(',')
+            ?.any { it.trim() == modrinthSlug }
+            ?: false
+    }
+
+    private fun addWorkspaceLibraryIfEnabled(
+        project: Project,
+        context: MultiloaderProjectContext,
+        catalog: VersionCatalog,
+        configuration: String,
+        alias: String,
+        identity: ProjectIdentity,
+    ) {
+        val library = when {
+            alias.startsWith("amber") -> "Amber"
+            alias.startsWith("konfig") -> "Konfig"
+            else -> error("Unsupported workspace library alias: $alias")
+        }
+        if (usesWorkspaceLibrary(project, context, identity, library)) {
+            addOptional(project, context, catalog, configuration, alias, identity)
         }
     }
 
@@ -252,8 +288,8 @@ object LoaderDependencyPolicy {
         configuration: String,
         identity: ProjectIdentity,
     ) {
-        addOptional(project, context, catalog, configuration, "amber-forge", identity)
-        addOptional(project, context, catalog, configuration, "konfig-forge", identity)
+        addWorkspaceLibraryIfEnabled(project, context, catalog, configuration, "amber-forge", identity)
+        addWorkspaceLibraryIfEnabled(project, context, catalog, configuration, "konfig-forge", identity)
     }
 
     private fun isSelfDependency(alias: String, modId: String): Boolean =

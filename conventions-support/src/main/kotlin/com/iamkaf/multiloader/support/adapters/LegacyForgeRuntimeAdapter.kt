@@ -45,6 +45,9 @@ object LegacyForgeRuntimeAdapter {
             ?: throw GradleException("Missing Forge version for ${project.path}")
         val forgeArtifactVersion = ForgeGradleAdapter.artifactVersion(minecraftVersion, forgeVersion)
         val useTeaKit = shouldUseTeaKit(project, context, catalog, identity)
+        val workspaceLibraries = listOf("Amber" to "amber", "Konfig" to "konfig")
+            .filter { (library, _) -> LoaderDependencyPolicy.usesWorkspaceLibrary(project, context, identity, library) }
+            .map { (_, alias) -> alias }
         val runLauncher = project.extensions.getByType(JavaToolchainService::class.java).launcherFor {
             languageVersion.set(JavaLanguageVersion.of(if (minecraftVersion in legacyJava16RunVersions) 16 else 17))
         }
@@ -61,7 +64,7 @@ object LegacyForgeRuntimeAdapter {
         val extractNatives = registerExtractLwjglNatives(project, lwjglNativesDir)
         val stageProjectJar = registerStageProjectJar(project, identity, minecraftVersion, runModsDir)
         val stageDependencyMods =
-            registerStageDependencyMods(project, context, catalog, identity, minecraftVersion, runModsDir, runtimeClasspath)
+            registerStageDependencyMods(project, context, catalog, minecraftVersion, runModsDir, runtimeClasspath, workspaceLibraries)
         val stageTeaKit = registerStageTeaKit(
             project,
             context,
@@ -89,7 +92,7 @@ object LegacyForgeRuntimeAdapter {
                     patchLegacyForgeVmArgsFile(
                         project = project,
                         runTaskName = name,
-                        ignoreList = ignoreList(context, catalog, useTeaKit),
+                        ignoreList = ignoreList(context, catalog, useTeaKit, workspaceLibraries),
                     )
                 }
             }
@@ -303,10 +306,10 @@ object LegacyForgeRuntimeAdapter {
         project: Project,
         context: MultiloaderProjectContext,
         catalog: VersionCatalog,
-        identity: ProjectIdentity,
         minecraftVersion: String,
         runModsDir: org.gradle.api.file.Directory,
         runtimeClasspath: FileCollection,
+        workspaceLibraries: List<String>,
     ): TaskProvider<*> =
         project.tasks.register("stageLegacyForgeDependencyMods") {
             group = "minecraft"
@@ -322,7 +325,7 @@ object LegacyForgeRuntimeAdapter {
                     include("konfig-forge-*.jar")
                 })
                 val runtimeFiles = runtimeClasspath.files
-                listOf("amber", "konfig").filterNot { it == identity.modId }.forEach { alias ->
+                workspaceLibraries.forEach { alias ->
                     LoaderDependencyPolicy.catalogModuleVersion(context, catalog, alias)
                         ?: throw GradleException("Missing $alias version for legacy Forge $minecraftVersion")
                     val source = runtimeFiles.requiredForgeModJar(alias)
@@ -437,9 +440,8 @@ object LegacyForgeRuntimeAdapter {
         context: MultiloaderProjectContext,
         catalog: VersionCatalog,
         useTeaKit: Boolean,
+        workspaceLibraries: List<String>,
     ): String {
-        val amberVersion = LoaderDependencyPolicy.catalogModuleVersion(context, catalog, "amber")
-        val konfigVersion = LoaderDependencyPolicy.catalogModuleVersion(context, catalog, "konfig")
         val teaKitVersion = LoaderDependencyPolicy.catalogModuleVersion(context, catalog, "teakit")
         return listOfNotNull(
             "bootstraplauncher",
@@ -456,8 +458,10 @@ object LegacyForgeRuntimeAdapter {
             "lowcodelanguage",
             "mclanguage",
             "forge-",
-            amberVersion?.let { "amber-forge-$it.jar" },
-            konfigVersion?.let { "konfig-forge-$it.jar" },
+            if ("amber" in workspaceLibraries) LoaderDependencyPolicy.catalogModuleVersion(context, catalog, "amber")
+                ?.let { "amber-forge-$it.jar" } else null,
+            if ("konfig" in workspaceLibraries) LoaderDependencyPolicy.catalogModuleVersion(context, catalog, "konfig")
+                ?.let { "konfig-forge-$it.jar" } else null,
             if (useTeaKit) teaKitVersion?.let { "teakit-forge-$it.jar" } else null,
         ).joinToString(",")
     }
