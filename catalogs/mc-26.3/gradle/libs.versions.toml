@@ -12,11 +12,11 @@ parchment = "null"
 fabric-loader = "0.19.3"
 fabric-api = "0.159.1+26.3"
 modmenu = "20.0.0-alpha.1"
-c2me-fabric = "0.4.2-alpha.0.12+26.2"
+c2me-fabric = "null"
 
 # NeoForge
 neoforge = "26.2.0.2-beta"
-c2me-neoforge = "0.4.2-alpha.0.90+26.2"
+c2me-neoforge = "null"
 
 # Forge
 forge = "26.2-65.0.1"
