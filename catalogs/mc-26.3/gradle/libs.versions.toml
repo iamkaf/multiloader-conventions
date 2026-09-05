@@ -29,13 +29,13 @@ forge-config-api-port-fabric = "26.1.4"
 forge-config-api-port-forge = "26.1.4"
 
 # Amber
-amber = "11.2.1+26.2"
+amber = "11.3.0+26.3"
 
 # Konfig
-konfig = "0.7.0+26.2"
+konfig = "0.7.1+26.3"
 
 # TeaKit
-teakit = "0.15.0+26.2"
+teakit = "0.15.0+26.3"
 
 # Bonded Compatibility Fixtures
 basic-weapons-fabric = "null"
