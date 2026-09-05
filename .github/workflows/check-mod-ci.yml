@@ -5,11 +5,13 @@ on:
     branches: [main]
     paths:
       - '.github/actions/plan-mod-build/**'
+      - '.github/actions/run-teakit/**'
       - '.github/workflows/mod-build.yml'
       - '.github/workflows/check-mod-ci.yml'
   pull_request:
     paths:
       - '.github/actions/plan-mod-build/**'
+      - '.github/actions/run-teakit/**'
       - '.github/workflows/mod-build.yml'
       - '.github/workflows/check-mod-ci.yml'
   workflow_dispatch:
@@ -28,3 +30,4 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: python3 -m unittest discover -s .github/actions/plan-mod-build -v
+      - run: python3 -m unittest discover -s .github/actions/run-teakit -v

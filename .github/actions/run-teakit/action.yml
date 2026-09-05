@@ -1,0 +1,84 @@
+name: Run Minecraft tests
+description: Prepare a Linux runner, execute existing TeaKit tests, and retain runtime evidence.
+inputs:
+  runner:
+    description: Existing TeaKit integration, gradle or wrapper.
+    required: true
+  version:
+    description: Minecraft version to test.
+    required: true
+  loader:
+    description: Minecraft loader to test.
+    required: true
+  java:
+    description: Build JVM version.
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: iamkaf/setup-teakit@5a028d45f75cddf03a60dcad1682a93c66303286 # v1.0.0
+      with:
+        java-version: ${{ inputs.java }}
+
+    - name: Check TeaKit configuration and tests
+      shell: bash
+      env:
+        TEAKIT_RUNNER: ${{ inputs.runner }}
+        ORG_GRADLE_PROJECT_multiloader.target.versions: ${{ inputs.version }}
+        ORG_GRADLE_PROJECT_multiloader.target.loaders: ${{ inputs.loader }}
+      run: |
+        set -euo pipefail
+        case "$TEAKIT_RUNNER" in
+          gradle) ./gradlew teakitDoctor teakitTypecheck --console=plain --max-workers=2 ;;
+          # Check the project here; wrapper freshness also checks Windows line endings.
+          wrapper) ./teakitw doctor --no-wrapper && ./teakitw typecheck ;;
+          *) echo "Unsupported TeaKit runner: $TEAKIT_RUNNER" >&2; exit 1 ;;
+        esac
+
+    - name: Run tests in Minecraft
+      shell: bash
+      env:
+        TEAKIT_RUNNER: ${{ inputs.runner }}
+        TEAKIT_NODE: ${{ inputs.version }}-${{ inputs.loader }}
+        ORG_GRADLE_PROJECT_multiloader.target.versions: ${{ inputs.version }}
+        ORG_GRADLE_PROJECT_multiloader.target.loaders: ${{ inputs.loader }}
+      run: |
+        set -euo pipefail
+        if [ "$TEAKIT_RUNNER" = gradle ]; then
+          ./gradlew teakitCheck \
+            "-Pteakit.node=$TEAKIT_NODE" \
+            -Pteakit.background=true \
+            -Pteakit.failOnRuntimeIncomplete=true \
+            -Pteakit.report=build/teakit/ci-summary.json \
+            --console=plain --max-workers=2
+        else
+          ./teakitw check --node "$TEAKIT_NODE" --background \
+            --fail-on-runtime-incomplete --timeout 720 \
+            --report build/teakit/ci-summary.json
+        fi
+
+    - name: Require executed tests and stopped processes
+      shell: bash
+      run: python3 "$GITHUB_ACTION_PATH/report.py" verify build/teakit/ci-summary.json
+
+    - name: Remove runtime credentials from the summary
+      if: always()
+      id: report
+      shell: bash
+      run: python3 "$GITHUB_ACTION_PATH/report.py" redact build/teakit/ci-summary.json
+
+    - name: Upload TeaKit results and screenshots
+      if: always() && steps.report.outcome == 'success'
+      uses: actions/upload-artifact@v4
+      with:
+        name: teakit-${{ inputs.version }}-${{ inputs.loader }}
+        retention-days: 7
+        path: |
+          build/teakit/ci-summary.json
+          ${{ inputs.loader }}/versions/${{ inputs.version }}/runs/client/screenshots/
+          ${{ inputs.loader }}/versions/${{ inputs.version }}/runs/client/logs/
+          ${{ inputs.loader }}/versions/${{ inputs.version }}/runs/client/crash-reports/
+          ${{ inputs.loader }}/versions/${{ inputs.version }}/run/screenshots/
+          ${{ inputs.loader }}/versions/${{ inputs.version }}/run/logs/
+          ${{ inputs.loader }}/versions/${{ inputs.version }}/run/crash-reports/
+        if-no-files-found: warn

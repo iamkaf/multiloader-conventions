@@ -7,10 +7,19 @@ inputs:
   horizontal-jars:
     description: Build all loaders together and validate the merged jar for each version.
     default: 'false'
+  teakit-runner:
+    description: Run existing tests with gradle or wrapper, or disable with none.
+    default: none
+  teakit-loaders:
+    description: Comma-separated loaders to test on the latest configured version.
+    default: fabric
 outputs:
   matrix:
     description: Selected build jobs as a JSON array.
     value: ${{ steps.plan.outputs.matrix }}
+  teakit:
+    description: Selected TeaKit runtime jobs as a JSON array.
+    value: ${{ steps.plan.outputs.teakit }}
 runs:
   using: composite
   steps:
@@ -19,6 +28,8 @@ runs:
       env:
         COMMON_TASK: ${{ inputs.common-task }}
         HORIZONTAL_JARS: ${{ inputs.horizontal-jars }}
+        TEAKIT_RUNNER: ${{ inputs.teakit-runner }}
+        TEAKIT_LOADERS: ${{ inputs.teakit-loaders }}
         EVENT_NAME: ${{ github.event_name }}
         BASE_REF: ${{ github.base_ref }}
         BEFORE_SHA: ${{ github.event.before }}

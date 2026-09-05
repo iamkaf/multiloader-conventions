@@ -5,12 +5,14 @@ on:
     branches: [ main ]
     paths-ignore:
       - '.github/actions/plan-mod-build/**'
+      - '.github/actions/run-teakit/**'
       - '.github/workflows/mod-build.yml'
       - '.github/workflows/check-mod-ci.yml'
   pull_request:
     branches: [ main ]
     paths-ignore:
       - '.github/actions/plan-mod-build/**'
+      - '.github/actions/run-teakit/**'
       - '.github/workflows/mod-build.yml'
       - '.github/workflows/check-mod-ci.yml'
   workflow_dispatch: {}

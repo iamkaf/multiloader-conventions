@@ -34,6 +34,13 @@ def selected_versions(versions, changes):
         return sorted(versions)
     selected = set()
     for path in changes:
+        if (
+            path.endswith(".md")
+            or Path(path).name.startswith("LICENSE")
+            or path in (".gitignore", ".gitattributes", ".editorconfig")
+            or path.startswith(".github/ISSUE_TEMPLATE/")
+        ):
+            continue
         version_path = VERSION_PATH.match(path)
         if version_path:
             version = version_path.group(1)
@@ -41,12 +48,7 @@ def selected_versions(versions, changes):
             if version not in versions:
                 return sorted(versions)
             selected.add(version)
-        elif not (
-            path.endswith(".md")
-            or Path(path).name.startswith("LICENSE")
-            or path in (".gitignore", ".gitattributes", ".editorconfig")
-            or path.startswith(".github/ISSUE_TEMPLATE/")
-        ):
+        else:
             return sorted(versions)
     return sorted(selected)
 
@@ -100,6 +102,37 @@ def plan_builds(root, changes, common_task="compileJava", horizontal_jars=False)
     return jobs
 
 
+def version_key(version):
+    match = re.fullmatch(r"([0-9]+(?:\.[0-9]+)*)(?:-(pre|rc)-?([0-9]+))?", version)
+    if not match:
+        raise ValueError(f"Unsupported Minecraft version ordering: {version}")
+    numbers, stage, revision = match.groups()
+    return tuple(map(int, numbers.split("."))), {"pre": 0, "rc": 1, None: 2}[stage], int(revision or 0)
+
+
+def plan_teakit(root, changes, runner="none", loaders="fabric"):
+    if runner not in ("none", "gradle", "wrapper"):
+        raise ValueError("teakit-runner must be none, gradle, or wrapper")
+    if runner == "none":
+        return []
+    requested = loaders.split(",")
+    if not requested or len(set(requested)) != len(requested) or set(requested) - set(LOADERS):
+        raise ValueError("teakit-loaders must contain distinct supported loaders")
+    if not any((root / "test/teakit").rglob("*.test.ts")):
+        raise ValueError("TeaKit is enabled but test/teakit contains no tests")
+    if runner == "wrapper" and not (root / "teakitw").is_file():
+        raise ValueError("TeaKit wrapper is missing")
+    candidates = plan_builds(root, None, common_task="none")
+    latest = max((job["version"] for job in candidates), key=version_key)
+    available = {job["loaders"]: job for job in candidates if job["version"] == latest}
+    if set(requested) - available.keys():
+        raise ValueError(f"Requested TeaKit loaders are not enabled for {latest}")
+    versions = {job["version"] for job in candidates}
+    if latest not in selected_versions(versions, changes):
+        return []
+    return [available[loader] for loader in requested]
+
+
 def main():
     root = Path.cwd()
     changes = changed_files(root, os.environ["EVENT_NAME"], os.environ.get("BASE_REF", ""), os.environ.get("BEFORE_SHA", ""))
@@ -107,8 +140,10 @@ def main():
     if horizontal not in ("true", "false"):
         raise ValueError("horizontal-jars must be true or false")
     jobs = plan_builds(root, changes, os.environ.get("COMMON_TASK", "compileJava"), horizontal == "true")
+    teakit = plan_teakit(root, changes, os.environ.get("TEAKIT_RUNNER", "none"), os.environ.get("TEAKIT_LOADERS", "fabric"))
     with Path(os.environ["GITHUB_OUTPUT"]).open("a") as output:
         output.write("matrix=" + json.dumps(jobs, separators=(",", ":")) + "\n")
+        output.write("teakit=" + json.dumps(teakit, separators=(",", ":")) + "\n")
     print("Selected builds: " + ", ".join(job["name"] for job in jobs) if jobs else "No build inputs changed")
 
 

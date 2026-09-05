@@ -3,7 +3,7 @@ import subprocess
 import tempfile
 import unittest
 
-from plan import changed_files, plan_builds
+from plan import changed_files, plan_builds, plan_teakit, version_key
 
 
 class BuildPlanTest(unittest.TestCase):
@@ -38,7 +38,7 @@ class BuildPlanTest(unittest.TestCase):
                 self.assertEqual(["26.2-fabric", "26.2-neoforge"], [j["name"] for j in jobs])
 
     def test_docs_only_and_empty_diffs_need_no_runners(self):
-        for changes in ([], ["README.md", ".github/ISSUE_TEMPLATE/bug.yml"]):
+        for changes in ([], ["README.md", ".github/ISSUE_TEMPLATE/bug.yml"], ["versions/26.2/README.md"]):
             self.assertEqual([], plan_builds(self.root, changes))
 
     def test_dispatch_and_deleted_versions_validate_remaining_matrix(self):
@@ -108,6 +108,47 @@ class BuildPlanTest(unittest.TestCase):
             self.assertIn("versions/26.2/gradle.properties", changes)
             self.assertIn("versions/26.3/gradle.properties", changes)
         self.assertIsNone(changed_files(self.root, "workflow_dispatch"))
+
+    def runtime_fixture(self):
+        self.write("test/teakit/backpack.test.ts", "")
+        self.write("teakitw", "")
+
+    def test_runtime_uses_latest_numeric_version(self):
+        self.runtime_fixture()
+        self.version("26.10", "fabric", 25)
+        jobs = plan_teakit(self.root, None, "wrapper")
+        self.assertEqual(["26.10-fabric"], [job["name"] for job in jobs])
+
+    def test_runtime_skips_docs_and_older_version_changes(self):
+        self.runtime_fixture()
+        for paths in (["README.md"], ["versions/1.21.11/gradle.properties"], []):
+            self.assertEqual([], plan_teakit(self.root, paths, "wrapper"))
+        for paths in (["test/teakit/backpack.test.ts"], ["fabric/src/main/java/Mod.java"], ["versions/26.2/gradle.properties"]):
+            self.assertEqual(["26.2-fabric"], [job["name"] for job in plan_teakit(self.root, paths, "wrapper")])
+
+    def test_runtime_loader_pilot_retains_all_requested_loaders(self):
+        self.runtime_fixture()
+        self.version("26.2", "fabric,forge,neoforge", 25)
+        jobs = plan_teakit(self.root, None, "gradle", "fabric,forge,neoforge")
+        self.assertEqual(["26.2-fabric", "26.2-forge", "26.2-neoforge"], [job["name"] for job in jobs])
+
+    def test_runtime_missing_suite_or_wrapper_fails(self):
+        self.assertEqual([], plan_teakit(self.root, None))
+        with self.assertRaises(ValueError):
+            plan_teakit(self.root, None, "gradle")
+        self.write("test/teakit/backpack.test.ts", "")
+        with self.assertRaises(ValueError):
+            plan_teakit(self.root, None, "wrapper")
+
+    def test_runtime_invalid_or_unavailable_loaders_fail(self):
+        self.runtime_fixture()
+        for loaders in ("unknown", "fabric,fabric", "", "forge"):
+            with self.subTest(loaders=loaders), self.assertRaises(ValueError):
+                plan_teakit(self.root, None, "gradle", loaders)
+
+    def test_version_ordering_distinguishes_prereleases(self):
+        versions = ["26.3", "26.2", "26.3-rc-2", "26.3-pre-10", "26.3-pre-2"]
+        self.assertEqual(["26.2", "26.3-pre-2", "26.3-pre-10", "26.3-rc-2", "26.3"], sorted(versions, key=version_key))
 
 
 if __name__ == "__main__":
