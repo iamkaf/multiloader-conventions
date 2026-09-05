@@ -35,7 +35,7 @@ jobs:
         with:
           fetch-depth: 0
       - id: plan
-        uses: iamkaf/multiloader-conventions/.github/actions/plan-mod-build@f6658deb1bed2b92a866cf74f88ad4818b4fcaa9
+        uses: iamkaf/multiloader-conventions/.github/actions/plan-mod-build@c68545261778909f9b976620df2fad54fd252abf
         with:
           common-task: ${{ inputs.common-task }}
           horizontal-jars: ${{ inputs.horizontal-jars }}
@@ -126,7 +126,7 @@ jobs:
         include: ${{ fromJSON(needs.detect-changes.outputs.teakit) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: iamkaf/multiloader-conventions/.github/actions/run-teakit@f6658deb1bed2b92a866cf74f88ad4818b4fcaa9
+      - uses: iamkaf/multiloader-conventions/.github/actions/run-teakit@c68545261778909f9b976620df2fad54fd252abf
         with:
           runner: ${{ inputs.teakit-runner }}
           version: ${{ matrix.version }}
