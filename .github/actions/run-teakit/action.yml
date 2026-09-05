@@ -31,7 +31,7 @@ runs:
         case "$TEAKIT_RUNNER" in
           gradle) ./gradlew teakitDoctor teakitTypecheck --console=plain --max-workers=2 ;;
           # Check the project here; wrapper freshness also checks Windows line endings.
-          wrapper) ./teakitw doctor --no-wrapper && ./teakitw typecheck ;;
+          wrapper) ./teakitw typecheck && ./teakitw doctor --no-wrapper ;;
           *) echo "Unsupported TeaKit runner: $TEAKIT_RUNNER" >&2; exit 1 ;;
         esac
 
