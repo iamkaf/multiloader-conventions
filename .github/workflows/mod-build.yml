@@ -11,6 +11,14 @@ on:
         description: Build loader jars together and validate one merged jar per version.
         type: boolean
         default: false
+      teakit-runner:
+        description: Existing TeaKit integration, gradle or wrapper, or none to omit runtime tests.
+        type: string
+        default: none
+      teakit-loaders:
+        description: Comma-separated loaders to test on the latest configured Minecraft version.
+        type: string
+        default: fabric
 
 permissions:
   contents: read
@@ -21,15 +29,18 @@ jobs:
     timeout-minutes: 5
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
+      teakit: ${{ steps.plan.outputs.teakit }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - id: plan
-        uses: iamkaf/multiloader-conventions/.github/actions/plan-mod-build@7e30617e986a00993eff0126d3fa1879d36edeb9
+        uses: iamkaf/multiloader-conventions/.github/actions/plan-mod-build@6a4aaebdc88576c50b9feee3e69102e1ac305f7d
         with:
           common-task: ${{ inputs.common-task }}
           horizontal-jars: ${{ inputs.horizontal-jars }}
+          teakit-runner: ${{ inputs.teakit-runner }}
+          teakit-loaders: ${{ inputs.teakit-loaders }}
 
   build:
     name: Build ${{ matrix.name }}
@@ -103,8 +114,27 @@ jobs:
             common/versions/${{ matrix.version }}/build/test-results/
           if-no-files-found: warn
 
+  teakit:
+    name: TeaKit ${{ matrix.name }}
+    needs: detect-changes
+    if: needs.detect-changes.outputs.teakit != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.detect-changes.outputs.teakit) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: iamkaf/multiloader-conventions/.github/actions/run-teakit@6a4aaebdc88576c50b9feee3e69102e1ac305f7d
+        with:
+          runner: ${{ inputs.teakit-runner }}
+          version: ${{ matrix.version }}
+          loader: ${{ matrix.loaders }}
+          java: ${{ matrix.java }}
+
   summary:
-    needs: [detect-changes, build]
+    needs: [detect-changes, build, teakit]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -118,5 +148,8 @@ jobs:
             .["detect-changes"].result == "success" and
             (if .["detect-changes"].outputs.matrix == "[]"
              then .build.result == "skipped"
-             else .build.result == "success" end)
+             else .build.result == "success" end) and
+            (if .["detect-changes"].outputs.teakit == "[]"
+             then .teakit.result == "skipped"
+             else .teakit.result == "success" end)
           ' <<< "$NEEDS_JSON"
