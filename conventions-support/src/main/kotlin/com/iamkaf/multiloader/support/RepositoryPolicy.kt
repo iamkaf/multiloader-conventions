@@ -1,12 +1,13 @@
 package com.iamkaf.multiloader.support
 
 import org.gradle.api.Project
+import org.gradle.api.artifacts.dsl.RepositoryHandler
 import org.gradle.api.publish.PublishingExtension
 import java.net.URI
 
 object RepositoryPolicy {
     fun configureProjectRepositories(project: Project) {
-        project.repositories.mavenLocal()
+        configureWorkspaceRepositories(project.repositories)
         project.repositories.mavenCentral()
         project.repositories.maven {
             name = "TerraformersMC"
@@ -44,12 +45,26 @@ object RepositoryPolicy {
             url = project.uri("https://api.modrinth.com/maven")
         }
         project.repositories.maven {
-            name = "Kaf Maven"
-            url = project.uri("https://maven.kaf.sh")
-        }
-        project.repositories.maven {
             name = "Fuzs Mod Resources"
             url = project.uri("https://raw.githubusercontent.com/Fuzss/modresources/main/maven/")
+        }
+    }
+
+    fun configureWorkspaceRepositories(repositories: RepositoryHandler) {
+        val local = repositories.mavenLocal()
+        val kaf = repositories.maven {
+            name = "Kaf Maven"
+            url = URI.create("https://maven.kaf.sh")
+            content {
+                includeGroupByRegex("com\\.iamkaf(\\..*)?")
+            }
+        }
+        // Keep workspace artifacts off third-party repositories, including ones added by loaders later.
+        repositories.exclusiveContent {
+            forRepositories(local, kaf)
+            filter {
+                includeGroupByRegex("com\\.iamkaf(\\..*)?")
+            }
         }
     }
 

@@ -19,6 +19,7 @@ dependencies {
     implementation(localGroovy())
 
     testImplementation(localGroovy())
+    testImplementation(gradleTestKit())
     testImplementation("org.spockframework:spock-core:2.4-M1-groovy-4.0")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.10.2")
 }

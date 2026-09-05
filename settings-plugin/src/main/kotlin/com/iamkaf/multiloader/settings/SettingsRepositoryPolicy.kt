@@ -1,5 +1,6 @@
 package com.iamkaf.multiloader.settings
 
+import com.iamkaf.multiloader.support.RepositoryPolicy
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
 import org.gradle.api.initialization.Settings
 import java.net.URI
@@ -42,14 +43,7 @@ object SettingsRepositoryPolicy {
     }
 
     fun configureDependencyRepositories(settings: Settings) {
-        settings.dependencyResolutionManagement.repositories.mavenLocal()
-        settings.dependencyResolutionManagement.repositories.maven {
-            name = "Kaf Maven"
-            url = URI.create("https://maven.kaf.sh")
-            content {
-                includeGroupByRegex("com\\.iamkaf(\\..*)?")
-            }
-        }
+        RepositoryPolicy.configureWorkspaceRepositories(settings.dependencyResolutionManagement.repositories)
         settings.dependencyResolutionManagement.repositories.mavenCentral()
     }
 
