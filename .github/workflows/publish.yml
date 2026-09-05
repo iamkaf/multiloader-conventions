@@ -3,18 +3,53 @@ name: Publish convention plugins
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch: {}
+
+permissions:
+  contents: read
 
 concurrency:
   group: publish-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  publish:
+  validate:
+    name: ${{ matrix.name }}
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Build and test plugins
+            task: build
+          - name: Validate minimal sample
+            task: checkMinimalSample
+          - name: Validate datagen sample
+            task: checkDatagenSample
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4.4.2
+        with:
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
+
+      - name: Run validation
+        run: ./gradlew --no-daemon --stacktrace ${{ matrix.task }}
+
+  publish:
+    needs: validate
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,10 +61,9 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-          cache: gradle
 
-      - name: Build and validate samples
-        run: ./gradlew --no-daemon --stacktrace build checkSamples
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4.4.2
 
       - name: Publish to KafMaven
         env:
