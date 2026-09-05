@@ -92,7 +92,7 @@ def plan_builds(root, changes, common_task="compileJava", horizontal_jars=False)
                 "name": version if horizontal_jars else f"{version}-{group[0]}",
                 "version": version,
                 "loaders": ",".join(group),
-                "java": str(max(25, int(java))) if merge else java,
+                "java": str(max(25 if merge else 21, int(java))),
                 "common": common_task if index == 0 else "none",
                 "merge": merge,
                 "artifacts": "\n".join(f"{loader}/versions/{version}/build/libs/*.jar" for loader in group),

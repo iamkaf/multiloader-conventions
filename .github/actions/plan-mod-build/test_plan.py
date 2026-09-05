@@ -64,6 +64,14 @@ class BuildPlanTest(unittest.TestCase):
         path.write_text(path.read_text() + "project.build-java=25\n")
         self.assertTrue(all(j["java"] == "25" for j in plan_builds(self.root, None)))
 
+    def test_build_java_meets_settings_plugin_floor_without_changing_runtime(self):
+        path = "versions/1.16.5/gradle.properties"
+        properties = "project.enabled-loaders=fabric\nproject.java=8\nproject.build-java=17\n"
+        self.write(path, properties)
+        jobs = plan_builds(self.root, [path])
+        self.assertEqual("21", jobs[0]["java"])
+        self.assertEqual(properties, (self.root / path).read_text())
+
     def test_invalid_metadata_fails_instead_of_dropping_a_check(self):
         cases = [("project.enabled-loaders=fabric,unknown\nproject.java=25\n"),
                  ("project.enabled-loaders=fabric\n"),
