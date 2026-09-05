@@ -131,10 +131,10 @@ object StonecutterSourceLayout {
     }
 
     @JvmStatic
-    fun addCommonResourceLane(project: Project, rootName: String, path: String) {
+    fun addCommonResourceLane(project: Project, rootName: String, path: String, minecraftVersion: String) {
         val directory = project.rootProject.file("$rootName/$path")
 
-        if (!addResourcesToStageTask(project, directory)) {
+        if (!addResourcesToStageTask(project, directory, minecraftVersion)) {
             val sourceSets = project.extensions.getByType(SourceSetContainer::class.java)
             sourceSets.named("main") {
                 resources.srcDir(directory)
@@ -172,14 +172,22 @@ object StonecutterSourceLayout {
         }
     }
 
-    private fun addResourcesToStageTask(project: Project, directory: File): Boolean {
+    private fun addResourcesToStageTask(project: Project, directory: File, minecraftVersion: String): Boolean {
         val stageResources = try {
             project.tasks.named(STAGE_RESOURCES_TASK, Sync::class.java)
         } catch (_: UnknownTaskException) {
             null
         }
         stageResources?.configure {
-            from(directory)
+            val versionRoot = project.rootProject.file("versions/$minecraftVersion/common/src/main")
+            from(directory) {
+                // Shared lanes must not overwrite version-specific resources staged earlier.
+                exclude {
+                    val relativePath = it.relativePath.pathString
+                    versionRoot.resolve("generated/$relativePath").isFile ||
+                        versionRoot.resolve("resources/$relativePath").isFile
+                }
+            }
         }
         return stageResources != null
     }

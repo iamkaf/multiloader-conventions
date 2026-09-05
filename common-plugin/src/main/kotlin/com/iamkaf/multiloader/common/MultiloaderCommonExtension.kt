@@ -39,6 +39,6 @@ open class MultiloaderResourceLane internal constructor(
             return
         }
 
-        StonecutterSourceLayout.addCommonResourceLane(project, rootName, path)
+        StonecutterSourceLayout.addCommonResourceLane(project, rootName, path, minecraftVersion)
     }
 }

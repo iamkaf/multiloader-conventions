@@ -82,6 +82,29 @@ class StonecutterSourceLayoutTest extends Specification {
         !stageResources.source.files.contains(sharedGenerated)
     }
 
+    def "version resource overrides retain priority over an added shared lane"() {
+        given:
+        def root = ProjectBuilder.builder().withProjectDir(testProjectDir).build()
+        def common = ProjectBuilder.builder().withName('26.3').withParent(root).build()
+        common.pluginManager.apply('java-library')
+        common.tasks.register('stonecutterGenerate')
+        def shared = new File(testProjectDir, 'common/src/main/generated/data/example/recipe.json')
+        def override = new File(testProjectDir, 'versions/26.3/common/src/main/generated/data/example/recipe.json')
+        shared.parentFile.mkdirs()
+        override.parentFile.mkdirs()
+        shared.text = 'old format'
+        override.text = 'new format'
+        StonecutterSourceLayout.configureCommon(common, '26.3', true)
+        StonecutterSourceLayout.addCommonResourceLane(common, 'common', 'src/main/generated', '26.3')
+
+        when:
+        def stage = common.tasks.named(StonecutterSourceLayout.STAGE_RESOURCES_TASK, Sync).get()
+        stage.actions.each { it.execute(stage) }
+
+        then:
+        new File(stage.destinationDir, 'data/example/recipe.json').text == 'new format'
+    }
+
     @Unroll
     def "#loader layout stages common, generated, and version overlay roots"() {
         given:
