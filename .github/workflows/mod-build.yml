@@ -1,0 +1,122 @@
+name: Build Minecraft mod
+
+on:
+  workflow_call:
+    inputs:
+      common-task:
+        description: Common check to run once per version, compileJava, test, or none.
+        type: string
+        default: compileJava
+      horizontal-jars:
+        description: Build loader jars together and validate one merged jar per version.
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - id: plan
+        uses: iamkaf/multiloader-conventions/.github/actions/plan-mod-build@46ef408295fdbd950cc88243dc075eee57824191
+        with:
+          common-task: ${{ inputs.common-task }}
+          horizontal-jars: ${{ inputs.horizontal-jars }}
+
+  build:
+    name: Build ${{ matrix.name }}
+    needs: detect-changes
+    if: needs.detect-changes.outputs.matrix != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include: ${{ fromJSON(needs.detect-changes.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5.6.0
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+      - uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+        with:
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
+
+      - name: Build and check selected projects
+        shell: bash
+        env:
+          MC_VERSION: ${{ matrix.version }}
+          LOADERS: ${{ matrix.loaders }}
+          COMMON_TASK: ${{ matrix.common }}
+          MERGE_JARS: ${{ matrix.merge }}
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          tasks=()
+          if [ "$COMMON_TASK" != none ]; then
+            tasks+=(":common:$MC_VERSION:$COMMON_TASK")
+          fi
+          IFS=',' read -ra loaders <<< "$LOADERS"
+          for loader in "${loaders[@]}"; do
+            tasks+=(":$loader:$MC_VERSION:build")
+          done
+          if [ "$MERGE_JARS" = true ]; then
+            tasks+=(validateHorizontalJars)
+          fi
+          ./gradlew \
+            "-Pmultiloader.target.versions=$MC_VERSION" \
+            "-Pmultiloader.target.loaders=$LOADERS" \
+            "${tasks[@]}" --console=plain --max-workers=2
+
+      - name: Upload loader jars
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.repository.name }}-${{ matrix.name }}
+          path: ${{ matrix.artifacts }}
+          if-no-files-found: error
+
+      - name: Upload merged jar
+        if: matrix.merge
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.repository.name }}-${{ matrix.version }}-horizontal
+          path: build/libs/horizontal/${{ matrix.version }}/*.jar
+          if-no-files-found: error
+
+      - name: Upload test reports
+        if: always() && matrix.common == 'test'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.repository.name }}-${{ matrix.version }}-tests
+          path: |
+            common/versions/${{ matrix.version }}/build/reports/tests/
+            common/versions/${{ matrix.version }}/build/test-results/
+          if-no-files-found: warn
+
+  summary:
+    needs: [detect-changes, build]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every selected build
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          printf '%s\n' "$NEEDS_JSON" >> "$GITHUB_STEP_SUMMARY"
+          jq -e '
+            .["detect-changes"].result == "success" and
+            (if .["detect-changes"].outputs.matrix == "[]"
+             then .build.result == "skipped"
+             else .build.result == "success" end)
+          ' <<< "$NEEDS_JSON"
