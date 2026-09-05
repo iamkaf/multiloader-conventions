@@ -1,16 +1,16 @@
 [versions]
 # Core Versions
-minecraft = "26.3-pre-1"
+minecraft = "26.3-pre-2"
 java = "25"
-neoform = "26.2-1"
+neoform = "26.3-pre-2-1"
 
 # Parchment
 parchment-minecraft = "null"
 parchment = "null"
 
 # Fabric
-fabric-loader = "0.19.3"
-fabric-api = "0.159.1+26.3"
+fabric-loader = "0.19.5"
+fabric-api = "0.159.4+26.3"
 modmenu = "null"
 c2me-fabric = "null"
 
@@ -32,10 +32,10 @@ forge-config-api-port-forge = "26.1.4"
 amber = "11.3.0+26.3"
 
 # Konfig
-konfig = "0.7.1+26.3"
+konfig = "0.8.0+26.3"
 
 # TeaKit
-teakit = "0.15.0+26.3"
+teakit = "0.16.0+26.3"
 
 # Bonded Compatibility Fixtures
 basic-weapons-fabric = "null"
