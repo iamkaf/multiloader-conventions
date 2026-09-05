@@ -24,10 +24,12 @@ runs:
       shell: bash
       env:
         TEAKIT_RUNNER: ${{ inputs.runner }}
-        ORG_GRADLE_PROJECT_multiloader.target.versions: ${{ inputs.version }}
-        ORG_GRADLE_PROJECT_multiloader.target.loaders: ${{ inputs.loader }}
+        TEAKIT_VERSION: ${{ inputs.version }}
+        TEAKIT_LOADER: ${{ inputs.loader }}
       run: |
         set -euo pipefail
+        # Keep the scope through POSIX wrappers and nested Gradle invocations.
+        export GRADLE_OPTS="${GRADLE_OPTS:-} -Dorg.gradle.project.multiloader.target.versions=$TEAKIT_VERSION -Dorg.gradle.project.multiloader.target.loaders=$TEAKIT_LOADER"
         case "$TEAKIT_RUNNER" in
           gradle) ./gradlew teakitDoctor teakitTypecheck --console=plain --max-workers=2 ;;
           # Check the project here; wrapper freshness also checks Windows line endings.
@@ -40,10 +42,12 @@ runs:
       env:
         TEAKIT_RUNNER: ${{ inputs.runner }}
         TEAKIT_NODE: ${{ inputs.version }}-${{ inputs.loader }}
-        ORG_GRADLE_PROJECT_multiloader.target.versions: ${{ inputs.version }}
-        ORG_GRADLE_PROJECT_multiloader.target.loaders: ${{ inputs.loader }}
+        TEAKIT_VERSION: ${{ inputs.version }}
+        TEAKIT_LOADER: ${{ inputs.loader }}
       run: |
         set -euo pipefail
+        # Keep the scope through POSIX wrappers and nested Gradle invocations.
+        export GRADLE_OPTS="${GRADLE_OPTS:-} -Dorg.gradle.project.multiloader.target.versions=$TEAKIT_VERSION -Dorg.gradle.project.multiloader.target.loaders=$TEAKIT_LOADER"
         if [ "$TEAKIT_RUNNER" = gradle ]; then
           ./gradlew teakitCheck \
             "-Pteakit.node=$TEAKIT_NODE" \
