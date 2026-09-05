@@ -40,6 +40,8 @@ runs:
     - name: Run tests in Minecraft
       shell: bash
       env:
+        # SDL uses EGL because Xvfb lacks the GLX visual required by Minecraft 26.3.
+        SDL_VIDEO_FORCE_EGL: "1"
         TEAKIT_RUNNER: ${{ inputs.runner }}
         TEAKIT_NODE: ${{ inputs.version }}-${{ inputs.loader }}
         TEAKIT_VERSION: ${{ inputs.version }}
