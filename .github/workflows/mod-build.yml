@@ -26,7 +26,7 @@ jobs:
         with:
           fetch-depth: 0
       - id: plan
-        uses: iamkaf/multiloader-conventions/.github/actions/plan-mod-build@46ef408295fdbd950cc88243dc075eee57824191
+        uses: iamkaf/multiloader-conventions/.github/actions/plan-mod-build@7e30617e986a00993eff0126d3fa1879d36edeb9
         with:
           common-task: ${{ inputs.common-task }}
           horizontal-jars: ${{ inputs.horizontal-jars }}
