@@ -1,0 +1,25 @@
+name: Plan mod builds
+description: Select changed Minecraft versions and assign each check to one build job.
+inputs:
+  common-task:
+    description: Common check to run once per version, compileJava, test, or none.
+    default: compileJava
+  horizontal-jars:
+    description: Build all loaders together and validate the merged jar for each version.
+    default: 'false'
+outputs:
+  matrix:
+    description: Selected build jobs as a JSON array.
+    value: ${{ steps.plan.outputs.matrix }}
+runs:
+  using: composite
+  steps:
+    - id: plan
+      shell: bash
+      env:
+        COMMON_TASK: ${{ inputs.common-task }}
+        HORIZONTAL_JARS: ${{ inputs.horizontal-jars }}
+        EVENT_NAME: ${{ github.event_name }}
+        BASE_REF: ${{ github.base_ref }}
+        BEFORE_SHA: ${{ github.event.before }}
+      run: python3 "$GITHUB_ACTION_PATH/plan.py"
