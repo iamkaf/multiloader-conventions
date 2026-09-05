@@ -95,7 +95,11 @@ object MetadataExpansion {
         }
 
     private fun fabricMinecraftDependency(minecraftVersion: String?, configuredRange: String?): String? =
-        if (minecraftVersion == null || minecraftVersion.contains("-rc-")) configuredRange else minecraftVersion
+        if (
+            minecraftVersion == null ||
+            minecraftVersion.contains("-rc-") ||
+            configuredRange?.contains("-pre.") == true
+        ) configuredRange else minecraftVersion
 
     private fun fabricLoaderVersion(
         minecraftVersion: String?,

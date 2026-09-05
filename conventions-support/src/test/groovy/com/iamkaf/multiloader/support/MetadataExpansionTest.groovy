@@ -84,6 +84,47 @@ class MetadataExpansionTest extends Specification {
         expanded.fabric_loader_version == '0.18.4'
     }
 
+    def "Fabric metadata preserves a configured prerelease Minecraft floor"() {
+        given:
+        def root = ProjectBuilder.builder()
+            .withName('root')
+            .withProjectDir(testProjectDir)
+            .build()
+        def fabric = ProjectBuilder.builder()
+            .withName('fabric')
+            .withParent(root)
+            .withProjectDir(new File(testProjectDir, 'fabric'))
+            .build()
+        def project = ProjectBuilder.builder()
+            .withName('26.3')
+            .withParent(fabric)
+            .withProjectDir(new File(testProjectDir, 'fabric/versions/26.3'))
+            .build()
+        def versionDirectory = new File(testProjectDir, 'versions/26.3')
+        versionDirectory.mkdirs()
+        new File(versionDirectory, 'gradle.properties').text = 'mod.minecraft-range=>=26.3-pre.1\n'
+        root.extensions.extraProperties.set('project.group', 'com.example')
+        root.extensions.extraProperties.set('project.version', '1.0.0+26.3')
+        root.extensions.extraProperties.set('project.java', '25')
+        root.extensions.extraProperties.set('mod.id', 'examplemod')
+        root.extensions.extraProperties.set('mod.name', 'Example Mod')
+        root.extensions.extraProperties.set('mod.minecraft-range', '>=26.3-pre.1')
+        ['common', 'fabric', 'forge', 'neoforge'].each {
+            root.extensions.extraProperties.set("mixin.compat.$it", 'JAVA_25')
+        }
+
+        when:
+        def expanded = MetadataExpansion.INSTANCE.stonecutter(
+            MultiloaderProjectContext.of(project),
+            '26.3',
+            'fabric',
+            emptyCatalog(),
+        )
+
+        then:
+        expanded.minecraft_version_range == '>=26.3-pre.1'
+    }
+
     private static VersionCatalog emptyCatalog() {
         Proxy.newProxyInstance(
             VersionCatalog.classLoader,
