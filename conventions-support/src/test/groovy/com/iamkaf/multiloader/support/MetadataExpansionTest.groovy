@@ -10,6 +10,18 @@ import java.util.Optional
 
 class MetadataExpansionTest extends Specification {
 
+    def "NeoForge icons retain legacy metadata before 26.3"() {
+        expect:
+        MetadataExpansion.INSTANCE.neoForgeIconKey(version) == key
+
+        where:
+        version  | key
+        '1.21.1' | 'logoFile'
+        '26.2'   | 'logoFile'
+        '26.3'   | 'iconFile'
+        '26.4'   | 'iconFile'
+    }
+
     @TempDir
     File testProjectDir
 

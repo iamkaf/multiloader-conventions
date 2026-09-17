@@ -36,6 +36,7 @@ object MetadataExpansion {
             "license" to context.optionalProperty("mod.license"),
             "description" to context.optionalProperty("mod.description"),
             "neoforge_version" to context.versionOrNull(catalog, "neoforge"),
+            "neoforge_icon_key" to neoForgeIconKey(minecraftVersion),
             "neoforge_loader_version_range" to context.optionalProperty("mod.neoforge-loader-range"),
             "forge_version" to context.versionOrNull(catalog, "forge"),
             "forge_loader_version_range" to context.optionalProperty("mod.forge-loader-range"),
@@ -88,6 +89,9 @@ object MetadataExpansion {
             "pack_minmax" to VersionPolicy.resourcePackMinMaxSnippet(FlatProjectAccess.versionAlias(project, "minecraft")),
             "pack_description" to "${FlatProjectAccess.requiredProperty(project, "mod.name")} resources",
         )
+
+    fun neoForgeIconKey(minecraftVersion: String): String =
+        if (VersionPolicy.isMinecraftVersionAtLeast(minecraftVersion, "26.3")) "iconFile" else "logoFile"
 
     fun jsonSafe(expandProperties: Map<String, Any?>): Map<String, Any?> =
         expandProperties.mapValues { (_, value) ->
