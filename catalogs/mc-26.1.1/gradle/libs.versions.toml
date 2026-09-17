@@ -15,7 +15,7 @@ modmenu = "18.0.0-alpha.7"
 c2me-fabric = "0.3.7+alpha.0.63+26.1.1"
 
 # NeoForge
-neoforge = "26.1.1.10-beta"
+neoforge = "26.1.1.15-beta"
 c2me-neoforge = "0.3.7+alpha.0.85+26.1.1"
 
 # Forge
@@ -69,7 +69,7 @@ patchouli-neoforge = "2CsnFLom"
 
 # Gradle Plugins
 fabric-loom-plugin = "1.15-SNAPSHOT"
-neoforge-moddev-plugin = "2.0.141"
+neoforge-moddev-plugin = "2.0.147"
 modpublisher-plugin = "2.1.6"
 forgegradle-plugin = "7.0.17"
 mixin-plugin = "0.7-SNAPSHOT"

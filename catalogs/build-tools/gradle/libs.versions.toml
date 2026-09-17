@@ -7,7 +7,7 @@ stonecutter = "0.9.2"
 # Loader/build plugins
 fabric-loom-plugin = "1.17-SNAPSHOT"
 fabric-loom = "1.17.12"
-neoforge-moddev = "2.0.141"
+neoforge-moddev = "2.0.147"
 forgegradle = "7.0.28"
 neogradle-userdev = "7.1.38"
 

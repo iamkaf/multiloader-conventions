@@ -10,12 +10,12 @@ parchment = "null"
 
 # Fabric
 fabric-loader = "0.19.5"
-fabric-api = "0.160.5+26.3"
-modmenu = "null"
+fabric-api = "0.160.6+26.3"
+modmenu = "21.0.0-beta.1"
 c2me-fabric = "null"
 
 # NeoForge
-neoforge = "26.2.0.2-beta"
+neoforge = "26.3.0.4-beta"
 c2me-neoforge = "null"
 
 # Forge
@@ -65,7 +65,7 @@ jei-api = "29.6.2.31"
 
 # Gradle Plugins
 fabric-loom-plugin = "1.17-SNAPSHOT"
-neoforge-moddev-plugin = "2.0.141"
+neoforge-moddev-plugin = "2.0.147"
 modpublisher-plugin = "2.1.6"
 forgegradle-plugin = "7.0.28"
 mixin-plugin = "0.7-SNAPSHOT"

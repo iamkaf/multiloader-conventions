@@ -10,12 +10,12 @@ parchment = "2025.12.20"
 
 # Fabric
 fabric-loader = "0.19.3"
-fabric-api = "0.155.0+26.1.2"
+fabric-api = "0.155.3+26.1.2"
 modmenu = "18.0.0-alpha.8"
 c2me-fabric = "0.4.0-alpha.0.31+26.1.2"
 
 # NeoForge
-neoforge = "26.1.2.78"
+neoforge = "26.1.2.109"
 c2me-neoforge = "0.4.0-alpha.0.91+26.1.2"
 
 # Forge
@@ -69,7 +69,7 @@ patchouli-neoforge = "2CsnFLom"
 
 # Gradle Plugins
 fabric-loom-plugin = "1.17-SNAPSHOT"
-neoforge-moddev-plugin = "2.0.141"
+neoforge-moddev-plugin = "2.0.147"
 modpublisher-plugin = "2.1.6"
 forgegradle-plugin = "7.0.28"
 mixin-plugin = "0.7-SNAPSHOT"
