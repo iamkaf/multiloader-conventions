@@ -35,7 +35,7 @@ amber = "11.3.0+26.3"
 konfig = "0.8.0+26.3"
 
 # TeaKit
-teakit = "0.16.0+26.3"
+teakit = "0.17.0+26.3"
 
 # Bonded Compatibility Fixtures
 basic-weapons-fabric = "null"
