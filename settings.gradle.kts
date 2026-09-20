@@ -26,7 +26,7 @@ dependencyResolutionManagement {
     }
     versionCatalogs {
         create("buildTools") {
-            from("com.iamkaf.platform:build-tools:${providers.gradleProperty("build-tools.version").get()}")
+            from(files("catalogs/build-tools/gradle/libs.versions.toml"))
         }
     }
 }

@@ -1,0 +1,144 @@
+name: Publish version catalogs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'catalogs/**'
+      - '.github/workflows/publish-catalogs.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'catalogs/**'
+      - '.github/workflows/publish-catalogs.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      initial_import: ${{ steps.changed.outputs.initial_import }}
+      projects: ${{ steps.changed.outputs.projects }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed catalogs
+        id: changed
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="${{ github.event.pull_request.base.sha }}"
+          else
+            base="${{ github.event.before }}"
+          fi
+
+          if [ "$base" = "0000000000000000000000000000000000000000" ]; then
+            base=$(git rev-list --max-parents=0 HEAD)
+          fi
+
+          mapfile -t all_projects < <(
+            awk '/^include / {
+              gsub(/[,\047"]/, "")
+              print $2
+            }' catalogs/settings.gradle
+          )
+
+          initial_import=false
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ] \
+              && ! git cat-file -e "$base:catalogs/settings.gradle" 2>/dev/null; then
+            initial_import=true
+            projects=("${all_projects[@]}")
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ] \
+              || git diff --name-only "$base"...HEAD \
+                | grep -Eq '^(catalogs/(build\.gradle|settings\.gradle|gradle\.properties)|\.github/workflows/publish-catalogs\.yml)$'; then
+            projects=("${all_projects[@]}")
+          else
+            mapfile -t projects < <(
+              git diff --name-only "$base"...HEAD \
+                | awk -F/ '/^catalogs\/(build-tools|mc-[^/]+)\// {print $2}' \
+                | sort -u
+            )
+          fi
+
+          echo "initial_import=$initial_import" >> "$GITHUB_OUTPUT"
+          echo "projects=${projects[*]}" >> "$GITHUB_OUTPUT"
+
+  validate:
+    needs: plan
+    if: needs.plan.outputs.projects != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4.4.2
+        with:
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
+
+      - name: Validate changed catalogs
+        env:
+          PROJECTS: ${{ needs.plan.outputs.projects }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tasks=()
+          for project in $PROJECTS; do
+            tasks+=(":$project:build")
+          done
+          ./gradlew -p catalogs --no-daemon --stacktrace "${tasks[@]}"
+
+  publish:
+    needs: [plan, validate]
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      github.event_name != 'pull_request' &&
+      needs.plan.outputs.initial_import != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4.4.2
+
+      - name: Publish changed catalogs to KafMaven
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          MAVEN_PUBLISH_PASSWORD: ${{ secrets.MAVEN_PUBLISH_PASSWORD }}
+          MAVEN_PUBLISH_USERNAME: ${{ secrets.MAVEN_PUBLISH_USERNAME }}
+          PROJECTS: ${{ needs.plan.outputs.projects }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for project in $PROJECTS; do
+            if [ "$project" = "build-tools" ] && [ "$EVENT_NAME" != "workflow_dispatch" ]; then
+              continue
+            fi
+            ./gradlew -p catalogs --no-daemon --stacktrace \
+              ":$project:publishAllPublicationsToKafMavenRepository"
+          done

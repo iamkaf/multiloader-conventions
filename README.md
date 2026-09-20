@@ -9,6 +9,9 @@ run configurations, datagen, translations, and publishing. They support both
 flat projects and branch-based [Stonecutter](https://stonecutter.kikugie.dev/)
 projects.
 
+The shared Minecraft version catalogs live in [`catalogs`](catalogs). They keep
+their existing `com.iamkaf.platform` Maven coordinates and release versions.
+
 > [!IMPORTANT]
 > Version `3.0-SNAPSHOT` is an in-development, breaking release. Consumers must
 > use Kotlin DSL (`.gradle.kts`) and should treat adoption as a migration rather
@@ -318,6 +321,18 @@ Run the repository checks from the root:
 ./gradlew build
 ./gradlew checkAll
 ./gradlew checkSamples
+```
+
+Validate one version catalog from the same checkout:
+
+```bash
+./gradlew -p catalogs :mc-26.3:build
+```
+
+Publish catalog changes to Maven local before checking a consumer:
+
+```bash
+./gradlew -p catalogs :mc-26.3:publishToMavenLocal
 ```
 
 The individual sample checks are:

@@ -1,0 +1,103 @@
+[versions]
+# Core Versions
+minecraft = "1.19.3"
+java = "17"
+
+# Parchment
+parchment-minecraft = "1.19.3"
+parchment = "2023.06.25"
+
+# Fabric
+fabric-loader = "0.19.3"
+fabric-api = "0.76.1+1.19.3"
+modmenu = "5.1.0"
+c2me-fabric = "0.2.0+alpha.10.0+1.19.3"
+c2me-neoforge = "null"
+
+# Forge
+forge = "1.19.3-44.1.0"
+
+# Libraries
+mixin = "0.8.5"
+mixinextras = "0.4.1"
+gson = "2.10.1"
+forge-config-api-port = "4.2.11"
+
+# Amber
+amber = "11.1.2+1.19.3"
+
+# Konfig
+konfig = "0.5.0+1.19.3"
+
+# TeaKit
+teakit = "0.14.0+1.19.3"
+
+# JEI
+jei = "12.4.0.22"
+jei-api = "12.4.0.22"
+
+# Gradle Plugins
+fabric-loom-plugin = "1.15-SNAPSHOT"
+modpublisher-plugin = "2.1.6"
+forgegradle-plugin = "[7.0.11,8.0)"
+mixin-plugin = "0.7-SNAPSHOT"
+neoforge-legacyforge-plugin = "2.0.140"
+
+[libraries]
+# Core Dependencies
+minecraft = { group = "com.mojang", name = "minecraft", version.ref = "minecraft" }
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+
+# Mixin
+mixin = { group = "org.spongepowered", name = "mixin", version.ref = "mixin" }
+mixin-extras = { group = "io.github.llamalad7", name = "mixinextras-common", version.ref = "mixinextras" }
+
+# Fabric
+fabric-loader = { group = "net.fabricmc", name = "fabric-loader", version.ref = "fabric-loader" }
+fabric-api = { group = "net.fabricmc.fabric-api", name = "fabric-api", version.ref = "fabric-api" }
+modmenu = { group = "com.terraformersmc", name = "modmenu", version.ref = "modmenu" }
+c2me-fabric = { group = "maven.modrinth", name = "VSNURh3q", version.ref = "c2me-fabric" }
+c2me-neoforge = { group = "maven.modrinth", name = "COlSi5iR", version.ref = "c2me-neoforge" }
+
+# Forge
+forge = { group = "net.minecraftforge", name = "forge", version.ref = "forge" }
+
+# Parchment
+parchment = { group = "org.parchmentmc.data", name = "parchment-1.19.3", version.ref = "parchment" }
+
+# Forge Config API Port
+forgeconfigapiport-fabric = { group = "fuzs.forgeconfigapiport", name = "forgeconfigapiport-fabric", version.ref = "forge-config-api-port" }
+
+# Amber (all platforms)
+amber = { group = "com.iamkaf.amber", name = "amber-common", version.ref = "amber" }
+amber-fabric = { group = "com.iamkaf.amber", name = "amber-fabric", version.ref = "amber" }
+amber-forge = { group = "com.iamkaf.amber", name = "amber-forge", version.ref = "amber" }
+
+# Konfig
+konfig = { group = "com.iamkaf.konfig", name = "konfig-common", version.ref = "konfig" }
+konfig-fabric = { group = "com.iamkaf.konfig", name = "konfig-fabric", version.ref = "konfig" }
+konfig-forge = { group = "com.iamkaf.konfig", name = "konfig-forge", version.ref = "konfig" }
+
+# TeaKit
+teakit = { group = "com.iamkaf.teakit", name = "teakit-common", version.ref = "teakit" }
+teakit-fabric = { group = "com.iamkaf.teakit", name = "teakit-fabric", version.ref = "teakit" }
+teakit-forge = { group = "com.iamkaf.teakit", name = "teakit-forge", version.ref = "teakit" }
+
+# JEI
+jei = { group = "maven.modrinth", name = "jei", version.ref = "jei" }
+jei-blamejared = { group = "mezz.jei", name = "jei-1.19.3", version.ref = "jei-api" }
+jei-common-api = { group = "mezz.jei", name = "jei-1.19.3-common-api", version.ref = "jei-api" }
+jei-common = { group = "mezz.jei", name = "jei-1.19.3-common", version.ref = "jei-api" }
+jei-fabric-api = { group = "mezz.jei", name = "jei-1.19.3-fabric-api", version.ref = "jei-api" }
+jei-fabric = { group = "mezz.jei", name = "jei-1.19.3-fabric", version.ref = "jei-api" }
+jei-forge-api = { group = "mezz.jei", name = "jei-1.19.3-forge-api", version.ref = "jei-api" }
+jei-forge = { group = "mezz.jei", name = "jei-1.19.3-forge", version.ref = "jei-api" }
+jei-neoforge-api = { group = "mezz.jei", name = "jei-1.19.3-neoforge-api", version.ref = "jei-api" }
+jei-neoforge = { group = "mezz.jei", name = "jei-1.19.3-neoforge", version.ref = "jei-api" }
+
+[plugins]
+fabric-loom = { id = "fabric-loom", version.ref = "fabric-loom-plugin" }
+modpublisher = { id = "com.hypherionmc.modutils.modpublisher", version.ref = "modpublisher-plugin" }
+forgegradle = { id = "net.minecraftforge.gradle", version.ref = "forgegradle-plugin" }
+mixin = { id = "org.spongepowered.mixin", version.ref = "mixin-plugin" }
+legacyforge = { id = "net.neoforged.moddev.legacyforge", version.ref = "neoforge-legacyforge-plugin" }
