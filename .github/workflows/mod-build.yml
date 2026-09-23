@@ -81,9 +81,7 @@ jobs:
         shell: bash
         run: |
           if [ -d "$HOME/.gradle/caches" ]; then
-            shopt -s nullglob
-            cache_paths=("$HOME"/.gradle/caches/*)
-            du -sm "$HOME/.gradle/caches" "${cache_paths[@]}" | sort -nr | sed -n '1,25p'
+            du -m --max-depth=1 "$HOME/.gradle/caches" | sort -nr | sed -n '1,25p'
           fi
 
       - name: Build and check selected projects
@@ -117,9 +115,7 @@ jobs:
         shell: bash
         run: |
           if [ -d "$HOME/.gradle/caches" ]; then
-            shopt -s nullglob
-            cache_paths=("$HOME"/.gradle/caches/*)
-            du -sm "$HOME/.gradle/caches" "${cache_paths[@]}" | sort -nr | sed -n '1,25p'
+            du -m --max-depth=1 "$HOME/.gradle/caches" | sort -nr | sed -n '1,25p'
           fi
           if [ -d .gradle/mavenizer/repo ]; then
             du -sm .gradle/mavenizer/repo
