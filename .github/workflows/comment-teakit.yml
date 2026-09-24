@@ -1,0 +1,16 @@
+name: Comment TeaKit results
+
+on:
+  workflow_call:
+
+permissions:
+  actions: read
+  pull-requests: write
+
+jobs:
+  comment:
+    if: github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: iamkaf/multiloader-conventions/.github/actions/comment-teakit@716d20a79dd6332c859cc61495cb8c344b535d81

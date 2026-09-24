@@ -73,7 +73,7 @@ def report_from_zip(data):
             return None
         skipped = sum(test.get("status") == "skipped" for test in result.get("tests", []))
         return passed, failed, skipped
-    except (OSError, ValueError, KeyError, TypeError, zipfile.BadZipFile):
+    except (OSError, ValueError, KeyError, TypeError, AttributeError, IndexError, zipfile.BadZipFile):
         return None
 
 
