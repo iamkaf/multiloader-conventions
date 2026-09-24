@@ -1,0 +1,10 @@
+name: Comment TeaKit results
+description: Summarize completed TeaKit jobs on their pull request.
+runs:
+  using: composite
+  steps:
+    - name: Comment on the pull request
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: python3 "$GITHUB_ACTION_PATH/comment.py"
