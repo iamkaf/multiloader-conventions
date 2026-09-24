@@ -126,6 +126,27 @@ class BuildPlanTest(unittest.TestCase):
         for paths in (["test/teakit/backpack.test.ts"], ["fabric/src/main/java/Mod.java"], ["versions/26.2/gradle.properties"]):
             self.assertEqual(["26.2-fabric"], [job["name"] for job in plan_teakit(self.root, paths, "wrapper")])
 
+    def test_teakit_only_changes_run_runtime_without_rebuilding_jars(self):
+        self.runtime_fixture()
+        changes = ["test/teakit/backpack.test.ts", "README.md"]
+        self.assertEqual([], plan_builds(self.root, changes, teakit_runner="wrapper"))
+        self.assertEqual(["26.2-fabric"], [job["name"] for job in plan_teakit(self.root, changes, "wrapper")])
+
+    def test_teakit_changes_keep_other_build_selection_and_runtime(self):
+        self.runtime_fixture()
+        changes = ["test/teakit/backpack.test.ts", "versions/1.21.11/gradle.properties"]
+        self.assertEqual(
+            ["1.21.11-fabric", "1.21.11-forge", "1.21.11-neoforge"],
+            [job["name"] for job in plan_builds(self.root, changes, teakit_runner="wrapper")],
+        )
+        self.assertEqual(["26.2-fabric"], [job["name"] for job in plan_teakit(self.root, changes, "wrapper")])
+        changes.append("common/src/main/java/Example.java")
+        self.assertEqual(5, len(plan_builds(self.root, changes, teakit_runner="wrapper")))
+
+    def test_teakit_changes_keep_builds_when_runtime_is_disabled(self):
+        self.assertEqual(5, len(plan_builds(self.root, ["test/teakit/backpack.test.ts"])))
+        self.assertEqual(5, len(plan_builds(self.root, ["test/other/config.json"], teakit_runner="wrapper")))
+
     def test_runtime_loader_pilot_retains_all_requested_loaders(self):
         self.runtime_fixture()
         self.version("26.2", "fabric,forge,neoforge", 25)

@@ -29,7 +29,7 @@ def changed_files(root, event, base_ref="", before_sha=""):
     return [path for path in result.stdout.split("\0") if path]
 
 
-def selected_versions(versions, changes):
+def selected_versions(versions, changes, ignore_teakit_tests=False):
     if changes is None:
         return sorted(versions)
     selected = set()
@@ -39,6 +39,7 @@ def selected_versions(versions, changes):
             or Path(path).name.startswith("LICENSE")
             or path in (".gitignore", ".gitattributes", ".editorconfig")
             or path.startswith(".github/ISSUE_TEMPLATE/")
+            or (ignore_teakit_tests and path.startswith("test/teakit/"))
         ):
             continue
         version_path = VERSION_PATH.match(path)
@@ -63,7 +64,7 @@ def read_properties(path):
     return properties
 
 
-def plan_builds(root, changes, common_task="compileJava", horizontal_jars=False):
+def plan_builds(root, changes, common_task="compileJava", horizontal_jars=False, teakit_runner="none"):
     if common_task not in ("compileJava", "test", "none"):
         raise ValueError("common-task must be compileJava, test, or none")
     version_files = {p.parent.name: p for p in (root / "versions").glob("*/gradle.properties")}
@@ -71,7 +72,7 @@ def plan_builds(root, changes, common_task="compileJava", horizontal_jars=False)
         raise ValueError("No versions/*/gradle.properties found")
 
     jobs = []
-    for version in selected_versions(version_files, changes):
+    for version in selected_versions(version_files, changes, ignore_teakit_tests=teakit_runner != "none"):
         if not re.fullmatch(r"[0-9][A-Za-z0-9._-]*", version):
             raise ValueError(f"Invalid version directory: {version}")
         properties = read_properties(version_files[version])
@@ -128,6 +129,8 @@ def plan_teakit(root, changes, runner="none", loaders="fabric"):
     if set(requested) - available.keys():
         raise ValueError(f"Requested TeaKit loaders are not enabled for {latest}")
     versions = {job["version"] for job in candidates}
+    if changes is not None and any(path.startswith("test/teakit/") for path in changes):
+        return [available[loader] for loader in requested]
     if latest not in selected_versions(versions, changes):
         return []
     return [available[loader] for loader in requested]
@@ -139,8 +142,9 @@ def main():
     horizontal = os.environ.get("HORIZONTAL_JARS", "false")
     if horizontal not in ("true", "false"):
         raise ValueError("horizontal-jars must be true or false")
-    jobs = plan_builds(root, changes, os.environ.get("COMMON_TASK", "compileJava"), horizontal == "true")
-    teakit = plan_teakit(root, changes, os.environ.get("TEAKIT_RUNNER", "none"), os.environ.get("TEAKIT_LOADERS", "fabric"))
+    teakit_runner = os.environ.get("TEAKIT_RUNNER", "none")
+    jobs = plan_builds(root, changes, os.environ.get("COMMON_TASK", "compileJava"), horizontal == "true", teakit_runner)
+    teakit = plan_teakit(root, changes, teakit_runner, os.environ.get("TEAKIT_LOADERS", "fabric"))
     with Path(os.environ["GITHUB_OUTPUT"]).open("a") as output:
         output.write("matrix=" + json.dumps(jobs, separators=(",", ":")) + "\n")
         output.write("teakit=" + json.dumps(teakit, separators=(",", ":")) + "\n")
