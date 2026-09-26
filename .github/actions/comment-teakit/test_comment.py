@@ -33,7 +33,7 @@ class CommentTests(unittest.TestCase):
         data = io.BytesIO()
         with zipfile.ZipFile(data, "w") as archive:
             archive.writestr("build/teakit/ci-summary.json", json.dumps(payload))
-        self.assertEqual(comment.report_from_zip(data.getvalue()), (2, 1, 1))
+        self.assertEqual(comment.report_from_zip(data.getvalue()), "2 passed, 1 failed, 1 skipped")
         run = {"id": 8, "run_attempt": 1}
         jobs = [{"name": "build / TeaKit 26.3-fabric", "id": 9,
                  "conclusion": "failure", "started_at": "2026-09-24T01:00:00Z"}]
@@ -42,6 +42,46 @@ class CommentTests(unittest.TestCase):
         body = comment.render(run, jobs, artifacts, FakeGitHub(data.getvalue()), "iamkaf/mod")
         self.assertIn("2 passed, 1 failed, 1 skipped", body)
         self.assertNotIn("private", body)
+
+    def test_failed_launch_report_explains_why_tests_did_not_run(self):
+        for tail, expected in [
+            (["compileJava FAILED", "BUILD FAILED in 57s"], "Tests did not run — build failed"),
+            ([], "Tests did not run — Minecraft failed to start"),
+        ]:
+            with self.subTest(expected=expected):
+                payload = {"runs": [{"status": "failed", "errorType": "RunnerFailure",
+                    "error": "Minecraft launch process exited early with code 1",
+                    "runLogTail": tail + ["secret credential | @someone <details>"],
+                    "durationMs": 60018}]}
+                data = io.BytesIO()
+                with zipfile.ZipFile(data, "w") as archive:
+                    archive.writestr("build/teakit/ci-summary.json", json.dumps(payload))
+                body = comment.render({"id": 8, "run_attempt": 1},
+                    [{"name": "build / TeaKit 26.3-fabric", "id": 9, "conclusion": "failure"}],
+                    [{"name": "teakit-26.3-fabric", "id": 10, "created_at": "2026-09-24T01:01:00Z"}],
+                    FakeGitHub(data.getvalue()), "iamkaf/mod")
+                self.assertIn(expected, body)
+                self.assertIn("/job/9", body)
+                self.assertNotIn("Report unavailable", body)
+                self.assertNotIn("0 passed", body)
+                self.assertNotIn("secret", body)
+
+    def test_unknown_runner_failure_does_not_claim_no_tests_started_or_expose_error(self):
+        data = io.BytesIO()
+        with zipfile.ZipFile(data, "w") as archive:
+            archive.writestr("ci-summary.json", json.dumps({"runs": [{
+                "status": "failed", "error": "private credential | @someone", "result": None}]}))
+        self.assertEqual(comment.report_from_zip(data.getvalue()),
+                         "No completed test results — runner failed (see job log)")
+
+    def test_missing_or_invalid_report_remains_unavailable(self):
+        for payload in [{}, {"runs": [{}]}, {"runs": [{"result": {"passed": -1, "failed": 0}}]}]:
+            with self.subTest(payload=payload):
+                data = io.BytesIO()
+                with zipfile.ZipFile(data, "w") as archive:
+                    archive.writestr("ci-summary.json", json.dumps(payload))
+                self.assertIsNone(comment.report_from_zip(data.getvalue()))
+        self.assertIsNone(comment.report_from_zip(b"invalid zip"))
 
     def test_old_artifact_cannot_supply_rerun(self):
         run = {"id": 8, "run_attempt": 2}
