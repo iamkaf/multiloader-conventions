@@ -67,12 +67,25 @@ def report_from_zip(data):
                 summary = json.loads(file.read(MAX_REPORT_BYTES + 1))
         if len(summary.get("runs", [])) != 1:
             return None
-        result = summary["runs"][0]["result"]
+        run = summary["runs"][0]
+        result = run.get("result")
+        if result is None:
+            if run.get("status") != "failed" or not isinstance(run.get("error"), str):
+                return None
+            # Reports are untrusted. Describe known failures without publishing raw logs.
+            if re.fullmatch(r"Minecraft launch process exited early with code \d+", run["error"]):
+                tail = run.get("runLogTail", [])
+                if isinstance(tail, list) and any(
+                    isinstance(line, str) and line.startswith("BUILD FAILED") for line in tail
+                ):
+                    return "Tests did not run — build failed (see job log)"
+                return "Tests did not run — Minecraft failed to start (see job log)"
+            return "No completed test results — runner failed (see job log)"
         passed, failed = result["passed"], result["failed"]
         if any(type(count) is not int or count < 0 for count in (passed, failed)):
             return None
         skipped = sum(test.get("status") == "skipped" for test in result.get("tests", []))
-        return passed, failed, skipped
+        return f"{passed} passed, {failed} failed, {skipped} skipped"
     except (OSError, ValueError, KeyError, TypeError, AttributeError, IndexError, zipfile.BadZipFile):
         return None
 
@@ -106,7 +119,7 @@ def render(run, jobs, artifacts, github, repository):
             raw = github.request(f"repos/{repository}/actions/artifacts/{artifact['id']}/zip")
             if len(raw) <= 25_000_000:
                 summary = report_from_zip(raw)
-        result = f"{summary[0]} passed, {summary[1]} failed, {summary[2]} skipped" if summary else "Report unavailable"
+        result = summary if summary is not None else "Report unavailable"
         status = job.get("conclusion") or "unknown"
         job_url = f"https://github.com/{repository}/actions/runs/{run['id']}/job/{job['id']}"
         rows.append(f"| [{markdown_text(node)}]({job_url}) | {markdown_text(status)} | {result} |")
