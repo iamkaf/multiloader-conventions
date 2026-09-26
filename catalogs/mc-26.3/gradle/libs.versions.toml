@@ -19,7 +19,7 @@ neoforge = "26.3.0.4-beta"
 c2me-neoforge = "null"
 
 # Forge
-forge = "26.2-65.0.1"
+forge = "26.3-66.0.3"
 
 # Libraries
 mixin = "0.8.5"
