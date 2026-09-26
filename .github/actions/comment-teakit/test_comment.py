@@ -27,20 +27,28 @@ class FakeGitHub:
 
 
 class CommentTests(unittest.TestCase):
-    def test_report_counts_without_exposing_test_text(self):
+    def test_named_results_show_failures_first_without_exposing_raw_errors(self):
         payload = {"runs": [{"result": {"passed": 2, "failed": 1, "tests": [
-            {"status": "skipped", "name": "private | [text](url)"}]}}]}
+            {"status": "passed", "name": "sorts the chest", "durationMs": 1250},
+            {"status": "skipped", "name": "optional integration", "reason": "target-mismatch"},
+            {"status": "failed", "name": "refills the offhand", "durationMs": 6000,
+             "error": "private credentials", "failure": {"message": "private credentials"}},
+            {"status": "passed", "name": "preserves item counts", "durationMs": 250}]}}]}
         data = io.BytesIO()
         with zipfile.ZipFile(data, "w") as archive:
             archive.writestr("build/teakit/ci-summary.json", json.dumps(payload))
-        self.assertEqual(comment.report_from_zip(data.getvalue()), "2 passed, 1 failed, 1 skipped")
+        self.assertEqual(comment.report_from_zip(data.getvalue())["summary"], "2 passed · 1 failed · 1 skipped")
         run = {"id": 8, "run_attempt": 1}
         jobs = [{"name": "build / TeaKit 26.3-fabric", "id": 9,
                  "conclusion": "failure", "started_at": "2026-09-24T01:00:00Z"}]
         artifacts = [{"name": "teakit-26.3-fabric", "id": 10,
                       "created_at": "2026-09-24T01:01:00Z"}]
         body = comment.render(run, jobs, artifacts, FakeGitHub(data.getvalue()), "iamkaf/mod")
-        self.assertIn("2 passed, 1 failed, 1 skipped", body)
+        self.assertIn("2 passed · 1 failed · 1 skipped", body)
+        self.assertIn("❌ ` refills the offhand ` — 6.0s", body)
+        self.assertIn("✅ ` sorts the chest ` — 1.2s", body)
+        self.assertIn("⏭️ ` optional integration ` — target does not apply", body)
+        self.assertLess(body.index("refills the offhand"), body.index("sorts the chest"))
         self.assertNotIn("private", body)
 
     def test_failed_launch_report_explains_why_tests_did_not_run(self):
@@ -71,8 +79,70 @@ class CommentTests(unittest.TestCase):
         with zipfile.ZipFile(data, "w") as archive:
             archive.writestr("ci-summary.json", json.dumps({"runs": [{
                 "status": "failed", "error": "private credential | @someone", "result": None}]}))
-        self.assertEqual(comment.report_from_zip(data.getvalue()),
+        self.assertEqual(comment.report_from_zip(data.getvalue())["summary"],
                          "No completed test results — runner failed (see job log)")
+
+    def test_report_names_cannot_break_out_of_code_spans(self):
+        line = comment.test_line({"status": "failed",
+            "name": "```\n@someone [link](https://example.com) <img src=x>\x1b\u202e"})
+        self.assertEqual(line.count("\n"), 0)
+        self.assertNotIn("\x1b", line)
+        self.assertNotIn("\u202e", line)
+        self.assertTrue(line.startswith("- ❌ ```` ``` @someone"))
+        self.assertTrue(line.endswith(" ````"))
+
+    def test_passing_tests_do_not_hide_a_runtime_audit_failure(self):
+        report = {"summary": "1 passed · 0 failed · 0 skipped", "failed": 0,
+                  "runtime_failed": True, "tests": [{"name": "opens the menu", "status": "passed"}]}
+        body = comment.render_report(report, "failure", 2000)
+        self.assertIn("Runtime capability check failed", body)
+        self.assertIn("✅ ` opens the menu `", body)
+
+    def test_cleanup_failure_is_distinct_from_test_failures(self):
+        report = {"summary": "1 passed · 0 failed · 0 skipped", "failed": 0,
+                  "tests": [{"name": "opens the menu", "status": "passed"}]}
+        body = comment.render_report(report, "failure", 2000)
+        self.assertIn("job failed outside the test assertions", body)
+
+    def test_large_reports_are_bounded_and_keep_failures_first(self):
+        tests = [{"name": "passing " + "x" * 1000, "status": "passed"} for _ in range(1000)]
+        tests.append({"name": "important failure", "status": "failed"})
+        data = io.BytesIO()
+        with zipfile.ZipFile(data, "w") as archive:
+            archive.writestr("ci-summary.json", json.dumps({"runs": [{"result": {
+                "passed": 1000, "failed": 1, "tests": tests}}]}))
+        # The decompressed report limit is independent of comment truncation.
+        self.assertIsNone(comment.report_from_zip(data.getvalue()))
+        report = {"summary": "1000 passed · 1 failed · 0 skipped", "failed": 1, "tests": tests}
+        body = comment.render_report(report, "failure", 2000)
+        self.assertLess(len(body), 2000)
+        self.assertIn("important failure", body)
+        self.assertIn("more tests", body)
+
+    def test_todo_is_visible_as_skipped(self):
+        self.assertEqual(comment.test_line({"name": "new feature", "status": "todo"}),
+                         "- ⏭️ ` new feature ` — not implemented")
+
+    def test_cancelled_job_preserves_results_without_claiming_test_failure(self):
+        report = {"summary": "1 passed · 0 failed · 0 skipped", "failed": 0,
+                  "tests": [{"name": "opens the menu", "status": "passed"}]}
+        body = comment.render_report(report, "cancelled", 2000)
+        self.assertIn("job was cancelled", body)
+        self.assertNotIn("job failed", body)
+        self.assertIn("✅ ` opens the menu `", body)
+
+    def test_multiple_large_nodes_fit_the_comment_limit(self):
+        data = io.BytesIO()
+        tests = [{"name": "x" * 240, "status": "passed"} for _ in range(500)]
+        with zipfile.ZipFile(data, "w") as archive:
+            archive.writestr("ci-summary.json", json.dumps({"runs": [{"result": {
+                "passed": 500, "failed": 0, "tests": tests}}]}))
+        jobs = [{"id": i, "name": f"TeaKit 26.3-loader{i}", "conclusion": "success"} for i in range(3)]
+        artifacts = [{"id": i, "name": f"teakit-26.3-loader{i}", "created_at": "2026-09-24T01:01:00Z"} for i in range(3)]
+        body = comment.render({"id": 8, "run_attempt": 1}, jobs, artifacts, FakeGitHub(data.getvalue()), "iamkaf/mod")
+        self.assertLessEqual(len(body), comment.MAX_COMMENT_CHARS)
+        self.assertIn("more tests", body)
+        self.assertIn("Additional nodes omitted", body)
 
     def test_missing_or_invalid_report_remains_unavailable(self):
         for payload in [{}, {"runs": [{}]}, {"runs": [{"result": {"passed": -1, "failed": 0}}]}]:

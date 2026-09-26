@@ -5,14 +5,15 @@ import json
 import os
 import re
 import sys
+import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
-from datetime import datetime
 
 MARKER = "<!-- teakit-ci-results -->"
 MAX_REPORT_BYTES = 1_000_000
+MAX_COMMENT_CHARS = 60_000
 TEAKIT_JOB = re.compile(r"(?:^| / )TeaKit ([A-Za-z0-9_.-]+)$")
 
 
@@ -78,20 +79,81 @@ def report_from_zip(data):
                 if isinstance(tail, list) and any(
                     isinstance(line, str) and line.startswith("BUILD FAILED") for line in tail
                 ):
-                    return "Tests did not run — build failed (see job log)"
-                return "Tests did not run — Minecraft failed to start (see job log)"
-            return "No completed test results — runner failed (see job log)"
+                    return {"summary": "Tests did not run — build failed (see job log)", "tests": []}
+                return {"summary": "Tests did not run — Minecraft failed to start (see job log)", "tests": []}
+            return {"summary": "No completed test results — runner failed (see job log)", "tests": []}
         passed, failed = result["passed"], result["failed"]
         if any(type(count) is not int or count < 0 for count in (passed, failed)):
             return None
-        skipped = sum(test.get("status") == "skipped" for test in result.get("tests", []))
-        return f"{passed} passed, {failed} failed, {skipped} skipped"
+        tests = result.get("tests", [])
+        if not isinstance(tests, list) or any(
+            not isinstance(test, dict)
+            or not isinstance(test.get("name"), str)
+            or test.get("status") not in ("passed", "failed", "skipped", "todo")
+            for test in tests
+        ):
+            return None
+        skipped = sum(test["status"] in ("skipped", "todo") for test in tests)
+        return {
+            "summary": f"{passed} passed · {failed} failed · {skipped} skipped",
+            "tests": tests,
+            "failed": failed,
+            "runtime_failed": run.get("runtimeCapabilityAuditResult", {}).get("passed") is False,
+        }
     except (OSError, ValueError, KeyError, TypeError, AttributeError, IndexError, zipfile.BadZipFile):
         return None
 
 
 def markdown_text(value):
     return str(value).replace("|", "\\|").replace("\n", " ").replace("\r", " ").replace("[", "\\[").replace("]", "\\]")
+
+
+def test_line(test):
+    # Keep report text inside a single code span: no mentions, links, HTML, or fences.
+    name = " ".join("".join(
+        " " if unicodedata.category(char).startswith("C") else char for char in test["name"]
+    ).split())
+    if len(name) > 240:
+        name = name[:239] + "…"
+    name = name or "Unnamed test"
+    fence = "`" * (1 + max((len(match[0]) for match in re.finditer(r"`+", name)), default=0))
+    icon = {"passed": "✅", "failed": "❌", "skipped": "⏭️", "todo": "⏭️"}[test["status"]]
+    line = f"- {icon} {fence} {name} {fence}"
+    duration = test.get("durationMs")
+    if type(duration) is int and 0 <= duration <= 86_400_000:
+        line += f" — {duration / 1000:.1f}s" if duration >= 1000 else f" — {duration}ms"
+    if test["status"] == "todo":
+        line += " — not implemented"
+    elif test["status"] == "skipped" and test.get("reason") == "target-mismatch":
+        line += " — target does not apply"
+    return line
+
+
+def render_report(report, status, budget):
+    if report is None:
+        return "⚠️ Report unavailable. See the job log for details."
+    lines = [f"**{report['summary']}**"]
+    if report.get("runtime_failed"):
+        lines += ["", "⚠️ **Runtime capability check failed.** See the job log for details."]
+    elif status == "cancelled":
+        lines += ["", "⏹️ **The job was cancelled after these results were recorded.**"]
+    elif status not in ("success", "skipped") and report.get("failed") == 0:
+        lines += ["", "⚠️ **The job failed outside the test assertions.** See the job log for details."]
+    if report.get("failed", 0):
+        lines += ["", "Failure details are available in the job log."]
+    tests = sorted(report["tests"], key=lambda test: {"failed": 0, "passed": 1, "skipped": 2, "todo": 2}[test["status"]])
+    if not tests and "failed" in report:
+        lines += ["", "No individual test results were included in the report."]
+    lines.append("")
+    used = len("\n".join(lines))
+    for index, test in enumerate(tests):
+        line = test_line(test)
+        if used + len(line) + 150 > budget:
+            lines.append(f"\n… {len(tests) - index} more tests; see the job log for the full list.")
+            break
+        lines.append(line)
+        used += len(line) + 1
+    return "\n".join(lines).rstrip()
 
 
 def match_pr(pr, run, repository):
@@ -102,12 +164,18 @@ def match_pr(pr, run, repository):
 
 
 def render(run, jobs, artifacts, github, repository):
-    rows = []
+    url = f"https://github.com/{repository}/actions/runs/{run['id']}/attempts/{run['run_attempt']}"
+    header = f"{MARKER}\n### TeaKit results\n\n[Build run]({url}) · attempt {run['run_attempt']}\n\n"
+    sections = []
+    used = len(header)
     for job in jobs:
         match = TEAKIT_JOB.search(job["name"])
         if not match:
             continue
         node = match.group(1)
+        if used + 1000 > MAX_COMMENT_CHARS:
+            sections.append("Additional nodes omitted; see the build run for all results.")
+            break
         created_after = job.get("started_at") or ""
         candidates = [artifact for artifact in artifacts
                       if artifact["name"] == f"teakit-{node}"
@@ -119,15 +187,16 @@ def render(run, jobs, artifacts, github, repository):
             raw = github.request(f"repos/{repository}/actions/artifacts/{artifact['id']}/zip")
             if len(raw) <= 25_000_000:
                 summary = report_from_zip(raw)
-        result = summary if summary is not None else "Report unavailable"
         status = job.get("conclusion") or "unknown"
         job_url = f"https://github.com/{repository}/actions/runs/{run['id']}/job/{job['id']}"
-        rows.append(f"| [{markdown_text(node)}]({job_url}) | {markdown_text(status)} | {result} |")
-    url = f"https://github.com/{repository}/actions/runs/{run['id']}/attempts/{run['run_attempt']}"
-    header = f"{MARKER}\n### TeaKit results\n\n[Build run]({url}) · attempt {run['run_attempt']}\n\n"
-    if not rows:
+        icon = {"success": "✅", "failure": "❌", "skipped": "⏭️", "cancelled": "⏹️"}.get(status, "⚠️")
+        heading = f"#### {icon} {markdown_text(node)}\n\n[Job log]({job_url}) · {markdown_text(status)}\n\n"
+        section = heading + render_report(summary, status, MAX_COMMENT_CHARS - used - len(heading) - 200)
+        sections.append(section)
+        used += len(section) + 2
+    if not sections:
         return header + "No TeaKit checks ran for this commit."
-    return header + "| Node | Check | Tests |\n| --- | --- | --- |\n" + "\n".join(rows)
+    return header + "\n\n".join(sections)
 
 
 def update_comment(github, repository, number, body, run):
