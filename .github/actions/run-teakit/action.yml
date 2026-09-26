@@ -20,6 +20,13 @@ runs:
       with:
         java-version: ${{ inputs.java }}
 
+    - name: Refresh cached dependency metadata
+      shell: bash
+      run: |
+        # Recheck snapshot catalogs without discarding jars or Minecraft preparation.
+        gradle_home="${GRADLE_USER_HOME:-$HOME/.gradle}"
+        rm -rf -- "$gradle_home"/caches/modules-2/metadata-*
+
     - name: Check TeaKit configuration and tests
       shell: bash
       env:
