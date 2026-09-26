@@ -41,6 +41,26 @@ class BuildPlanTest(unittest.TestCase):
         for changes in ([], ["README.md", ".github/ISSUE_TEMPLATE/bug.yml"], ["versions/26.2/README.md"]):
             self.assertEqual([], plan_builds(self.root, changes))
 
+    def test_comment_workflow_does_not_select_build_or_runtime_jobs(self):
+        self.runtime_fixture()
+        changes = [".github/workflows/teakit-results.yml"]
+        self.assertEqual([], plan_builds(self.root, changes, teakit_runner="wrapper"))
+        self.assertEqual([], plan_teakit(self.root, changes, "wrapper"))
+        changes.append("test/teakit/backpack.test.ts")
+        self.assertEqual([], plan_builds(self.root, changes, teakit_runner="wrapper"))
+        self.assertEqual(["26.2-fabric"], [j["name"] for j in plan_teakit(self.root, changes, "wrapper")])
+
+    def test_comment_workflow_keeps_selection_for_mixed_changes(self):
+        self.runtime_fixture()
+        for path in ("common/src/main/java/Example.java", ".github/workflows/build.yml"):
+            with self.subTest(path=path):
+                changes = [".github/workflows/teakit-results.yml", path]
+                self.assertEqual(5, len(plan_builds(self.root, changes, teakit_runner="wrapper")))
+                self.assertEqual(1, len(plan_teakit(self.root, changes, "wrapper")))
+        changes = [".github/workflows/teakit-results.yml", "versions/1.21.11/gradle.properties"]
+        self.assertEqual(3, len(plan_builds(self.root, changes, teakit_runner="wrapper")))
+        self.assertEqual([], plan_teakit(self.root, changes, "wrapper"))
+
     def test_dispatch_and_deleted_versions_validate_remaining_matrix(self):
         for changes in (None, ["versions/1.20.1/gradle.properties"]):
             self.assertEqual(5, len(plan_builds(self.root, changes)))

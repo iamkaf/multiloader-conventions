@@ -39,6 +39,7 @@ def selected_versions(versions, changes, ignore_teakit_tests=False):
             or Path(path).name.startswith("LICENSE")
             or path in (".gitignore", ".gitattributes", ".editorconfig")
             or path.startswith(".github/ISSUE_TEMPLATE/")
+            or path == ".github/workflows/teakit-results.yml"
             or (ignore_teakit_tests and path.startswith("test/teakit/"))
         ):
             continue
