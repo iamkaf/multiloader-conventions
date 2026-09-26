@@ -13,4 +13,4 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: iamkaf/multiloader-conventions/.github/actions/comment-teakit@8a67e324e295ed3c768cada1d2055cebbf1c8111
+      - uses: iamkaf/multiloader-conventions/.github/actions/comment-teakit@eac6c241b2ebe1a437b43f7ecd7a8cde760d9262
