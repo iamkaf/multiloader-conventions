@@ -6,6 +6,8 @@ import org.gradle.api.initialization.Settings
 import java.net.URI
 
 object SettingsRepositoryPolicy {
+    // Consumer settings bootstraps own com.iamkaf plugin exclusivity because this plugin resolves through
+    // them. Do not declare it again here: two exclusiveContent blocks for one group make it unresolvable.
     fun configurePluginRepositories(settings: Settings) {
         removePluginRepository(settings, "https://maven.kikugie.dev/snapshots")
 
