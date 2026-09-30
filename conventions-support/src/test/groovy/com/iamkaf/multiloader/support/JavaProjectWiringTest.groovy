@@ -42,4 +42,28 @@ class JavaProjectWiringTest extends Specification {
         project.tasks.named('jar', Jar).get().manifest.attributes['Built-On-Minecraft'] == '26.2'
         project.tasks.named('jar', Jar).get().manifest.attributes['MixinConfigs'] == 'testmod.mixins.json'
     }
+
+    def "mod.artifact names archives when the mod id cannot hold the Maven name"() {
+        given:
+        def project = ProjectBuilder.builder()
+            .withName('fabric')
+            .withProjectDir(projectDir)
+            .build()
+        [
+            'project.group'    : 'com.example',
+            'project.version'  : '1.0.0+26.3',
+            'project.minecraft': '26.3',
+            'project.java'     : '25',
+            'mod.id'           : 'test_mod',
+            'mod.name'         : 'Test Mod',
+            'mod.artifact'     : 'test-mod',
+        ].each { name, value -> project.extensions.extraProperties.set(name, value) }
+
+        when:
+        def identity = ProjectIdentity.from(MultiloaderProjectContext.of(project), MultiloaderProjectRole.FABRIC)
+
+        then:
+        identity.archiveName == 'test-mod-fabric'
+        identity.modId == 'test_mod'
+    }
 }

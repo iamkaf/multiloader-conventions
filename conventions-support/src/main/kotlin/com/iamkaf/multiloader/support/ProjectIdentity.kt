@@ -9,7 +9,7 @@ enum class MultiloaderProjectRole(val loaderId: LoaderId?, val artifactSuffix: S
     NEOFORGE(LoaderId.NEOFORGE, LoaderId.NEOFORGE.id),
 }
 
-data class ProjectIdentity(
+data class ProjectIdentity @JvmOverloads constructor(
     val group: String,
     val version: String,
     val modId: String,
