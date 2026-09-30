@@ -2,6 +2,7 @@ package com.iamkaf.multiloader.support.adapters
 
 import com.iamkaf.multiloader.support.ClientRunEnvironmentPolicy
 import com.iamkaf.multiloader.support.GroovyGradleDsl
+import com.iamkaf.multiloader.support.VersionPolicy
 import org.gradle.api.Project
 import org.gradle.api.tasks.SourceSetContainer
 import java.io.File
@@ -52,6 +53,16 @@ object LegacyForgeAdapter {
 
         if (accessTransformerFile.exists()) {
             GroovyGradleDsl.set(legacyForge, "accessTransformers", listOf(accessTransformerFile.absolutePath))
+        }
+
+        if (VersionPolicy.isMinecraftVersionAtLeast(minecraftVersion, "1.17") &&
+            !VersionPolicy.isMinecraftVersionAtLeast(minecraftVersion, "1.18")
+        ) {
+            // Forge 37's Mixin 0.8.4 declares "requires static gson", the automatic module name of Gson 2.8.0.
+            // Newer Gson is named com.google.gson, so the run classpath must keep 2.8.0 or Mixin fails to load.
+            project.configurations.matching { it.name.endsWith("LegacyClasspath") }.configureEach {
+                resolutionStrategy.force("com.google.code.gson:gson:2.8.0")
+            }
         }
 
         val mainSourceSet = project.extensions.getByType(SourceSetContainer::class.java).getByName("main")
