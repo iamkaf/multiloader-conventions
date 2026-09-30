@@ -1,6 +1,7 @@
 package com.iamkaf.multiloader.support
 
 import com.iamkaf.multiloader.support.adapters.FabricLoomAdapter
+import com.iamkaf.multiloader.support.adapters.ForgeJarJarAdapter
 import org.gradle.api.Project
 import org.gradle.api.artifacts.ExternalModuleDependency
 import org.gradle.api.artifacts.MinimalExternalModuleDependency
@@ -20,9 +21,11 @@ object LoaderDependencyPolicy {
         if (toolchainStrategy == CommonToolchainStrategy.FABRIC_LOOM) {
             addWorkspaceLibraryIfEnabled(project, context, catalog, "modImplementation", "amber-fabric", identity)
             addWorkspaceLibraryIfEnabled(project, context, catalog, "modCompileOnly", "konfig-fabric", identity)
+            addWorkspaceLibraryIfEnabled(project, context, catalog, "modCompileOnly", "teakit-playerdriver-fabric", identity)
         } else {
             addWorkspaceLibraryIfEnabled(project, context, catalog, "implementation", "amber", identity)
             addWorkspaceLibraryIfEnabled(project, context, catalog, "compileOnly", "konfig", identity)
+            addWorkspaceLibraryIfEnabled(project, context, catalog, "compileOnly", "teakit-playerdriver", identity)
         }
     }
 
@@ -41,6 +44,8 @@ object LoaderDependencyPolicy {
             addWorkspaceLibraryIfEnabled(project, context, catalog, "modImplementation", "amber-fabric", identity)
             addWorkspaceLibraryIfEnabled(project, context, catalog, "modImplementation", "konfig-fabric", identity)
         }
+        val playerDriverConfiguration = if (VersionPolicy.useUnobfuscatedMinecraft(minecraftVersion)) "implementation" else "modImplementation"
+        bundleWorkspaceLibraryIfEnabled(project, context, catalog, playerDriverConfiguration, "include", "teakit-playerdriver-fabric", identity)
     }
 
     fun addFabricApi(
@@ -124,7 +129,10 @@ object LoaderDependencyPolicy {
                 addForgeDependencyMods(project, context, catalog, "compileOnly", identity)
                 addForgeDependencyMods(project, context, catalog, "modRuntimeOnly", identity)
             }
-            else -> addForgeDependencyMods(project, context, catalog, "implementation", identity)
+            else -> {
+                addForgeDependencyMods(project, context, catalog, "implementation", identity)
+                bundleWorkspaceLibraryIfEnabled(project, context, catalog, "implementation", null, "teakit-playerdriver-forge", identity)
+            }
         }
     }
 
@@ -136,6 +144,7 @@ object LoaderDependencyPolicy {
     ) {
         addWorkspaceLibraryIfEnabled(project, context, catalog, "implementation", "amber-neoforge", identity)
         addWorkspaceLibraryIfEnabled(project, context, catalog, "implementation", "konfig-neoforge", identity)
+        bundleWorkspaceLibraryIfEnabled(project, context, catalog, "implementation", "jarJar", "teakit-playerdriver-neoforge", identity)
     }
 
     fun addC2meRuntime(
@@ -179,8 +188,6 @@ object LoaderDependencyPolicy {
         val teaKitVersion = context.versionOrNull(catalog, "teakit")
         if (teaKitVersion.isNullOrBlank() || teaKitVersion == "null") return
         addOptional(project, context, catalog, configuration, "teakit-${loader.id}", identity)
-        // TeaKit requires its player driver library as a separate mod; catalogs without the alias add nothing.
-        addOptional(project, context, catalog, configuration, "teakit-playerdriver-${loader.id}", identity)
     }
 
     fun catalogModuleVersion(context: MultiloaderProjectContext, catalog: VersionCatalog, alias: String): String? =
@@ -222,15 +229,48 @@ object LoaderDependencyPolicy {
         alias: String,
         identity: ProjectIdentity,
     ) {
-        val library = when {
-            alias.startsWith("amber") -> "Amber"
-            alias.startsWith("konfig") -> "Konfig"
-            else -> error("Unsupported workspace library alias: $alias")
-        }
-        if (usesWorkspaceLibrary(project, context, identity, library)) {
+        if (usesWorkspaceLibrary(project, context, identity, workspaceLibrary(alias))) {
             addOptional(project, context, catalog, configuration, alias, identity)
         }
     }
+
+    /**
+     * Adds a workspace library and nests it in the loader jar, for libraries players never install themselves.
+     * A null [bundleConfiguration] selects the Forge jar-in-jar staging, which ForgeGradle lacks.
+     */
+    private fun bundleWorkspaceLibraryIfEnabled(
+        project: Project,
+        context: MultiloaderProjectContext,
+        catalog: VersionCatalog,
+        configuration: String,
+        bundleConfiguration: String?,
+        alias: String,
+        identity: ProjectIdentity,
+    ) {
+        if (!usesWorkspaceLibrary(project, context, identity, workspaceLibrary(alias))) return
+        if (isSelfDependency(alias, identity.modId)) return
+        val dependency = context.libraryOrNull(catalog, alias) ?: return
+        addOptional(project, context, catalog, configuration, alias, identity)
+        // Nest only the library itself; its published dependencies are loaders, APIs, and Minecraft libraries.
+        val bundle = bundleConfiguration ?: ForgeJarJarAdapter.configuration(project)
+        if (dependency is Provider<*>) {
+            @Suppress("UNCHECKED_CAST")
+            project.dependencies.addProvider<MinimalExternalModuleDependency, ExternalModuleDependency>(
+                bundle,
+                dependency as Provider<MinimalExternalModuleDependency>,
+            ) { isTransitive = false }
+        } else {
+            (project.dependencies.add(bundle, dependency) as? ExternalModuleDependency)?.isTransitive = false
+        }
+    }
+
+    private fun workspaceLibrary(alias: String): String =
+        when {
+            alias.startsWith("amber") -> "Amber"
+            alias.startsWith("konfig") -> "Konfig"
+            alias.startsWith("teakit-playerdriver") -> "TeaKitPlayerDriver"
+            else -> error("Unsupported workspace library alias: $alias")
+        }
 
     private fun addOptional(
         project: Project,

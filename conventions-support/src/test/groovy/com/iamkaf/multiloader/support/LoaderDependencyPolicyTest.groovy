@@ -138,6 +138,35 @@ class LoaderDependencyPolicyTest extends Specification {
         System.clearProperty('example.withKonfig')
     }
 
+    def "Forge nests the opted-in player driver without its dependencies"() {
+        given:
+        System.setProperty('example.withTeaKitPlayerDriver', 'true')
+        def project = javaProject()
+        def catalog = Mock(VersionCatalog)
+        catalog.findLibrary('teakit-playerdriver-forge') >> Optional.of(project.providers.provider {
+            project.dependencies.create('com.iamkaf.teakit:teakit-playerdriver-forge:1.0.0+26.2')
+        })
+
+        when:
+        LoaderDependencyPolicy.INSTANCE.addForgeLoaderLibraries(
+            project,
+            MultiloaderProjectContext.of(project),
+            catalog,
+            identity(MultiloaderProjectRole.FORGE),
+            '26.2',
+        )
+
+        then:
+        project.configurations.implementation.allDependencies*.name == ['teakit-playerdriver-forge']
+        def nested = project.configurations.multiloaderForgeJarJar.allDependencies
+        nested*.name == ['teakit-playerdriver-forge']
+        nested.every { !it.transitive }
+        project.tasks.named('stageForgeJarJar').isPresent()
+
+        cleanup:
+        System.clearProperty('example.withTeaKitPlayerDriver')
+    }
+
     def "modern Fabric adds C2ME to the ordinary runtime classpath when catalogued"() {
         given:
         def project = javaProject()

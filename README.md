@@ -164,7 +164,8 @@ Frequently used optional property groups include:
 - `mod.artifact`, the base of published artifact names when it differs from
   `mod.id`, which cannot contain hyphens (for example `teakit-playerdriver`)
 - `project.catalog-coordinate` and `project.build-java`
-- `<modId>.withAmber`, `<modId>.withKonfig`, and `<modId>.withTeaKit`
+- `<modId>.withAmber`, `<modId>.withKonfig`, `<modId>.withTeaKit`, and
+  `<modId>.withTeaKitPlayerDriver`
 - `dependencies.*` and `environments.*`
 - `translations.token`
 - `publish.*`
@@ -183,8 +184,13 @@ examplemod.withAmber=true
 examplemod.withKonfig=true
 ```
 
+The TeaKit player driver is not published on mod platforms, so
+`<modId>.withTeaKitPlayerDriver=true` also nests it in each loader jar. Fabric
+uses `include`, NeoForge uses `jarJar`, and Forge gets a generated
+`META-INF/jarjar/metadata.json`, because ForgeGradle has no jar-in-jar support.
+
 An explicit `false` switch overrides publication metadata. The shared version
-catalog only supplies coordinates. Its presence does not add either library to
+catalog only supplies coordinates. Its presence does not add any library to
 compile or runtime classpaths.
 
 ## Plugin reference
