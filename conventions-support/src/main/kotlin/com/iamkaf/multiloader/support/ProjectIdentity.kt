@@ -18,12 +18,14 @@ data class ProjectIdentity(
     val minecraftVersion: String,
     val javaVersion: Int,
     val role: MultiloaderProjectRole,
+    /** Base of published artifact names; `mod.artifact` when the mod id cannot be the Maven name, since mod ids forbid hyphens. */
+    val artifactBase: String = modId,
 ) {
     val loader: String?
         get() = role.loaderId?.id
 
     val archiveName: String
-        get() = "$modId-${role.artifactSuffix}"
+        get() = "$artifactBase-${role.artifactSuffix}"
 
     val implementationTitle: String
         get() = loader ?: role.artifactSuffix
@@ -45,6 +47,7 @@ data class ProjectIdentity(
                 minecraftVersion = context.requiredProperty("project.minecraft"),
                 javaVersion = context.requiredProperty("project.java").toInt(),
                 role = role,
+                artifactBase = context.optionalProperty("mod.artifact")?.takeUnless { it.isBlank() } ?: context.requiredProperty("mod.id"),
             )
     }
 }

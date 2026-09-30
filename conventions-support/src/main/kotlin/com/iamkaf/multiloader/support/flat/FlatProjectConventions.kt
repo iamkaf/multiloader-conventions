@@ -20,7 +20,7 @@ object FlatProjectConventions {
 
         RepositoryPolicy.configureProjectRepositories(project)
         configureCoordinates(project)
-        JavaProjectWiring.configureArchiveName(project, "${FlatProjectAccess.requiredProperty(project, "mod.id")}-${project.name}")
+        JavaProjectWiring.configureArchiveName(project, "${FlatProjectAccess.artifactBase(project)}-${project.name}")
         JavaProjectWiring.configureJavaBuild(
             project,
             FlatProjectAccess.requiredProperty(project, "project.java").toInt(),

@@ -179,6 +179,8 @@ object LoaderDependencyPolicy {
         val teaKitVersion = context.versionOrNull(catalog, "teakit")
         if (teaKitVersion.isNullOrBlank() || teaKitVersion == "null") return
         addOptional(project, context, catalog, configuration, "teakit-${loader.id}", identity)
+        // TeaKit requires its player driver library as a separate mod; catalogs without the alias add nothing.
+        addOptional(project, context, catalog, configuration, "teakit-playerdriver-${loader.id}", identity)
     }
 
     fun catalogModuleVersion(context: MultiloaderProjectContext, catalog: VersionCatalog, alias: String): String? =

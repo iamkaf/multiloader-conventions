@@ -37,7 +37,7 @@ object ConventionSupport {
     @JvmStatic
     fun configureArchiveNaming(project: Project) {
         project.extensions.configure(BasePluginExtension::class.java) {
-            archivesName.set("${requiredProperty(project, "mod.id")}-${project.name}")
+            archivesName.set("${FlatProjectAccess.artifactBase(project)}-${project.name}")
         }
     }
 

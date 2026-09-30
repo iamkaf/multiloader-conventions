@@ -73,6 +73,10 @@ object FlatProjectAccess {
     fun optionalProperty(project: Project, propertyName: String): String? =
         project.findProperty(propertyName)?.toString()
 
+    /** Base of published artifact names: `mod.artifact` when the mod id is not the wanted Maven name, since mod ids forbid hyphens. */
+    fun artifactBase(project: Project): String =
+        optionalProperty(project, "mod.artifact")?.takeUnless { it.isBlank() } ?: requiredProperty(project, "mod.id")
+
     fun isUnobfuscatedMinecraft(project: Project): Boolean {
         val minecraftVersion = optionalProperty(project, "project.minecraft")
         return minecraftVersion != null && VersionPolicy.useUnobfuscatedMinecraft(minecraftVersion)

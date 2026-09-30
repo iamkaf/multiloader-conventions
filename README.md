@@ -161,6 +161,8 @@ baseline.
 
 Frequently used optional property groups include:
 
+- `mod.artifact`, the base of published artifact names when it differs from
+  `mod.id`, which cannot contain hyphens (for example `teakit-playerdriver`)
 - `project.catalog-coordinate` and `project.build-java`
 - `<modId>.withAmber`, `<modId>.withKonfig`, and `<modId>.withTeaKit`
 - `dependencies.*` and `environments.*`
