@@ -15,7 +15,7 @@ c2me-fabric = "null"
 c2me-neoforge = "null"
 
 # Forge
-forge = "1.17.1-37.0.0"
+forge = "1.17.1-37.1.1"
 
 # Libraries
 mixin = "0.8.5"
