@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Updated Minecraft 1.21.11 through 26.3 to TeaKit `0.18.0`, which ships the player driver, and Amber `11.5.0`.
 - Updated the Minecraft 26.2 catalog to Fabric API `0.152.1+26.2`.
 - Updated loader and helper coordinates to support the full Stonecutter migration and TeaKit-backed validation flow.
 - Aligned Konfig coordinates with `0.5.0` and TeaKit coordinates with published releases across all covered Minecraft lines.

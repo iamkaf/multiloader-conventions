@@ -29,15 +29,13 @@ forge-config-api-port-fabric = "26.1.3"
 forge-config-api-port-forge = "26.1.3"
 
 # Amber
-amber = "11.4.0+26.1.1"
+amber = "11.5.0+26.1.1"
 
 # Konfig
 konfig = "0.9.0+26.1.1"
 
 # TeaKit
-teakit = "0.16.0+26.1.1"
-# Unpublished until TeaKit 0.18.0 ships; then point the aliases at the teakit version and drop this key.
-teakit-playerdriver = "0.18.0+26.1.1"
+teakit = "0.18.0+26.1.1"
 
 # Bonded Compatibility Fixtures
 basic-weapons-fabric = "BONRhyAx"
@@ -123,10 +121,10 @@ teakit = { group = "com.iamkaf.teakit", name = "teakit-common", version.ref = "t
 teakit-fabric = { group = "com.iamkaf.teakit", name = "teakit-fabric", version.ref = "teakit" }
 teakit-neoforge = { group = "com.iamkaf.teakit", name = "teakit-neoforge", version.ref = "teakit" }
 teakit-forge = { group = "com.iamkaf.teakit", name = "teakit-forge", version.ref = "teakit" }
-teakit-playerdriver = { group = "com.iamkaf.teakit", name = "teakit-playerdriver-common", version.ref = "teakit-playerdriver" }
-teakit-playerdriver-fabric = { group = "com.iamkaf.teakit", name = "teakit-playerdriver-fabric", version.ref = "teakit-playerdriver" }
-teakit-playerdriver-neoforge = { group = "com.iamkaf.teakit", name = "teakit-playerdriver-neoforge", version.ref = "teakit-playerdriver" }
-teakit-playerdriver-forge = { group = "com.iamkaf.teakit", name = "teakit-playerdriver-forge", version.ref = "teakit-playerdriver" }
+teakit-playerdriver = { group = "com.iamkaf.teakit", name = "teakit-playerdriver-common", version.ref = "teakit" }
+teakit-playerdriver-fabric = { group = "com.iamkaf.teakit", name = "teakit-playerdriver-fabric", version.ref = "teakit" }
+teakit-playerdriver-neoforge = { group = "com.iamkaf.teakit", name = "teakit-playerdriver-neoforge", version.ref = "teakit" }
+teakit-playerdriver-forge = { group = "com.iamkaf.teakit", name = "teakit-playerdriver-forge", version.ref = "teakit" }
 
 # Bonded Compatibility Fixtures
 basic-weapons-fabric = { group = "maven.modrinth", name = "basicweapons", version.ref = "basic-weapons-fabric" }
