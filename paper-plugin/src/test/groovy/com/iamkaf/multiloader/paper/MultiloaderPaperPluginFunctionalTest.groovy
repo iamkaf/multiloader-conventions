@@ -70,6 +70,59 @@ tasks.register("printCompileOnly") {
         failure.output.contains('Minecraft 26.3 is not listed in plugin.minecraft-versions')
     }
 
+    def "publishes the plugin jar to Modrinth for every server and listed line"() {
+        given:
+        writeProject(sha256(SERVER_JAR))
+        file('gradle.properties') << """
+plugin.minecraft-versions=1.21.11,26.3
+publish.modrinth.id=demo
+publish.dry-run=true
+"""
+        file('src/main/resources/plugin.yml').text = "name: Demo\nversion: '\${version}'\n"
+        file('changelog.md').text = "# Changelog\n\n## 1.2.3\n\n### Added\n\n- First release.\n\n## Types of changes\n"
+
+        when:
+        def result = runner('publishModrinth').build()
+
+        then:
+        result.task(':publishModrinthPaper').outcome == TaskOutcome.SUCCESS
+        def payload = result.output.replaceAll(/\s/, '')
+        payload.contains('"loaders":["paper","purpur","folia","spigot"]')
+        payload.contains('"game_versions":["1.21.11","26.3"]')
+        payload.contains('"name":"demo-1.2.3"')
+    }
+
+    def "writes a publishing graph with one paper loader covering every listed line"() {
+        given:
+        writeProject(sha256(SERVER_JAR))
+        file('gradle.properties') << "plugin.minecraft-versions=1.21.11,26.3\npublish.modrinth.id=demo\n"
+
+        when:
+        runner('writeMultiloaderGraph').build()
+        def graph = new groovy.json.JsonSlurper().parse(file('build/reports/multiloader/graph.json'))
+
+        then:
+        graph.versions.size() == 1
+        graph.versions[0].name == '1.21.11'
+        graph.versions[0].gameVersions == ['1.21.11', '26.3']
+        graph.versions[0].loaders[0].name == 'paper'
+        graph.versions[0].loaders[0].artifactPath == 'build/libs/demo-1.2.3.jar'
+        // CurseForge has no project id here, so only Modrinth is offered.
+        graph.versions[0].loaders[0].platformPublishTasks == [modrinth: ':publishModrinthPaper']
+    }
+
+    def "refuses to publish a jar without plugin.yml"() {
+        given:
+        writeProject(sha256(SERVER_JAR))
+        file('gradle.properties') << "publish.modrinth.id=demo\npublish.dry-run=true\n"
+
+        when:
+        def failure = runner('publishModrinth').buildAndFail()
+
+        then:
+        failure.output.contains('no plugin.yml or paper-plugin.yml file was found')
+    }
+
     private void writeProject(String pinnedSha256, String extraBuildScript = '') {
         file('gradle.properties').text = """
 project.group=com.example

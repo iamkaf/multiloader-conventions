@@ -7,6 +7,8 @@ import java.nio.file.Files
 import java.util.Locale
 
 object MultiloaderPublishRules {
+    private val SERVER_PLUGIN_LOADERS = setOf("bukkit", "spigot", "paper", "purpur", "folia")
+
     @JvmStatic
     fun requireNonEmpty(label: String, items: Collection<*>?) {
         if (items == null || items.isEmpty()) {
@@ -27,6 +29,8 @@ object MultiloaderPublishRules {
             val forgeToml = fs.getPath("META-INF/mods.toml")
             val neoforgeToml = fs.getPath("META-INF/neoforge.mods.toml")
             val forgeMc = fs.getPath("mcmod.info")
+            val pluginYml = fs.getPath("plugin.yml")
+            val paperPluginYml = fs.getPath("paper-plugin.yml")
 
             if ((loaders.contains("forge") || loaders.contains("neoforge")) &&
                 !Files.exists(neoforgeToml) &&
@@ -40,6 +44,10 @@ object MultiloaderPublishRules {
 
             if (loaders.contains("fabric") && !Files.exists(fabricJson)) {
                 throw IllegalStateException("[Publishing] File marked as fabric, but no fabric.mod.json file was found")
+            }
+
+            if (loaders.any { it in SERVER_PLUGIN_LOADERS } && !Files.exists(pluginYml) && !Files.exists(paperPluginYml)) {
+                throw IllegalStateException("[Publishing] File marked as a server plugin, but no plugin.yml or paper-plugin.yml file was found")
             }
 
             if (loaders.contains("quilt") && !Files.exists(quiltJson) && !Files.exists(fabricJson)) {

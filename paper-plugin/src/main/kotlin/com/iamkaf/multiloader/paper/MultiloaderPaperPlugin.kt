@@ -1,8 +1,11 @@
 package com.iamkaf.multiloader.paper
 
+import com.iamkaf.multiloader.publishing.MultiloaderPublishingExtension
+import com.iamkaf.multiloader.publishing.MultiloaderPublishingPlugin
 import com.iamkaf.multiloader.support.ConsumerDslPolicy
 import com.iamkaf.multiloader.support.RepositoryPolicy
 import com.iamkaf.multiloader.support.VersionPolicy
+import groovy.json.JsonOutput
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -63,6 +66,79 @@ class MultiloaderPaperPlugin : Plugin<Project> {
         }
 
         registerRunServer(project, floor, libs, catalogs)
+        val gameVersions = (project.providers.gradleProperty("publish.game-versions").orNull
+            ?: project.providers.gradleProperty("plugin.minecraft-versions").orNull
+            ?: floor)
+            .split(",").map(String::trim).filter(String::isNotEmpty)
+        configurePublishing(project, gameVersions)
+        registerGraph(project, floor, gameVersions)
+    }
+
+    /** One `paper` publication: the plugin jar, tagged for every server that runs it and every listed line. */
+    private fun configurePublishing(project: Project, gameVersions: List<String>) {
+        project.pluginManager.apply(MultiloaderPublishingPlugin::class.java)
+        project.extensions.configure(MultiloaderPublishingExtension::class.java) {
+            publication("paper") {
+                getProjectPath().set(":")
+                artifactTask(JavaPlugin.JAR_TASK_NAME)
+                // Plugins built on these conventions are region-safe and Spigot-compatible, so one jar serves all four.
+                getLoaders().set(listOf("paper", "purpur", "folia", "spigot"))
+                getGameVersions().set(gameVersions)
+            }
+        }
+    }
+
+    /**
+     * Writes the same `graph.json` contract as mod repositories, so release tooling can plan plugin releases. The one
+     * jar is a single `paper` loader on a version named after the floor line, and `gameVersions` lists every line
+     * the upload covers. A platform task is listed only when its project id is configured.
+     */
+    private fun registerGraph(project: Project, floor: String, gameVersions: List<String>) {
+        val graphFile = project.layout.buildDirectory.file("reports/multiloader/graph.json")
+        val jar = project.tasks.named(JavaPlugin.JAR_TASK_NAME, Jar::class.java)
+        project.tasks.register("writeMultiloaderGraph") {
+            group = "help"
+            description = "Writes this plugin's publishing graph as JSON."
+            outputs.file(graphFile)
+            doLast {
+                val platformTasks = linkedMapOf(
+                    "modrinth" to ":publishModrinthPaper".takeIf { project.hasProperty("publish.modrinth.id") },
+                    "curseforge" to ":publishCurseforgePaper".takeIf { project.hasProperty("publish.curseforge.id") },
+                ).filterValues { it != null }
+                val graph = linkedMapOf(
+                    "schemaVersion" to 2,
+                    "project" to linkedMapOf(
+                        "name" to project.name,
+                        "group" to project.group.toString(),
+                        "version" to project.version.toString(),
+                    ),
+                    "conventions" to linkedMapOf("version" to project.findProperty("project.plugins")?.toString()),
+                    "versions" to listOf(
+                        linkedMapOf(
+                            "name" to floor,
+                            "projectVersion" to project.version.toString(),
+                            "gameVersions" to gameVersions,
+                            "enabledLoaders" to listOf("paper"),
+                            "loaders" to listOf(
+                                linkedMapOf(
+                                    "name" to "paper",
+                                    "enabled" to true,
+                                    "artifactPath" to project.relativePath(jar.get().archiveFile.get().asFile),
+                                    "mavenPublishTasks" to emptyList<String>(),
+                                    "platformPublishTasks" to platformTasks,
+                                ),
+                            ),
+                            // Plugins depend on no Kaf library releases.
+                            "dependencies" to emptyList<Any>(),
+                        ),
+                    ),
+                )
+                val outputFile = graphFile.get().asFile
+                outputFile.parentFile.mkdirs()
+                outputFile.writeText(JsonOutput.prettyPrint(JsonOutput.toJson(graph)) + System.lineSeparator())
+                project.logger.lifecycle("Wrote ${project.relativePath(outputFile)}")
+            }
+        }
     }
 
     private fun registerRunServer(project: Project, floor: String, libs: VersionCatalog, catalogs: VersionCatalogsExtension) {

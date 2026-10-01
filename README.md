@@ -205,7 +205,7 @@ compile or runtime classpaths.
 | `com.iamkaf.multiloader.forge` | Forge project | Forge toolchain selection, dependencies, runs, and source sharing |
 | `com.iamkaf.multiloader.neoforge` | NeoForge project | NeoForge toolchain selection, dependencies, runs, and datagen |
 | `com.iamkaf.multiloader.translations` | root project | Remote translation downloads |
-| `com.iamkaf.multiloader.paper` | Paper plugin root project | Paper API compilation, `plugin.yml` expansion, and pinned `runServer` |
+| `com.iamkaf.multiloader.paper` | Paper plugin root project | Paper API compilation, `plugin.yml` expansion, pinned `runServer`, and Modrinth publishing |
 | `com.iamkaf.multiloader.publishing` | root project | Modrinth and CurseForge release planning and uploads |
 
 `com.iamkaf.multiloader.core` supplies shared plugin infrastructure and is not
@@ -287,6 +287,14 @@ line's Paper server build and SHA-256.
 
 `runServer` downloads the pinned server into the Gradle user home, refuses a jar whose
 SHA-256 differs from the catalog, and runs it in `run/<minecraft>/` with that line's Java.
+
+The Paper plugin also applies the publishing plugin with one `paper` publication. That
+publication is the plugin jar, tagged for the `paper`, `purpur`, `folia`, and `spigot` loaders.
+It lists every `plugin.minecraft-versions` line unless `publish.game-versions` overrides
+the list. Set `publish.modrinth.id`, keep a `changelog.md`, and run `./gradlew
+publishModrinth` with `MODRINTH_TOKEN`. Use `-Ppublish.dry-run=true` to print the payload
+without uploading it. A jar without `plugin.yml` or `paper-plugin.yml` is refused. `writeMultiloaderGraph` writes the same
+`graph.json` as mod repositories, so release tooling can plan a plugin release like a mod's.
 
 ## Publishing
 
