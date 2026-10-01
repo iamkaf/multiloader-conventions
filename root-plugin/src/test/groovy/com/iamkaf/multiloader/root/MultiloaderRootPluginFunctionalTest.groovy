@@ -20,6 +20,17 @@ include("common:26.1.2", "common:26.2")
 include("fabric:26.1.2", "fabric:26.2")
 include("forge:26.2")
 include("neoforge:26.1.2", "neoforge:26.2")
+
+dependencyResolutionManagement {
+    versionCatalogs {
+        create("libsMc262") {
+            version("amber", "11.6.0+26.2")
+            library("amber", "com.iamkaf.amber", "amber-common").versionRef("amber")
+            library("amber-fabric", "com.iamkaf.amber", "amber-fabric").versionRef("amber")
+            library("forge-config-api-port", "fuzs.forgeconfigapiport", "forgeconfigapiport-common").version("21.0.0")
+        }
+    }
+}
 '''.stripIndent()
 
         new File(testProjectDir, 'build.gradle.kts').text = '''
@@ -68,6 +79,7 @@ tasks = [":forge:26.2:runClient"]
 
         writeVersion('26.1.2', 'fabric,neoforge')
         writeVersion('26.2', 'fabric,forge,neoforge')
+        new File(testProjectDir, 'versions/26.2/gradle.properties') << 'dependencies.modrinth.required=amber,forge-config-api-port\n'
 
         createProject('common/26.1.2', 'graphmod-common', '26.1.2', '25', false)
         createProject('common/26.2', 'graphmod-common', '26.2', '25', false)
@@ -95,12 +107,16 @@ tasks = [":forge:26.2:runClient"]
 
         then:
         result.task(':printMultiloaderGraph').outcome == TaskOutcome.SUCCESS
-        graph.schemaVersion == 1
+        graph.schemaVersion == 2
         graph.mod.id == 'graphmod'
         graph.mod.name == 'Graph Mod'
         graph.conventions.version == '3.0-SNAPSHOT'
 
         version2612.enabledLoaders == ['fabric', 'neoforge']
+        version2612.dependencies == []
+        version262.dependencies == [
+            [modrinth: 'amber', group: 'com.iamkaf.amber', version: '11.6.0+26.2', artifacts: [fabric: 'amber-fabric']],
+        ]
         version2612.horizontal == [
             enabled: false,
             planned: false,
