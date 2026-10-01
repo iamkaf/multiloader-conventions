@@ -51,6 +51,8 @@ class MultiloaderPaperPlugin : Plugin<Project> {
             GradleException("The Minecraft $floor catalog has no paper-api entry, so Paper cannot be targeted there.")
         }
         project.dependencies.addProvider(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME, paperApi)
+        // Unit tests that touch Bukkit types need the API at runtime. The server provides it in production.
+        project.dependencies.addProvider(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME, paperApi)
 
         val version = project.version.toString()
         project.tasks.named(JavaPlugin.PROCESS_RESOURCES_TASK_NAME, ProcessResources::class.java) {
