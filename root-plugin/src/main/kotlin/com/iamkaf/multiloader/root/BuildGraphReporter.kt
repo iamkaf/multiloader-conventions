@@ -5,6 +5,8 @@ import com.iamkaf.multiloader.support.VersionPolicy
 import groovy.json.JsonOutput
 import org.gradle.api.Project
 import org.gradle.api.UnknownTaskException
+import org.gradle.api.artifacts.VersionCatalog
+import org.gradle.api.artifacts.VersionCatalogsExtension
 import java.io.File
 import java.util.Properties
 
@@ -43,7 +45,7 @@ object BuildGraphReporter {
         val teaKitNodes = TeaKitNodeReader.read(project)
 
         return linkedMapOf(
-            "schemaVersion" to 1,
+            "schemaVersion" to 2,
             "project" to linkedMapOf(
                 "name" to project.name,
                 "group" to project.group?.toString(),
@@ -104,12 +106,47 @@ object BuildGraphReporter {
             "catalog" to catalogName(minecraftVersion),
             "enabledLoaders" to enabledLoaders,
             "ranges" to ranges,
+            "dependencies" to workspaceDependencies(project, versionDir, props),
             "horizontal" to horizontalGraph(project, minecraftVersion, enabledLoaders, props),
             "common" to commonGraph(project, minecraftVersion),
             "loaders" to knownLoaders.map { loader ->
                 loaderGraph(project, minecraftVersion, props, loader, loader in enabledLoaders, teaKitNodes)
             },
         )
+    }
+
+    /**
+     * Kaf libraries this version requires on mod platforms, at the versions its resolved catalog pins.
+     * Publishers check these against Modrinth and Kaf Maven, since a catalog published only to Maven
+     * local can pin a release that players cannot download.
+     */
+    private fun workspaceDependencies(project: Project, versionDir: File?, props: Properties): List<Map<String, Any?>> {
+        val catalog = versionCatalog(project, versionDir) ?: return emptyList()
+        val required = (props.getProperty("dependencies.modrinth.required")
+            ?: optionalProjectProperty(project, "dependencies.modrinth.required"))
+            .orEmpty()
+            .split(",")
+            .map(String::trim)
+            .filter(String::isNotEmpty)
+        return required.mapNotNull { slug ->
+            val library = catalog.findLibrary(slug).orElse(null)?.get() ?: return@mapNotNull null
+            val version = library.versionConstraint.requiredVersion
+            if (!library.module.group.startsWith("com.iamkaf.") || version.isEmpty()) return@mapNotNull null
+            linkedMapOf(
+                "modrinth" to slug,
+                "group" to library.module.group,
+                "version" to version,
+                "artifacts" to knownLoaders.mapNotNull { loader ->
+                    catalog.findLibrary("$slug-$loader").orElse(null)?.get()?.let { loader to it.module.name }
+                }.toMap(),
+            )
+        }
+    }
+
+    private fun versionCatalog(project: Project, versionDir: File?): VersionCatalog? {
+        val catalogs = project.extensions.findByType(VersionCatalogsExtension::class.java) ?: return null
+        val name = versionDir?.let { VersionPolicy.catalogName(it.name) } ?: "libs"
+        return catalogs.find(name).orElse(null)
     }
 
     private fun horizontalGraph(
