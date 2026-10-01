@@ -205,6 +205,7 @@ compile or runtime classpaths.
 | `com.iamkaf.multiloader.forge` | Forge project | Forge toolchain selection, dependencies, runs, and source sharing |
 | `com.iamkaf.multiloader.neoforge` | NeoForge project | NeoForge toolchain selection, dependencies, runs, and datagen |
 | `com.iamkaf.multiloader.translations` | root project | Remote translation downloads |
+| `com.iamkaf.multiloader.paper` | Paper plugin root project | Paper API compilation, `plugin.yml` expansion, and pinned `runServer` |
 | `com.iamkaf.multiloader.publishing` | root project | Modrinth and CurseForge release planning and uploads |
 
 `com.iamkaf.multiloader.core` supplies shared plugin infrastructure and is not
@@ -259,6 +260,33 @@ Download translations with:
 
 The plugin downloads approved non-`en_us` locale files. It leaves `en_us` and
 unrelated local language files under the consumer's control.
+
+## Paper plugins
+
+A Paper plugin repository is one flat project. It applies the settings plugin and
+`com.iamkaf.multiloader.paper` at the root:
+
+```properties
+project.group=com.example
+project.version=1.0.0
+project.plugins=3.0-SNAPSHOT
+project.minecraft=1.21.11
+project.java=21
+plugin.minecraft-versions=1.21.11,26.1.2,26.2,26.3
+```
+
+The jar compiles against the `paper-api` of `project.minecraft`, the oldest supported
+line, and `${version}` is expanded in `plugin.yml` and `paper-plugin.yml`. The settings
+plugin loads one catalog per `plugin.minecraft-versions` entry. Each catalog pins that
+line's Paper server build and SHA-256.
+
+```bash
+./gradlew runServer                         # the project.minecraft line
+./gradlew runServer -Ppaper.minecraft=26.3  # another listed line
+```
+
+`runServer` downloads the pinned server into the Gradle user home, refuses a jar whose
+SHA-256 differs from the catalog, and runs it in `run/<minecraft>/` with that line's Java.
 
 ## Publishing
 

@@ -222,6 +222,27 @@ plugins {
         result.output.contains('gradle/legacy-loader-glue.gradle')
     }
 
+    def "a flat server plugin loads one catalog per listed Minecraft line"() {
+        given:
+        new File(testProjectDir, 'versions').deleteDir()
+        new File(testProjectDir, 'gradle.properties') << '''
+project.minecraft=26.2
+plugin.minecraft-versions=26.2, 26.3
+'''.stripIndent()
+        new File(testProjectDir, 'build.gradle.kts') << '''
+tasks.register("printCatalogs") {
+    val names = project.extensions.getByType<VersionCatalogsExtension>().catalogNames.sorted()
+    doLast { println("CATALOGS " + names.joinToString()) }
+}
+'''.stripIndent()
+
+        when:
+        def result = runner('printCatalogs').build()
+
+        then:
+        result.output.contains('CATALOGS libs, libsMc263')
+    }
+
     private void writeVersion(String version, String loaders) {
         def file = new File(testProjectDir, "versions/${version}/gradle.properties")
         file.parentFile.mkdirs()

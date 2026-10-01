@@ -37,6 +37,11 @@ konfig = "0.9.0+26.3"
 # TeaKit
 teakit = "0.18.0+26.3"
 
+# Paper (server plugins compile against paper-api; runs use the pinned server build)
+paper-api = "26.3.build.140-beta"
+paper-build = "140"
+paper-sha256 = "98aabc113a80b9b5e183475e839a17cf99c39c915a1f46b8f35a5e89fd5de0f1"
+
 # Bonded Compatibility Fixtures
 basic-weapons-fabric = "null"
 basic-weapons-neoforge = "null"
@@ -121,6 +126,9 @@ teakit-playerdriver = { group = "com.iamkaf.teakit", name = "teakit-playerdriver
 teakit-playerdriver-fabric = { group = "com.iamkaf.teakit", name = "teakit-playerdriver-fabric", version.ref = "teakit" }
 teakit-playerdriver-neoforge = { group = "com.iamkaf.teakit", name = "teakit-playerdriver-neoforge", version.ref = "teakit" }
 teakit-playerdriver-forge = { group = "com.iamkaf.teakit", name = "teakit-playerdriver-forge", version.ref = "teakit" }
+
+# Paper
+paper-api = { group = "io.papermc.paper", name = "paper-api", version.ref = "paper-api" }
 
 # Bonded Compatibility Fixtures
 basic-weapons-fabric = { group = "maven.modrinth", name = "basicweapons", version.ref = "basic-weapons-fabric" }

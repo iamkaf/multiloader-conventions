@@ -63,6 +63,7 @@ class MultiloaderSettingsPlugin : Plugin<Settings> {
                 "com.iamkaf.multiloader.fabric",
                 "com.iamkaf.multiloader.forge",
                 "com.iamkaf.multiloader.neoforge",
+                "com.iamkaf.multiloader.paper",
                 "com.iamkaf.multiloader.publishing",
                 "com.iamkaf.multiloader.translations",
                 "com.iamkaf.multiloader.root",
@@ -88,7 +89,21 @@ class MultiloaderSettingsPlugin : Plugin<Settings> {
         settings.dependencyResolutionManagement.versionCatalogs.create("libs") {
             from(catalogCoordinate)
         }
+
+        // A server plugin ships one jar for several Minecraft lines. Each line's catalog pins its server build.
+        pluginMinecraftVersions(settings).filter { it != mcVersion }.forEach { version ->
+            settings.dependencyResolutionManagement.versionCatalogs.create(VersionPolicy.catalogName(version)) {
+                from(VersionPolicy.catalogCoordinate(version))
+            }
+        }
     }
+
+    private fun pluginMinecraftVersions(settings: Settings): List<String> =
+        settings.providers.gradleProperty("plugin.minecraft-versions").orNull
+            ?.split(",")
+            ?.map(String::trim)
+            ?.filter(String::isNotEmpty)
+            .orEmpty()
 
     private fun configureStonecutterDependencyResolution(settings: Settings, versionDirs: List<File>) {
         SettingsRepositoryPolicy.configureDependencyRepositories(settings)
