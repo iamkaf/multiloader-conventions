@@ -9,6 +9,8 @@ fabric-loom-plugin = "1.17-SNAPSHOT"
 fabric-loom = "1.17.12"
 neoforge-moddev = "2.0.147"
 forgegradle = "7.0.28"
+# Renamer Gradle 1.1.1 runs Renamer 2.2.1, which Forge's Maven does not serve.
+renamer-gradle = "1.1.0"
 neogradle-userdev = "7.1.38"
 
 [libraries]
@@ -18,6 +20,7 @@ fabric-loom = { group = "net.fabricmc", name = "fabric-loom", version.ref = "fab
 neoforge-moddev-plugin = { group = "net.neoforged.moddev", name = "net.neoforged.moddev.gradle.plugin", version.ref = "neoforge-moddev" }
 neoforge-legacyforge-plugin = { group = "net.neoforged.moddev.legacyforge", name = "net.neoforged.moddev.legacyforge.gradle.plugin", version.ref = "neoforge-moddev" }
 forgegradle = { group = "net.minecraftforge", name = "forgegradle", version.ref = "forgegradle" }
+renamer-gradle = { group = "net.minecraftforge", name = "renamer-gradle", version.ref = "renamer-gradle" }
 neogradle-userdev = { group = "net.neoforged.gradle", name = "userdev", version.ref = "neogradle-userdev" }
 
 [plugins]

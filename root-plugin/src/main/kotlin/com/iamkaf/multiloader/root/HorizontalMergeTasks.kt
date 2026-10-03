@@ -107,6 +107,20 @@ object HorizontalMergeTasks {
             )
         }
 
+        // Configure-on-demand leaves other projects unconfigured, so tasks they register while configuring,
+        // such as the Forge 1.20.2-1.20.4 reobfJar, do not exist yet.
+        val unconfigured = configuredLoaders.mapNotNull { loader ->
+            root.findProject(":$loader:${versionDir.name}")?.takeIf {
+                !it.state.executed && findArchiveTaskOrNull(it, archiveStrategy(minecraftVersion, loader)) == null
+            }
+        }
+        if (unconfigured.isNotEmpty()) {
+            root.logger.lifecycle(
+                "[Horizontal Merge] Skipping $minecraftVersion because ${unconfigured.joinToString { it.path }} is not configured.",
+            )
+            return null
+        }
+
         val archives = configuredLoaders.associateWith { loader ->
             resolveArchive(root, versionDir.name, minecraftVersion, loader)
         }
@@ -125,12 +139,7 @@ object HorizontalMergeTasks {
     ): LoaderArchive {
         val target = root.findProject(":$loader:$projectVersionName")
             ?: throw GradleException("Missing horizontal merge project :$loader:$projectVersionName")
-        val strategy = when (loader) {
-            "fabric" -> VersionPolicy.fabricPublicationArtifact(minecraftVersion)
-            "forge" -> VersionPolicy.forgePublicationArtifact()
-            "neoforge" -> VersionPolicy.neoForgePublicationArtifact()
-            else -> throw GradleException("Unknown horizontal merge loader '$loader'")
-        }
+        val strategy = archiveStrategy(minecraftVersion, loader)
         val archiveTask = findArchiveTask(target, strategy)
         // Some modern Forge projects produce the distributable archive directly from `jar`
         // and do not register ForgeGradle's historical `reobfJar` lifecycle task. The archive
@@ -146,11 +155,20 @@ object HorizontalMergeTasks {
         )
     }
 
-    private fun findArchiveTask(project: Project, strategy: PublicationArtifactStrategy): Task {
-        project.tasks.findByName(strategy.artifactTask)?.let { return it }
-        strategy.fallbackArtifactTask?.let { fallback ->
-            project.tasks.findByName(fallback)?.let { return it }
+    private fun archiveStrategy(minecraftVersion: String, loader: String): PublicationArtifactStrategy =
+        when (loader) {
+            "fabric" -> VersionPolicy.fabricPublicationArtifact(minecraftVersion)
+            "forge" -> VersionPolicy.forgePublicationArtifact(minecraftVersion)
+            "neoforge" -> VersionPolicy.neoForgePublicationArtifact()
+            else -> throw GradleException("Unknown horizontal merge loader '$loader'")
         }
+
+    private fun findArchiveTaskOrNull(project: Project, strategy: PublicationArtifactStrategy): Task? =
+        project.tasks.findByName(strategy.artifactTask)
+            ?: strategy.fallbackArtifactTask?.let(project.tasks::findByName)
+
+    private fun findArchiveTask(project: Project, strategy: PublicationArtifactStrategy): Task {
+        findArchiveTaskOrNull(project, strategy)?.let { return it }
         throw GradleException(
             "Missing archive task for ${project.path} " +
                 "(preferred=${strategy.artifactTask}, fallback=${strategy.fallbackArtifactTask})",

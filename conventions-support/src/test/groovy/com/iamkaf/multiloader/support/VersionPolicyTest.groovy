@@ -122,6 +122,22 @@ class VersionPolicyTest extends Specification {
     }
 
     @Unroll
+    def "Forge #version releases the #strategy artifact"() {
+        expect:
+        VersionPolicy.INSTANCE.usesForgeGradleSrgRemap(version) == (strategy == PublicationArtifactStrategy.FORGE_SRG_JAR)
+        VersionPolicy.INSTANCE.forgePublicationArtifact(version) == strategy
+
+        where:
+        version  | strategy
+        '1.20.1' | PublicationArtifactStrategy.FORGE_REOBF_JAR
+        '1.20.2' | PublicationArtifactStrategy.FORGE_SRG_JAR
+        '1.20.3' | PublicationArtifactStrategy.FORGE_SRG_JAR
+        '1.20.4' | PublicationArtifactStrategy.FORGE_SRG_JAR
+        '1.20.6' | PublicationArtifactStrategy.FORGE_REOBF_JAR
+        '26.2'   | PublicationArtifactStrategy.FORGE_REOBF_JAR
+    }
+
+    @Unroll
     def "#version maps resource pack expansion defaults"() {
         expect:
         VersionPolicy.INSTANCE.resourcePackFormat(version) == format

@@ -24,7 +24,7 @@ object RootPublicationDefaults {
                 publication.getProjectPath().set(":$loaderId:$minecraftVersion")
                 val artifact = when (loaderId) {
                     "fabric" -> VersionPolicy.fabricPublicationArtifact(minecraftVersion)
-                    "forge" -> VersionPolicy.forgePublicationArtifact()
+                    "forge" -> VersionPolicy.forgePublicationArtifact(minecraftVersion)
                     else -> VersionPolicy.neoForgePublicationArtifact()
                 }
                 publication.getArtifactTask().set(artifact.artifactTask)

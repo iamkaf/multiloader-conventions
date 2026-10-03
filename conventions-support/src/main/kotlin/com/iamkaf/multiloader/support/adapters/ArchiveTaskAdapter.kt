@@ -4,6 +4,7 @@ import com.iamkaf.multiloader.support.GroovyGradleDsl
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.file.RegularFile
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.bundling.AbstractArchiveTask
 
@@ -13,12 +14,18 @@ object ArchiveTaskAdapter {
             return task.archiveFile
         }
 
-        val hasArchiveFile = (GroovyGradleDsl.invoke(task, "hasProperty", "archiveFile") as? Boolean) == true
-        if (!hasArchiveFile) {
+        // Renamer Gradle's RenameJar, the Forge 1.20.2-1.20.4 reobfJar, writes its jar to `output`.
+        val output = if (hasProperty(task, "output")) GroovyGradleDsl.get(task, "output") as? RegularFileProperty else null
+        if (output != null) return output
+
+        if (!hasProperty(task, "archiveFile")) {
             throw IllegalStateException("[Publishing] Task ${project.path}:${task.name} does not expose archiveFile")
         }
 
         @Suppress("UNCHECKED_CAST")
         return GroovyGradleDsl.invoke(task, "property", "archiveFile") as Provider<RegularFile>
     }
+
+    private fun hasProperty(task: Task, property: String): Boolean =
+        (GroovyGradleDsl.invoke(task, "hasProperty", property) as? Boolean) == true
 }

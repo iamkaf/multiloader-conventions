@@ -19,6 +19,7 @@ java {
 dependencies {
     implementation(localGroovy())
     implementation(buildTools.forgegradle)
+    implementation(buildTools.renamer.gradle)
     implementation(buildTools.neoforge.legacyforge.plugin)
     implementation(project(":core-plugin"))
     implementation(project(":conventions-support"))

@@ -53,6 +53,7 @@ enum class PublicationArtifactStrategy(val artifactTask: String, val fallbackArt
     JAR("jar", null, emptyList()),
     FABRIC_REMAP_JAR("remapJar", "jar", emptyList()),
     FORGE_REOBF_JAR("jar", null, listOf("reobfJar")),
+    FORGE_SRG_JAR("reobfJar", null, emptyList()),
 }
 
 data class VersionMetadata(
@@ -278,7 +279,15 @@ object VersionPolicy {
         if (useUnobfuscatedMinecraft(version)) PublicationArtifactStrategy.JAR
         else PublicationArtifactStrategy.FABRIC_REMAP_JAR
 
-    fun forgePublicationArtifact(): PublicationArtifactStrategy = PublicationArtifactStrategy.FORGE_REOBF_JAR
+    fun forgePublicationArtifact(version: String?): PublicationArtifactStrategy =
+        if (version != null && usesForgeGradleSrgRemap(version)) PublicationArtifactStrategy.FORGE_SRG_JAR
+        else PublicationArtifactStrategy.FORGE_REOBF_JAR
+
+    /**
+     * Forge 1.20.2 through 1.20.4 builds with ForgeGradle 7 against Mojang names, but production Forge on those
+     * lines still runs SRG member names, so the released jar needs a Mojang-to-SRG remap.
+     */
+    fun usesForgeGradleSrgRemap(version: String): Boolean = version in setOf("1.20.2", "1.20.3", "1.20.4")
 
     fun neoForgePublicationArtifact(): PublicationArtifactStrategy = PublicationArtifactStrategy.JAR
 

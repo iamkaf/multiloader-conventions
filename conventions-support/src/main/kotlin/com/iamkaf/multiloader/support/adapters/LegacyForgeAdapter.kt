@@ -132,20 +132,7 @@ object LegacyForgeAdapter {
             options.compilerArgs.add("-AMSG_NO_OBFDATA_FOR_TARGET=warning")
         }
 
-        project.tasks.named("processResources", ProcessResources::class.java) {
-            inputs.property("mixinRefmap", refmap)
-            filesMatching(mixinConfigs) {
-                if (!MixinRefmapInjection.declaresRefmap(file.readText())) {
-                    var injected = false
-                    filter { line ->
-                        if (injected) return@filter line
-                        val updated = MixinRefmapInjection.injectIntoLine(line, refmap) ?: return@filter line
-                        injected = true
-                        updated
-                    }
-                }
-            }
-        }
+        MixinRefmapInjection.nameRefmapInConfigs(project, mixinConfigs, refmap)
     }
 
     private fun configureNamedRun(runs: Any, name: String, action: (Any) -> Unit = {}) {
@@ -156,8 +143,26 @@ object LegacyForgeAdapter {
     }
 }
 
-internal object MixinRefmapInjection {
+object MixinRefmapInjection {
     private val refmapKey = Regex("\"refmap\"\\s*:")
+
+    /** Names [refmap] in each mixin config that does not already name one. */
+    fun nameRefmapInConfigs(project: Project, mixinConfigs: List<String>, refmap: String) {
+        project.tasks.named("processResources", ProcessResources::class.java) {
+            inputs.property("mixinRefmap", refmap)
+            filesMatching(mixinConfigs) {
+                if (!declaresRefmap(file.readText())) {
+                    var injected = false
+                    filter { line ->
+                        if (injected) return@filter line
+                        val updated = injectIntoLine(line, refmap) ?: return@filter line
+                        injected = true
+                        updated
+                    }
+                }
+            }
+        }
+    }
 
     fun declaresRefmap(config: String): Boolean = refmapKey.containsMatchIn(config)
 

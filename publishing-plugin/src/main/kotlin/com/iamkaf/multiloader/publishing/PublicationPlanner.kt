@@ -33,6 +33,7 @@ internal object PublicationPlanner {
 
         val minecraftVersion = projectProperty(project, "project.minecraft")
         val fabricArtifact = minecraftVersion?.let(VersionPolicy::fabricPublicationArtifact)
+        val forgeArtifact = VersionPolicy.forgePublicationArtifact(minecraftVersion)
         val enabledLoaders = configuredLoaders(project)
 
         return listOf(
@@ -52,9 +53,9 @@ internal object PublicationPlanner {
                 "forge",
                 enabledLoaders.contains("forge") && extension.getLoaders().getForge().enabled.get(),
                 ":forge",
-                VersionPolicy.forgePublicationArtifact().artifactTask,
-                VersionPolicy.forgePublicationArtifact().fallbackArtifactTask,
-                VersionPolicy.forgePublicationArtifact().buildTasks,
+                forgeArtifact.artifactTask,
+                forgeArtifact.fallbackArtifactTask,
+                forgeArtifact.buildTasks,
                 listOf("forge"),
                 emptyList(),
                 emptyList(),
@@ -73,6 +74,16 @@ internal object PublicationPlanner {
                 null,
             ),
         )
+    }
+
+    /**
+     * Configure-on-demand leaves other projects unconfigured, so archive tasks they register while configuring,
+     * such as the Forge 1.20.2-1.20.4 reobfJar, do not exist yet.
+     */
+    fun awaitsConfiguration(project: Project, publicationConfig: PublicationConfig): Boolean {
+        val target = project.findProject(publicationConfig.projectPath) ?: return false
+        return !target.state.executed &&
+            findJarOutput(target, publicationConfig.artifactTask, publicationConfig.fallbackArtifactTask) == null
     }
 
     fun plan(project: Project, publicationConfig: PublicationConfig): PublicationSpec {

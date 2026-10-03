@@ -81,6 +81,11 @@ internal object PublishingTaskRegistrar {
                     return@forEach
                 }
 
+                if (PublicationPlanner.awaitsConfiguration(project, publicationConfig)) {
+                    configureUnconfiguredPublicationTasks(project, taskSuffix, publicationConfig.projectPath)
+                    return@forEach
+                }
+
                 val spec = PublicationPlanner.plan(project, publicationConfig)
                 val assembleTask = configureAssembleTask(project, extension, publicationConfig, spec)
                 configureCurseForgeTask(project, extension, spec, assembleTask)
@@ -189,6 +194,16 @@ internal object PublishingTaskRegistrar {
                 if (isDryRun) {
                     project.logger.lifecycle("[Publishing] dryRun=true -> skipping live publish")
                 }
+            }
+        }
+    }
+
+    private fun configureUnconfiguredPublicationTasks(project: Project, taskSuffix: String, projectPath: String) {
+        project.tasks.named("publishingAssemble$taskSuffix") {
+            doFirst {
+                throw IllegalStateException(
+                    "[Publishing] $projectPath was not configured in this build; run without --configure-on-demand",
+                )
             }
         }
     }

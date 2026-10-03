@@ -16,6 +16,7 @@ import com.iamkaf.multiloader.support.VersionPolicy
 import com.iamkaf.multiloader.support.adapters.ForgeGradleAdapter
 import com.iamkaf.multiloader.support.adapters.LegacyForgeAdapter
 import com.iamkaf.multiloader.support.adapters.LegacyForgeRuntimeAdapter
+import net.minecraftforge.gradle.MavenizerInstance
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -84,7 +85,17 @@ class MultiloaderForgePlugin : Plugin<Project> {
             } else {
                 "net.minecraftforge:forge:$forgeArtifactVersion"
             }
-            project.dependencies.add("implementation", ForgeGradleAdapter.dependency(project, forgeCoordinate))
+            val forgeDependency = ForgeGradleAdapter.dependency(project, forgeCoordinate)
+            project.dependencies.add("implementation", forgeDependency)
+            if (VersionPolicy.usesForgeGradleSrgRemap(minecraftVersion)) {
+                ForgeSrgRemap.configure(
+                    project = project,
+                    forgeDependency = forgeDependency as MavenizerInstance,
+                    mixinConfigs = mixinConfigs,
+                    modId = modId,
+                    mixinVersion = ConventionSupport.versionAlias(project, "mixin"),
+                )
+            }
             addStrictJopt(project)
         }
 
@@ -159,7 +170,18 @@ class MultiloaderForgePlugin : Plugin<Project> {
             } else {
                 "net.minecraftforge:forge:${ForgeGradleAdapter.artifactVersion(minecraftVersion, forgeVersion)}"
             }
-            project.dependencies.add("implementation", ForgeGradleAdapter.dependency(project, forgeCoordinate))
+            val forgeDependency = ForgeGradleAdapter.dependency(project, forgeCoordinate)
+            project.dependencies.add("implementation", forgeDependency)
+            if (VersionPolicy.usesForgeGradleSrgRemap(minecraftVersion)) {
+                ForgeSrgRemap.configure(
+                    project = project,
+                    forgeDependency = forgeDependency as MavenizerInstance,
+                    mixinConfigs = mixinConfigs,
+                    modId = identity.modId,
+                    mixinVersion = context.versionOrNull(catalog, "mixin")
+                        ?: throw GradleException("Missing Mixin version for ${project.path}"),
+                )
+            }
         }
 
         addStrictJopt(project)
