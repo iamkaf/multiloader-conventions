@@ -52,7 +52,8 @@ enum class FabricDatagenRuntimeStrategy {
 enum class PublicationArtifactStrategy(val artifactTask: String, val fallbackArtifactTask: String?, val buildTasks: List<String>) {
     JAR("jar", null, emptyList()),
     FABRIC_REMAP_JAR("remapJar", "jar", emptyList()),
-    FORGE_REOBF_JAR("jar", null, listOf("reobfJar")),
+    // Legacy ModDevGradle writes the dev jar with `jar` and the SRG release jar with `reobfJar`.
+    FORGE_REOBF_JAR("reobfJar", "jar", listOf("reobfJar")),
     FORGE_SRG_JAR("reobfJar", null, emptyList()),
 }
 
