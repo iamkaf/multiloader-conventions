@@ -123,7 +123,11 @@ object LoaderDependencyPolicy {
             minecraftVersion in legacyForgeRuntimeModVersions -> {
                 addForgeDependencyMods(project, context, catalog, "compileOnly", identity)
                 addForgeDependencyMods(project, context, catalog, "modRuntimeOnly", identity)
-                project.dependencies.add("runtimeOnly", "org.slf4j:slf4j-simple:2.0.13")
+                // Minecraft 1.18.2 logs through SLF4J and ships Log4j's binding. A second binding
+                // would win and send the game's log lines to the console instead of latest.log.
+                if (minecraftVersion != "1.18.2") {
+                    project.dependencies.add("runtimeOnly", "org.slf4j:slf4j-simple:2.0.13")
+                }
             }
             VersionPolicy.usesLegacyForgePlugin(minecraftVersion) -> {
                 addForgeDependencyMods(project, context, catalog, "compileOnly", identity)
