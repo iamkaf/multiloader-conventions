@@ -64,6 +64,7 @@ class MultiloaderForgePlugin : Plugin<Project> {
                 modId = modId,
                 accessTransformerFile = accessTransformerFile,
                 usesUnobfuscatedMinecraft = usesUnobfuscatedMinecraft,
+                mixinVersion = ConventionSupport.versionAlias(project, "mixin"),
             )
             addStrictJopt(project)
         } else {
@@ -226,6 +227,8 @@ class MultiloaderForgePlugin : Plugin<Project> {
             modId = modId,
             accessTransformerFile = accessTransformerFile,
             usesUnobfuscatedMinecraft = false,
+            mixinVersion = context.versionOrNull(catalog, "mixin")
+                ?: throw GradleException("Missing Mixin version for ${project.path}"),
         )
 
         LegacyForgeRuntimeAdapter.configure(project, context, catalog, ProjectIdentity.from(context, MultiloaderProjectRole.FORGE), minecraftVersion)

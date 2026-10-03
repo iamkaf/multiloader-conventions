@@ -4,7 +4,10 @@ import com.iamkaf.multiloader.support.ClientRunEnvironmentPolicy
 import com.iamkaf.multiloader.support.GroovyGradleDsl
 import com.iamkaf.multiloader.support.VersionPolicy
 import org.gradle.api.Project
+import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.language.jvm.tasks.ProcessResources
 import java.io.File
 
 object LegacyForgeAdapter {
@@ -42,6 +45,7 @@ object LegacyForgeAdapter {
         modId: String,
         accessTransformerFile: File,
         usesUnobfuscatedMinecraft: Boolean,
+        mixinVersion: String,
     ) {
         val legacyForge = project.extensions.getByName("legacyForge")
         if (usesUnobfuscatedMinecraft) {
@@ -99,6 +103,49 @@ object LegacyForgeAdapter {
                 ForgeGradleAdapter.configureNamedMod(mods, modId, "sourceSet", mainSourceSet)
             },
         )
+
+        if (!usesUnobfuscatedMinecraft) {
+            configureMixinRefmap(project, mainSourceSet, mixinConfigs, modId, mixinVersion)
+        }
+    }
+
+    /**
+     * Production Forge on these lines runs SRG member names, so Mojang names in mixin annotations
+     * resolve only through a refmap. ModDevGradle's mixin extension runs the Mixin annotation
+     * processor against its official-to-SRG mappings, packs the refmap into the jar, and feeds the
+     * processor's mappings to reobfJar for shadowed members. Mixin reads the refmap from each config.
+     */
+    private fun configureMixinRefmap(
+        project: Project,
+        mainSourceSet: SourceSet,
+        mixinConfigs: List<String>,
+        modId: String,
+        mixinVersion: String,
+    ) {
+        if (mixinConfigs.isEmpty()) return
+        val refmap = "$modId.refmap.json"
+        project.dependencies.add("annotationProcessor", "org.spongepowered:mixin:$mixinVersion:processor")
+        GroovyGradleDsl.invoke(project.extensions.getByName("mixin"), "add", mainSourceSet, refmap)
+        project.tasks.named(mainSourceSet.compileJavaTaskName, JavaCompile::class.java) {
+            // Loader-added targets, such as Forge's onSheared, have no SRG mapping and keep their name at
+            // runtime. Report them like unmapped shadows and accessors instead of failing the build.
+            options.compilerArgs.add("-AMSG_NO_OBFDATA_FOR_TARGET=warning")
+        }
+
+        project.tasks.named("processResources", ProcessResources::class.java) {
+            inputs.property("mixinRefmap", refmap)
+            filesMatching(mixinConfigs) {
+                if (!MixinRefmapInjection.declaresRefmap(file.readText())) {
+                    var injected = false
+                    filter { line ->
+                        if (injected) return@filter line
+                        val updated = MixinRefmapInjection.injectIntoLine(line, refmap) ?: return@filter line
+                        injected = true
+                        updated
+                    }
+                }
+            }
+        }
     }
 
     private fun configureNamedRun(runs: Any, name: String, action: (Any) -> Unit = {}) {
@@ -106,5 +153,18 @@ object LegacyForgeAdapter {
             ?: runCatching { GroovyGradleDsl.invoke(runs, "create", name) }.getOrNull()
             ?: throw IllegalStateException("[LegacyForge] Could not create run '$name'")
         action(run)
+    }
+}
+
+internal object MixinRefmapInjection {
+    private val refmapKey = Regex("\"refmap\"\\s*:")
+
+    fun declaresRefmap(config: String): Boolean = refmapKey.containsMatchIn(config)
+
+    /** Returns [line] with the refmap key added after its opening brace, or null if it has none. */
+    fun injectIntoLine(line: String, refmap: String): String? {
+        val brace = line.indexOf('{')
+        if (brace < 0) return null
+        return line.substring(0, brace + 1) + "\n  \"refmap\": \"$refmap\"," + line.substring(brace + 1)
     }
 }
