@@ -1,5 +1,6 @@
 package com.iamkaf.multiloader.publishing
 
+import com.iamkaf.multiloader.support.GraphOnlyBuild
 import com.iamkaf.multiloader.support.MultiloaderProjectContext
 import com.iamkaf.multiloader.support.VersionPolicy
 import com.iamkaf.multiloader.support.adapters.ArchiveTaskAdapter
@@ -82,7 +83,8 @@ internal object PublicationPlanner {
      */
     fun awaitsConfiguration(project: Project, publicationConfig: PublicationConfig): Boolean {
         val target = project.findProject(publicationConfig.projectPath) ?: return false
-        return !target.state.executed &&
+        // Graph-only builds skip loader toolchains, so a release jar task such as reobfJar may never be registered.
+        return (!target.state.executed || GraphOnlyBuild.requested(project)) &&
             findJarOutput(target, publicationConfig.artifactTask, publicationConfig.fallbackArtifactTask) == null
     }
 

@@ -1,6 +1,7 @@
 package com.iamkaf.multiloader.forge
 
 import com.iamkaf.multiloader.platform.MultiloaderPlatformPlugin
+import com.iamkaf.multiloader.support.GraphOnlyBuild
 import com.iamkaf.multiloader.support.ClientRunEnvironmentPolicy
 import com.iamkaf.multiloader.support.ConventionSupport
 import com.iamkaf.multiloader.support.ConsumerDslPolicy
@@ -109,7 +110,7 @@ class MultiloaderForgePlugin : Plugin<Project> {
 
         val context = MultiloaderProjectContext.of(project)
         val minecraftVersion = context.requiredProperty("project.minecraft")
-        if (isGraphOnlyBuild(project)) {
+        if (GraphOnlyBuild.requested(project)) {
             configureStonecutterForgeGraphOnly(project, context)
             return
         }
@@ -267,14 +268,6 @@ class MultiloaderForgePlugin : Plugin<Project> {
             throw GradleException(
                 "Forge convention support starts at Minecraft 1.17. Keep ${project.path} on a repo-local legacy setup for $minecraftVersion.",
             )
-        }
-    }
-
-    private fun isGraphOnlyBuild(project: Project): Boolean {
-        val taskNames = project.gradle.startParameter.taskNames
-        return taskNames.isNotEmpty() && taskNames.all { taskName ->
-            val requested = taskName.split(":").last()
-            requested == "writeMultiloaderGraph" || requested == "printMultiloaderGraph"
         }
     }
 
