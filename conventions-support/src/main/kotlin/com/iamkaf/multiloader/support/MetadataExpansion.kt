@@ -11,10 +11,11 @@ object MetadataExpansion {
         loader: String,
         catalog: VersionCatalog,
     ): Map<String, Any?> {
+        val configuredRange = context.optionalProperty("mod.minecraft-range")
         val minecraftVersionRange = if (loader == LoaderId.FABRIC.id) {
-            fabricMinecraftDependency(minecraftVersion, context.optionalProperty("mod.minecraft-range"))
+            fabricMinecraftDependency(minecraftVersion, configuredRange)
         } else {
-            context.optionalProperty("mod.minecraft-range")
+            mavenMinecraftRange(configuredRange)
         }
 
         return linkedMapOf(
@@ -104,6 +105,21 @@ object MetadataExpansion {
             minecraftVersion.contains("-rc-") ||
             configuredRange?.contains("-pre.") == true
         ) configuredRange else minecraftVersion
+
+    /**
+     * Forge and NeoForge read Maven ranges, where a bare spec such as `>=26.3` is a soft requirement that accepts
+     * every version. A Fabric-style `>=` floor becomes a range capped at the next Minecraft line.
+     */
+    fun mavenMinecraftRange(configuredRange: String?): String? {
+        if (configuredRange == null || configuredRange.startsWith("[") || configuredRange.startsWith("(")) {
+            return configuredRange
+        }
+        val floor = configuredRange.removePrefix(">=").trim()
+        require(configuredRange.startsWith(">=") && floor.isNotEmpty()) {
+            "mod.minecraft-range '$configuredRange' must be a Maven range such as [1.21.1, 1.22) or a floor such as >=1.21.1"
+        }
+        return "[$floor, ${VersionPolicy.nextMinecraftUpperBound(floor)})"
+    }
 
     private fun fabricLoaderVersion(
         minecraftVersion: String?,

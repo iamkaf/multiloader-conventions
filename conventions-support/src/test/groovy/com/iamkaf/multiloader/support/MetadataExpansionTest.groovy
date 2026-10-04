@@ -22,6 +22,26 @@ class MetadataExpansionTest extends Specification {
         '26.4'   | 'iconFile'
     }
 
+    def "Forge and NeoForge get a capped Maven range from a Fabric-style floor"() {
+        expect:
+        MetadataExpansion.INSTANCE.mavenMinecraftRange(configured) == range
+
+        where:
+        configured       | range
+        '>=26.3'         | '[26.3, 27)'
+        '>=1.21.1'       | '[1.21.1, 1.22)'
+        '[1.21, 1.21.1]' | '[1.21, 1.21.1]'
+        null             | null
+    }
+
+    def "Forge and NeoForge reject a Minecraft range they would read as any version"() {
+        when:
+        MetadataExpansion.INSTANCE.mavenMinecraftRange('26.3')
+
+        then:
+        thrown(IllegalArgumentException)
+    }
+
     @TempDir
     File testProjectDir
 
