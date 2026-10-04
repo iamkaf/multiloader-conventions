@@ -29,13 +29,13 @@ forge-config-api-port-fabric = "26.1.4"
 forge-config-api-port-forge = "26.1.4"
 
 # Amber
-amber = "11.5.0+26.3"
+amber = "11.7.0+26.3"
 
 # Konfig
-konfig = "0.9.0+26.3"
+konfig = "0.10.1+26.3"
 
 # TeaKit
-teakit = "0.18.0+26.3"
+teakit = "0.18.1+26.3"
 
 # Paper (server plugins compile against paper-api; runs use the pinned server build)
 paper-api = "26.3.build.140-beta"

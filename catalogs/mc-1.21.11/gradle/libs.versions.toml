@@ -28,13 +28,13 @@ gson = "2.10.1"
 forge-config-api-port = "21.11.1"
 
 # Amber
-amber = "11.5.0+1.21.11"
+amber = "11.7.0+1.21.11"
 
 # Konfig
-konfig = "0.9.0+1.21.11"
+konfig = "0.10.1+1.21.11"
 
 # TeaKit
-teakit = "0.18.0+1.21.11"
+teakit = "0.18.1+1.21.11"
 
 # Paper (server plugins compile against paper-api; runs use the pinned server build)
 paper-api = "1.21.11-R0.1-SNAPSHOT"
