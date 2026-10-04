@@ -35,7 +35,7 @@ amber = "11.7.0+26.1.1"
 konfig = "0.10.1+26.1.1"
 
 # TeaKit
-teakit = "0.18.1+26.1.1"
+teakit = "0.18.2+26.1.1"
 
 # Bonded Compatibility Fixtures
 basic-weapons-fabric = "BONRhyAx"
