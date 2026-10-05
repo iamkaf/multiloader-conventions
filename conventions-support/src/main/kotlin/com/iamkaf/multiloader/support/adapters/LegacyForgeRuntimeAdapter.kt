@@ -352,12 +352,18 @@ object LegacyForgeRuntimeAdapter {
             doLast {
                 LoaderDependencyPolicy.catalogModuleVersion(context, catalog, "teakit")
                     ?: throw GradleException("Missing teakit version for legacy Forge $minecraftVersion")
-                val source = runtimeClasspath.files.requiredForgeModJar("teakit")
+                val runtimeFiles = runtimeClasspath.files
                 val modsDir = runModsDir.asFile
                 modsDir.mkdirs()
-                project.delete(project.fileTree(modsDir) { include("teakit-forge-*.jar") })
-                val target = File(modsDir, source.name)
-                Files.copy(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING)
+                project.delete(project.fileTree(modsDir) {
+                    include("teakit-forge-*.jar")
+                    include("teakit-playerdriver-forge-*.jar")
+                })
+                // TeaKit requires its player driver, which ships as its own mod.
+                for (alias in listOf("teakit", "teakit-playerdriver")) {
+                    val source = runtimeFiles.requiredForgeModJar(alias)
+                    Files.copy(source.toPath(), File(modsDir, source.name).toPath(), StandardCopyOption.REPLACE_EXISTING)
+                }
             }
         }
 
@@ -475,14 +481,9 @@ object LegacyForgeRuntimeAdapter {
             }
             ?: throw GradleException("Missing jar '$fileNameOrPrefix' from $coordinate")
 
+    // Resolving downloads the jar again when Gradle has evicted it, and returns its cache path, the copy the launcher reads.
     private fun resolveCachedJar(project: Project, group: String, module: String, version: String): File =
-        project.fileTree(
-            File(project.gradle.gradleUserHomeDir, "caches/modules-2/files-2.1/$group/$module/$version"),
-        ) {
-            include("**/$module-$version.jar")
-            exclude("**/*sources.jar")
-        }.files.singleOrNull()
-            ?: throw GradleException("Missing cached $module-$version.jar")
+        resolveDetachedJar(project, "$group:$module:$version", "$module-$version.jar")
 
     private fun copyWithBackupIfDifferent(source: File, target: File, backupSuffix: String) {
         val backup = File(target.parentFile, "${target.name}.$backupSuffix")
