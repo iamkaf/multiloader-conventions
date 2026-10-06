@@ -15,6 +15,7 @@ object NeoForgeModDevAdapter {
         accessTransformerFile: File,
     ) {
         val neoForge = project.extensions.getByName("neoForge")
+        AmberToolchain.useAmberNeoFormRuntime(project)
         GroovyGradleDsl.set(neoForge, "neoFormVersion", neoFormVersion)
 
         if (accessTransformerFile.exists()) {
@@ -45,6 +46,7 @@ object NeoForgeModDevAdapter {
         parchmentMinecraftVersion: String,
     ) {
         val neoForge = project.extensions.getByName("neoForge")
+        AmberToolchain.useAmberNeoFormRuntime(project)
         GroovyGradleDsl.set(neoForge, "version", neoforgeVersion)
 
         if (accessTransformerFile.exists()) {

@@ -19,6 +19,7 @@ object LegacyForgeAdapter {
         accessTransformerFile: File,
     ) {
         val legacyForge = project.extensions.getByName("legacyForge")
+        AmberToolchain.useAmberNeoFormRuntime(project)
         GroovyGradleDsl.set(legacyForge, "mcpVersion", minecraftVersion)
 
         if (accessTransformerFile.exists()) {
@@ -48,6 +49,7 @@ object LegacyForgeAdapter {
         mixinVersion: String,
     ) {
         val legacyForge = project.extensions.getByName("legacyForge")
+        AmberToolchain.useAmberNeoFormRuntime(project)
         if (usesUnobfuscatedMinecraft) {
             GroovyGradleDsl.set(legacyForge, "mcpVersion", minecraftVersion)
         } else {

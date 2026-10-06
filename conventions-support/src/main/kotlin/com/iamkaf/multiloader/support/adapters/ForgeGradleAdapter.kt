@@ -20,6 +20,7 @@ object ForgeGradleAdapter {
         modId: String,
         forgeArtifactVersion: String? = null,
     ) {
+        AmberToolchain.useAmberMavenizer(project)
         val minecraft = project.extensions.getByName("minecraft")
         if (!usesUnobfuscatedMinecraft) {
             GroovyGradleDsl.invoke(
@@ -139,7 +140,7 @@ object ForgeGradleAdapter {
     }
 
     private fun legacyForge1165AssetsDir(project: Project): File =
-        File(project.gradle.gradleUserHomeDir, "caches/fabric-loom/assets")
+        File(project.gradle.gradleUserHomeDir, "caches/amber-loom/assets")
 
     private fun legacyForge1165NativesDir(project: Project, forgeArtifactVersion: String?): File =
         File(
