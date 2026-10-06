@@ -15,6 +15,11 @@ pluginManagement {
     }
 }
 
+plugins {
+    // Provisions the Java 25 daemon that Amber Loom needs
+    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
+}
+
 dependencyResolutionManagement {
     repositories {
         mavenLocal()
