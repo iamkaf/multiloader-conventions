@@ -31,7 +31,7 @@ amber = "11.1.2+1.17"
 konfig = "0.5.0+1.17"
 
 # TeaKit
-teakit = "0.14.0+1.17"
+teakit = "0.19.0+1.17"
 
 # JEI
 jei = "null"
@@ -82,6 +82,8 @@ konfig-fabric = { group = "com.iamkaf.konfig", name = "konfig-fabric", version.r
 # TeaKit
 teakit = { group = "com.iamkaf.teakit", name = "teakit-common", version.ref = "teakit" }
 teakit-fabric = { group = "com.iamkaf.teakit", name = "teakit-fabric", version.ref = "teakit" }
+teakit-playerdriver = { group = "com.iamkaf.teakit", name = "teakit-playerdriver-common", version.ref = "teakit" }
+teakit-playerdriver-fabric = { group = "com.iamkaf.teakit", name = "teakit-playerdriver-fabric", version.ref = "teakit" }
 
 # JEI
 jei = { group = "maven.modrinth", name = "jei", version.ref = "jei" }

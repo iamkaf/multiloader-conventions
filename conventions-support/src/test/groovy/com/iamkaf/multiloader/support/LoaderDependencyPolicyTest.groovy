@@ -167,6 +167,36 @@ class LoaderDependencyPolicyTest extends Specification {
         System.clearProperty('example.withTeaKitPlayerDriver')
     }
 
+    def "TeaKit runs add the player driver beside the runtime mod"() {
+        given:
+        System.setProperty('example.withTeaKit', 'true')
+        def project = javaProject()
+        def catalog = Mock(VersionCatalog)
+        catalog.findVersion('teakit') >> Optional.of(versionConstraint('0.19.0+1.20.1'))
+        ['teakit-forge', 'teakit-playerdriver-forge'].each { alias ->
+            catalog.findLibrary(alias) >> Optional.of(project.providers.provider {
+                project.dependencies.create("com.iamkaf.teakit:$alias:0.19.0+1.20.1")
+            })
+        }
+
+        when:
+        LoaderDependencyPolicy.INSTANCE.addTeaKitRuntime(
+            project,
+            MultiloaderProjectContext.of(project),
+            catalog,
+            identity(MultiloaderProjectRole.FORGE),
+            LoaderId.FORGE,
+            '1.20.1',
+            TeaKitRuntimeStrategy.RUNTIME_ONLY,
+        )
+
+        then:
+        project.configurations.runtimeOnly.allDependencies*.name == ['teakit-forge', 'teakit-playerdriver-forge']
+
+        cleanup:
+        System.clearProperty('example.withTeaKit')
+    }
+
     def "modern Fabric adds C2ME to the ordinary runtime classpath when catalogued"() {
         given:
         def project = javaProject()

@@ -379,6 +379,10 @@ object LegacyForgeRuntimeAdapter {
     ) {
         val dependency = context.libraryOrNull(catalog, "teakit-${LoaderId.FORGE.id}") ?: return
         project.dependencies.add("modRuntimeOnly", dependency)
+        // The old Forge TeaKit publication declares no dependencies, so its player driver is added explicitly.
+        context.libraryOrNull(catalog, "teakit-playerdriver-${LoaderId.FORGE.id}")?.let {
+            project.dependencies.add("modRuntimeOnly", it)
+        }
     }
 
     private fun Set<File>.requiredForgeModJar(alias: String): File {
