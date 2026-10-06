@@ -11,7 +11,7 @@ pluginManagement {
         }
     }
     plugins {
-        id("org.gradle.kotlin.kotlin-dsl") version "6.5.7"
+        id("org.gradle.kotlin.kotlin-dsl") version "6.7.3"
     }
 }
 
