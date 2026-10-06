@@ -5,6 +5,7 @@ import com.iamkaf.multiloader.support.ConsumerDslPolicy
 import com.iamkaf.multiloader.support.GroovyGradleDsl
 import com.iamkaf.multiloader.support.MultiloaderTargetScope
 import com.iamkaf.multiloader.support.VersionPolicy
+import com.iamkaf.multiloader.support.adapters.AmberToolchain
 import org.gradle.api.Plugin
 import org.gradle.api.initialization.Settings
 import java.io.File
@@ -45,10 +46,10 @@ class MultiloaderSettingsPlugin : Plugin<Settings> {
             .version(BuildToolsVersions.required("foojayResolverConventionPlugin"))
         plugins.id("dev.kikugie.stonecutter")
             .version(BuildToolsVersions.required("stonecutterPlugin"))
-        plugins.id("fabric-loom")
-            .version(BuildToolsVersions.required("fabricLoomPlugin"))
-        plugins.id("net.fabricmc.fabric-loom")
-            .version(BuildToolsVersions.required("fabricLoomPlugin"))
+        plugins.id(AmberToolchain.LOOM)
+            .version(BuildToolsVersions.required("amberLoom"))
+        plugins.id(AmberToolchain.LOOM_REMAP)
+            .version(BuildToolsVersions.required("amberLoom"))
         plugins.id("net.neoforged.moddev")
             .version(BuildToolsVersions.required("neoforgeModDevPlugin"))
         plugins.id("net.neoforged.moddev.legacyforge")
