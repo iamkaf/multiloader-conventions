@@ -9,6 +9,4 @@ abstract class MultiloaderTranslationsExtension {
     abstract val outputDir: DirectoryProperty
 
     abstract val baseUrl: Property<String>
-
-    abstract val token: Property<String>
 }

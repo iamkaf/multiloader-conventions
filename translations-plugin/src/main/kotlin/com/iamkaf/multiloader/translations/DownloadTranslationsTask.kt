@@ -5,7 +5,6 @@ import org.gradle.api.GradleException
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
@@ -26,9 +25,6 @@ abstract class DownloadTranslationsTask : DefaultTask() {
     @get:Input
     abstract val baseUrl: Property<String>
 
-    @get:Internal
-    abstract val token: Property<String>
-
     init {
         outputs.upToDateWhen { false }
     }
@@ -41,27 +37,19 @@ abstract class DownloadTranslationsTask : DefaultTask() {
         }
 
         val outputPath = outputDir.get().asFile.toPath()
-        val client = I18nExportClient(requiredText(baseUrl, "multiloaderTranslations.baseUrl"), token.orNull)
-        val projectIndex = client.fetchProjectIndex(slug)
+        val client = TranslateExportClient(requiredText(baseUrl, "multiloaderTranslations.baseUrl"))
+        // en_us is the source catalog the mod owns; never overwrite it.
+        val locales = client.fetchLocales(slug).filter { it != "en_us" }.distinct().sorted()
 
-        Files.createDirectories(outputPath)
-
-        val sourceLocale = projectIndex.defaultLocale ?: projectIndex.locales.firstOrNull { it.source }?.locale
-        val localesToDownload = projectIndex.locales
-            .mapNotNull { it.locale }
-            .filter { locale -> locale != "en_us" && locale != sourceLocale }
-            .distinct()
-            .sorted()
-
-        if (localesToDownload.isEmpty()) {
-            logger.lifecycle("[Translations] No non-source locales available for '{}'.", slug)
+        if (locales.isEmpty()) {
+            logger.lifecycle("[Translations] No translations available for '{}'.", slug)
             return
         }
 
-        localesToDownload.forEach { locale ->
-            val export = client.fetchLocaleExport(slug, locale)
+        Files.createDirectories(outputPath)
+        locales.forEach { locale ->
             val destination = outputPath.resolve("$locale.json")
-            writeAtomically(destination, export.rawBody)
+            writeAtomically(destination, client.fetchLangFile(slug, locale))
             logger.lifecycle("[Translations] Wrote {}", project.relativePath(destination.toFile()))
         }
     }

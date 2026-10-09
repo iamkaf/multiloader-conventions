@@ -30,7 +30,7 @@ gradlePlugin {
             id = "com.iamkaf.multiloader.translations"
             implementationClass = "com.iamkaf.multiloader.translations.MultiloaderTranslationsPlugin"
             displayName = "Multiloader Translations Plugin"
-            description = "Downloads approved non-en_us locale JSON files from i18n.kaf.sh into a configured lang directory."
+            description = "Downloads approved translations from kaf.sh Translate into a configured lang directory."
         }
     }
 }

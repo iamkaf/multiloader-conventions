@@ -18,7 +18,6 @@ class MultiloaderTranslationsPluginFunctionalTest extends Specification {
     HttpServer server
     String baseUrl
     Map<String, Closure<Void>> routes = [:]
-    String lastAuthorizationHeader
 
     def cleanup() {
         server?.stop(0)
@@ -27,16 +26,9 @@ class MultiloaderTranslationsPluginFunctionalTest extends Specification {
     def "downloadTranslations downloads approved locales, preserves en_us, preserves stale files, and overwrites fetched locales"() {
         given:
         startServer()
-        routeJson('/api/export/demo-mod', [
-            default_locale: 'en_us',
-            locales       : [
-                [locale: 'en_us', is_source: true],
-                [locale: 'fr_fr', is_source: false],
-                [locale: 'zh_cn', is_source: false],
-            ],
-        ])
-        routeRaw('/api/export/demo-mod/fr_fr', '{"hello":"Bonjour"}')
-        routeRaw('/api/export/demo-mod/zh_cn', '{"hello":"你好"}')
+        routeJson('/api/translate/export/demo-mod', [locales: ['fr_fr', 'zh_cn']])
+        routeRaw('/api/translate/export/demo-mod/fr_fr', '{"hello":"Bonjour"}')
+        routeRaw('/api/translate/export/demo-mod/zh_cn', '{"hello":"你好"}')
         writeProject("""
 plugins {
     id("com.iamkaf.multiloader.translations")
@@ -66,16 +58,9 @@ multiloaderTranslations {
     def "downloadTranslations accepts Minecraft locale codes outside the xx_xx shape"() {
         given:
         startServer()
-        routeJson('/api/export/demo-mod', [
-            default_locale: 'en_us',
-            locales       : [
-                [locale: 'en_us', is_source: true],
-                [locale: 'tok', is_source: false],
-                [locale: 'zlm_arab', is_source: false],
-            ],
-        ])
-        routeRaw('/api/export/demo-mod/tok', '{"hello":"toki"}')
-        routeRaw('/api/export/demo-mod/zlm_arab', '{"hello":"هلو"}')
+        routeJson('/api/translate/export/demo-mod', [locales: ['tok', 'zlm_arab']])
+        routeRaw('/api/translate/export/demo-mod/tok', '{"hello":"toki"}')
+        routeRaw('/api/translate/export/demo-mod/zlm_arab', '{"hello":"هلو"}')
         writeProject("""
 plugins {
     id("com.iamkaf.multiloader.translations")
@@ -97,50 +82,17 @@ multiloaderTranslations {
         langFile('zlm_arab.json').text == '{"hello":"هلو"}'
     }
 
-    def "downloadTranslations authenticates private exports with translations.token"() {
+    def "downloadTranslations refuses locale codes that would escape the lang directory"() {
         given:
         startServer()
-        routeAuthJson('/api/export/private-mod', 'kaf_secret', [
-            default_locale: 'en_us',
-            locales       : [
-                [locale: 'en_us', is_source: true],
-                [locale: 'pt_br', is_source: false],
-            ],
-        ])
-        routeAuthRaw('/api/export/private-mod/pt_br', 'kaf_secret', '{"hello":"Oi"}')
+        routeJson('/api/translate/export/demo-mod', [locales: ['../evil']])
         writeProject("""
 plugins {
     id("com.iamkaf.multiloader.translations")
 }
 
 multiloaderTranslations {
-    projectSlug.set("private-mod")
-    outputDir.set(layout.projectDirectory.dir("common/src/main/resources/assets/demo/lang"))
-    baseUrl.set("${baseUrl}")
-    token.set(providers.gradleProperty("translations.token"))
-}
-""")
-
-        when:
-        def result = gradleRunner('downloadTranslations', '-Ptranslations.token=kaf_secret').build()
-
-        then:
-        result.task(':downloadTranslations').outcome == TaskOutcome.SUCCESS
-        langFile('pt_br.json').text == '{"hello":"Oi"}'
-        lastAuthorizationHeader == 'Bearer kaf_secret'
-    }
-
-    def "downloadTranslations fails with a clear message when private exports are missing auth"() {
-        given:
-        startServer()
-        routeStatus('/api/export/private-mod', 401)
-        writeProject("""
-plugins {
-    id("com.iamkaf.multiloader.translations")
-}
-
-multiloaderTranslations {
-    projectSlug.set("private-mod")
+    projectSlug.set("demo-mod")
     outputDir.set(layout.projectDirectory.dir("common/src/main/resources/assets/demo/lang"))
     baseUrl.set("${baseUrl}")
 }
@@ -150,18 +102,14 @@ multiloaderTranslations {
         def result = gradleRunner('downloadTranslations').buildAndFail()
 
         then:
-        result.output.contains('If this project is private, set translations.token or I18N_TOKEN.')
+        result.output.contains("'../evil' is not a Minecraft locale code")
+        !new File(testProjectDir, 'common/src/main/resources/assets/demo/evil.json').exists()
     }
 
-    def "downloadTranslations succeeds when only the source locale exists remotely"() {
+    def "downloadTranslations succeeds when nothing is translated yet"() {
         given:
         startServer()
-        routeJson('/api/export/demo-mod', [
-            default_locale: 'en_us',
-            locales       : [
-                [locale: 'en_us', is_source: true],
-            ],
-        ])
+        routeJson('/api/translate/export/demo-mod', [locales: []])
         writeProject("""
 plugins {
     id("com.iamkaf.multiloader.translations")
@@ -182,13 +130,13 @@ multiloaderTranslations {
         result.task(':downloadTranslations').outcome == TaskOutcome.SUCCESS
         langFile('en_us.json').text == '{"hello":"Hello"}'
         !langFile('fr_fr.json').exists()
-        result.output.contains('No non-source locales available')
+        result.output.contains('No translations available')
     }
 
     def "downloadTranslations fails on malformed index JSON"() {
         given:
         startServer()
-        routeRaw('/api/export/demo-mod', '{not-json')
+        routeRaw('/api/translate/export/demo-mod', '{not-json')
         writeProject("""
 plugins {
     id("com.iamkaf.multiloader.translations")
@@ -206,20 +154,14 @@ multiloaderTranslations {
 
         then:
         result.output.contains('Invalid JSON from')
-        result.output.contains('/api/export/demo-mod')
+        result.output.contains('/api/translate/export/demo-mod')
     }
 
     def "downloadTranslations fails on malformed locale JSON"() {
         given:
         startServer()
-        routeJson('/api/export/demo-mod', [
-            default_locale: 'en_us',
-            locales       : [
-                [locale: 'en_us', is_source: true],
-                [locale: 'fr_fr', is_source: false],
-            ],
-        ])
-        routeRaw('/api/export/demo-mod/fr_fr', '{not-json')
+        routeJson('/api/translate/export/demo-mod', [locales: ['fr_fr']])
+        routeRaw('/api/translate/export/demo-mod/fr_fr', '{not-json')
         writeProject("""
 plugins {
     id("com.iamkaf.multiloader.translations")
@@ -237,7 +179,7 @@ multiloaderTranslations {
 
         then:
         result.output.contains('Invalid JSON from')
-        result.output.contains('/api/export/demo-mod/fr_fr')
+        result.output.contains('/api/translate/export/demo-mod/fr_fr')
     }
 
     def "plugin fails immediately when applied to a subproject"() {
@@ -303,7 +245,6 @@ multiloaderTranslations {
     private void startServer() {
         server = HttpServer.create(new InetSocketAddress('127.0.0.1', 0), 0)
         server.createContext('/') { HttpExchange exchange ->
-            lastAuthorizationHeader = exchange.requestHeaders.getFirst('Authorization')
             def handler = routes[exchange.requestURI.path]
             if (handler == null) {
                 sendResponse(exchange, 404, 'Not found')
@@ -321,28 +262,6 @@ multiloaderTranslations {
 
     private void routeRaw(String path, String body) {
         routes[path] = { HttpExchange exchange ->
-            exchange.responseHeaders.add('Content-Type', 'application/json')
-            sendResponse(exchange, 200, body)
-        }
-    }
-
-    private void routeStatus(String path, int status) {
-        routes[path] = { HttpExchange exchange ->
-            sendResponse(exchange, status, '')
-        }
-    }
-
-    private void routeAuthJson(String path, String token, Object payload) {
-        routeAuthRaw(path, token, groovy.json.JsonOutput.toJson(payload))
-    }
-
-    private void routeAuthRaw(String path, String token, String body) {
-        routes[path] = { HttpExchange exchange ->
-            def auth = exchange.requestHeaders.getFirst('Authorization')
-            if (auth != "Bearer ${token}") {
-                sendResponse(exchange, 401, '')
-                return
-            }
             exchange.responseHeaders.add('Content-Type', 'application/json')
             sendResponse(exchange, 200, body)
         }

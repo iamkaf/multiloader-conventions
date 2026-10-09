@@ -16,19 +16,14 @@ class MultiloaderTranslationsPlugin : Plugin<Project> {
             "multiloaderTranslations",
             MultiloaderTranslationsExtension::class.java,
         )
-        extension.baseUrl.convention("https://i18n.kaf.sh")
-        extension.token.convention(
-            project.providers.gradleProperty("translations.token")
-                .orElse(project.providers.environmentVariable("I18N_TOKEN")),
-        )
+        extension.baseUrl.convention("https://kaf.sh")
 
         project.tasks.register("downloadTranslations", DownloadTranslationsTask::class.java) {
             group = "translations"
-            description = "Downloads approved non-en_us translations from the configured i18n export project."
+            description = "Downloads approved translations from kaf.sh Translate."
             projectSlug.convention(extension.projectSlug)
             outputDir.convention(extension.outputDir)
             baseUrl.convention(extension.baseUrl)
-            token.convention(extension.token)
         }
     }
 }

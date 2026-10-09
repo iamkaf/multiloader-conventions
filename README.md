@@ -167,7 +167,6 @@ Frequently used optional property groups include:
 - `<modId>.withAmber`, `<modId>.withKonfig`, `<modId>.withTeaKit`, and
   `<modId>.withTeaKitPlayerDriver`
 - `dependencies.*` and `environments.*`
-- `translations.token`
 - `publish.*`
 
 Workspace libraries are opt-in. A published mod normally opts in through its
@@ -248,7 +247,6 @@ multiloaderTranslations {
             "common/src/main/resources/assets/examplemod/lang",
         ),
     )
-    token.set(providers.gradleProperty("translations.token")) // optional
 }
 ```
 
@@ -258,7 +256,7 @@ Download translations with:
 ./gradlew downloadTranslations
 ```
 
-The plugin downloads approved non-`en_us` locale files. It leaves `en_us` and
+The plugin downloads approved translations from [kaf.sh Translate](https://kaf.sh/translate), one lang file per locale. It leaves `en_us` and
 unrelated local language files under the consumer's control.
 
 ## Paper plugins
