@@ -45,7 +45,8 @@ object MetadataExpansion {
             "konfig_version" to context.versionOrNull(catalog, "konfig"),
             "parchment_minecraft" to context.versionOrNull(catalog, "parchment-minecraft"),
             "parchment_version" to context.versionOrNull(catalog, "parchment"),
-            "credits" to context.optionalProperty("mod.credits"),
+            // Templates print a missing value as "null"; an unset credits line stays empty instead.
+            "credits" to (context.optionalProperty("mod.credits") ?: ""),
             "java_version" to context.requiredProperty("project.java"),
             "mixin_compat_common" to commonMixinCompatibilityFor(loader, context),
             "mixin_compat_fabric" to context.requiredProperty("mixin.compat.fabric"),
@@ -84,7 +85,7 @@ object MetadataExpansion {
             "konfig_version" to FlatProjectAccess.optionalVersionAlias(project, "konfig"),
             "parchment_minecraft" to FlatProjectAccess.optionalVersionAlias(project, "parchment-minecraft"),
             "parchment_version" to FlatProjectAccess.optionalVersionAlias(project, "parchment"),
-            "credits" to FlatProjectAccess.optionalProperty(project, "mod.credits"),
+            "credits" to (FlatProjectAccess.optionalProperty(project, "mod.credits") ?: ""),
             "java_version" to FlatProjectAccess.requiredProperty(project, "project.java"),
             "pack_format" to VersionPolicy.resourcePackFormat(FlatProjectAccess.versionAlias(project, "minecraft")),
             "pack_minmax" to VersionPolicy.resourcePackMinMaxSnippet(FlatProjectAccess.versionAlias(project, "minecraft")),
