@@ -63,6 +63,40 @@ multiloaderTranslations {
         langFile('zh_cn.json').text == '{"hello":"你好"}'
     }
 
+    def "downloadTranslations accepts Minecraft locale codes outside the xx_xx shape"() {
+        given:
+        startServer()
+        routeJson('/api/export/demo-mod', [
+            default_locale: 'en_us',
+            locales       : [
+                [locale: 'en_us', is_source: true],
+                [locale: 'tok', is_source: false],
+                [locale: 'zlm_arab', is_source: false],
+            ],
+        ])
+        routeRaw('/api/export/demo-mod/tok', '{"hello":"toki"}')
+        routeRaw('/api/export/demo-mod/zlm_arab', '{"hello":"هلو"}')
+        writeProject("""
+plugins {
+    id("com.iamkaf.multiloader.translations")
+}
+
+multiloaderTranslations {
+    projectSlug.set("demo-mod")
+    outputDir.set(layout.projectDirectory.dir("common/src/main/resources/assets/demo/lang"))
+    baseUrl.set("${baseUrl}")
+}
+""")
+
+        when:
+        def result = gradleRunner('downloadTranslations').build()
+
+        then:
+        result.task(':downloadTranslations').outcome == TaskOutcome.SUCCESS
+        langFile('tok.json').text == '{"hello":"toki"}'
+        langFile('zlm_arab.json').text == '{"hello":"هلو"}'
+    }
+
     def "downloadTranslations authenticates private exports with translations.token"() {
         given:
         startServer()

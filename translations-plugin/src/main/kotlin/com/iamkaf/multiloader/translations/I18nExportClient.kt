@@ -35,7 +35,7 @@ class I18nExportClient {
             val itemMap = item as? Map<*, *>
                 ?: throw GradleException("Invalid JSON from ${response.uri}: expected every locale entry to be an object.")
             val locale = normalizeLocale(itemMap["locale"])
-                ?: throw GradleException("Invalid JSON from ${response.uri}: locale entries must contain a locale matching xx_xx.")
+                ?: throw GradleException("Invalid JSON from ${response.uri}: locale entries must contain a Minecraft locale code.")
             ProjectLocale(locale, itemMap["is_source"] == true)
         }
 
@@ -119,7 +119,8 @@ class I18nExportClient {
             if (value !is CharSequence) return null
 
             val normalized = value.toString().trim().lowercase(Locale.ROOT)
-            return if (Regex("[a-z]{2}_[a-z]{2}").matches(normalized)) normalized else null
+            // Minecraft locales include bare and longer codes such as tok, enws, and zlm_arab.
+            return if (Regex("[a-z]+(_[a-z]+)?").matches(normalized)) normalized else null
         }
     }
 }
