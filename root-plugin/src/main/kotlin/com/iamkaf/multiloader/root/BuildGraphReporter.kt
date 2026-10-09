@@ -97,6 +97,8 @@ object BuildGraphReporter {
             "neoforge" to props.getProperty("mod.neoforge-loader-range"),
         ).filterValues { it != null }
 
+        val horizontal = horizontalGraph(project, minecraftVersion, enabledLoaders, props)
+        val mergedJarPublished = horizontal["publishable"] == true
         return linkedMapOf(
             "name" to minecraftVersion,
             "minecraft" to minecraftVersion,
@@ -107,10 +109,10 @@ object BuildGraphReporter {
             "enabledLoaders" to enabledLoaders,
             "ranges" to ranges,
             "dependencies" to workspaceDependencies(project, versionDir, props),
-            "horizontal" to horizontalGraph(project, minecraftVersion, enabledLoaders, props),
+            "horizontal" to horizontal,
             "common" to commonGraph(project, minecraftVersion),
             "loaders" to knownLoaders.map { loader ->
-                loaderGraph(project, minecraftVersion, props, loader, loader in enabledLoaders, teaKitNodes)
+                loaderGraph(project, minecraftVersion, props, loader, loader in enabledLoaders, teaKitNodes, mergedJarPublished)
             },
         )
     }
@@ -165,6 +167,7 @@ object BuildGraphReporter {
         val validateTask = suffix?.let { taskPath(project, "validateHorizontalJar$it") }
         val planned = enabledForVersion && mergeTask != null && validateTask != null
         val tier = if (planned) minecraftVersion?.let(HorizontalMergePolicy::tier) else null
+        val published = planned && horizontal?.publish?.orNull == true
         val unsafeAcknowledged = minecraftVersion != null &&
             minecraftVersion in horizontal?.allowUnstableVersions?.orNull.orEmpty()
         val projectVersion = props.getProperty("project.version") ?: project.version.toString()
@@ -192,13 +195,17 @@ object BuildGraphReporter {
             "mergeTask" to mergeTask.takeIf { planned },
             "validateTask" to validateTask.takeIf { planned },
             "artifactPath" to artifactPath,
-            "publishable" to false,
-            "nonPublishableReason" to if (planned) {
-                "Cross-loader platform dependency semantics are not represented safely by the publishing plugin."
+            "publishable" to published,
+            "nonPublishableReason" to if (planned && !published) {
+                "Merged jars upload only when horizontalMerge.publish is set."
             } else {
                 null
             },
-            "platformPublishTasks" to emptyMap<String, String>(),
+            "platformPublishTasks" to if (published) {
+                minecraftVersion?.let { platformPublishTasks(project, HorizontalMergeTasks.horizontalPublicationName(it)) }.orEmpty()
+            } else {
+                emptyMap()
+            },
         )
     }
 
@@ -221,17 +228,19 @@ object BuildGraphReporter {
         loader: String,
         enabled: Boolean,
         teaKitNodes: List<TeaKitNode>,
+        mergedJarPublished: Boolean,
     ): Map<String, Any?> {
         val loaderPath = if (minecraftVersion == null) ":$loader" else ":$loader:$minecraftVersion"
         val loaderProject = project.findProject(loaderPath)
         val artifactTask = artifactTaskName(loader, minecraftVersion)
         val artifactTaskPath = taskPath(loaderProject, artifactTask) ?: taskPath(loaderProject, "jar")
         val artifactPath = if (artifactTaskPath == null) null else artifactPath(project, loaderProject, loader, minecraftVersion, props)
-        val publishSuffix = RootTaskNames.taskSuffix(if (minecraftVersion == null) loader else "$minecraftVersion-$loader")
-        val platformPublishTasks = linkedMapOf(
-            "modrinth" to taskPath(project, "publishModrinth$publishSuffix"),
-            "curseforge" to taskPath(project, "publishCurseforge$publishSuffix"),
-        ).filterValues { it != null }
+        // The merged jar carries this loader to the platforms instead.
+        val platformPublishTasks = if (mergedJarPublished) {
+            emptyMap()
+        } else {
+            platformPublishTasks(project, if (minecraftVersion == null) loader else "$minecraftVersion-$loader")
+        }
 
         return linkedMapOf(
             "name" to loader,
@@ -250,6 +259,14 @@ object BuildGraphReporter {
                 .map { it.name }
                 .sorted(),
         )
+    }
+
+    private fun platformPublishTasks(project: Project, publicationName: String): Map<String, String> {
+        val suffix = RootTaskNames.taskSuffix(publicationName)
+        return listOfNotNull(
+            taskPath(project, "publishModrinth$suffix")?.let { "modrinth" to it },
+            taskPath(project, "publishCurseforge$suffix")?.let { "curseforge" to it },
+        ).toMap(linkedMapOf())
     }
 
     private fun taskPath(project: Project?, taskName: String?): String? {

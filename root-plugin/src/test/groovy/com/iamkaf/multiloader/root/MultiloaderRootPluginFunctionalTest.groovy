@@ -203,13 +203,52 @@ tasks.register("verifyHorizontalWiring") {
         horizontal.artifactPath == 'build/libs/horizontal/26.2/graphmod-multiloader-9.9.9+26.2.jar'
         !horizontal.publishable
         horizontal.platformPublishTasks == [:]
-        horizontal.nonPublishableReason.contains('dependency semantics')
+        horizontal.nonPublishableReason.contains('horizontalMerge.publish')
         !graph.versions.find { it.name == '26.1.2' }.horizontal.enabled
 
         and: 'existing raw publication tasks remain present'
         graph.versions.find { it.name == '26.2' }.loaders.every { loader ->
             !loader.enabled || loader.platformPublishTasks.keySet() == ['modrinth', 'curseforge'] as Set
         }
+    }
+
+    def "a published horizontal merge uploads the merged jar in place of the loader jars"() {
+        given:
+        new File(testProjectDir, 'build.gradle.kts') << '''
+
+multiloaderArtifacts {
+    horizontalMerge {
+        enabled.set(true)
+        publish.set(true)
+        version("26.2")
+    }
+}
+'''.stripIndent()
+        configureArchiveProvider('fabric/26.2', 'fabric-provider.jar')
+        configureArchiveProvider('forge/26.2', 'forge-provider.jar')
+        configureArchiveProvider('neoforge/26.2', 'neoforge-provider.jar')
+
+        when:
+        def runner = GradleRunner.create().withProjectDir(testProjectDir).withPluginClasspath()
+        def graph = extractGraph(runner.withArguments('printMultiloaderGraph', '--stacktrace').build().output)
+        def version = graph.versions.find { it.name == '26.2' }
+        def upload = runner.withArguments('publishModrinth262Multiloader', '--dry-run', '--stacktrace').build()
+
+        then:
+        version.horizontal.publishable
+        version.horizontal.nonPublishableReason == null
+        version.horizontal.platformPublishTasks == [
+            modrinth: ':publishModrinth262Multiloader',
+            curseforge: ':publishCurseforge262Multiloader',
+        ]
+        version.loaders.every { it.platformPublishTasks.isEmpty() }
+        version.loaders.find { it.name == 'fabric' }.mavenPublishTasks.any { it.endsWith('ToMavenLocal') }
+        upload.output.contains(':validateHorizontalJar262 SKIPPED')
+        upload.output.contains(':publishingAssemble262Multiloader SKIPPED')
+
+        and: 'versions without a merged jar keep their loader uploads'
+        graph.versions.find { it.name == '26.1.2' }.loaders
+            .find { it.name == 'fabric' }.platformPublishTasks.modrinth == ':publishModrinth2612Fabric'
     }
 
     def "horizontal merge tasks do not exist by default"() {

@@ -28,6 +28,7 @@ internal object PublicationPlanner {
                 gameVersions = publication.getGameVersions().getOrElse(emptyList()),
                 javaVersions = publication.getJavaVersions().getOrElse(emptyList()),
                 displayName = publication.getDisplayName().orNull,
+                version = publication.getVersion().orNull,
             )
         }
         if (explicit.isNotEmpty()) return explicit
@@ -118,6 +119,7 @@ internal object PublicationPlanner {
             gameVersions = gameVersions,
             javaVersions = javaVersions,
             displayName = publicationConfig.displayName,
+            version = publicationConfig.version ?: targetProject.version.toString(),
         )
     }
 
@@ -214,6 +216,7 @@ internal data class PublicationConfig(
     val gameVersions: List<String>,
     val javaVersions: List<String>,
     val displayName: String?,
+    val version: String? = null,
 )
 
 internal data class PublicationSpec(
@@ -225,6 +228,7 @@ internal data class PublicationSpec(
     val gameVersions: List<String>,
     val javaVersions: List<String>,
     val displayName: String?,
+    val version: String,
 ) {
     val archiveFile: Provider<RegularFile>
         get() = jarOutput.archiveFile

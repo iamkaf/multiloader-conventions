@@ -25,6 +25,14 @@ open class MultiloaderArtifactsExtension @Inject constructor(objects: ObjectFact
         val versions: SetProperty<String> =
             objects.setProperty(String::class.java).convention(emptySet())
 
+        /**
+         * Uploads each merged jar to Modrinth and CurseForge in place of that version's loader jars.
+         * Platform dependencies apply to every loader in the file, so only set this when they hold on all of them.
+         * Kaf Maven keeps publishing the loader jars.
+         */
+        val publish: Property<Boolean> =
+            objects.property(Boolean::class.javaObjectType).convention(false)
+
         /** Explicit acknowledgement for versions whose common classes may be loader-relocated. */
         val allowUnstableVersions: SetProperty<String> =
             objects.setProperty(String::class.java).convention(emptySet())

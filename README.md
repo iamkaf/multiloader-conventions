@@ -351,8 +351,14 @@ build/libs/horizontal/<minecraft>/<mod-id>-multiloader-<project-version>.jar
 
 Validation checks the merged ZIP, loader metadata, referenced mixins and
 classes, entrypoints, access wideners or transformers, assets, data, and shared
-resources. Horizontal platform upload tasks are not yet registered; normal
-per-loader platform and Maven publications remain unchanged.
+resources.
+
+Set `publish.set(true)` to upload each merged jar to Modrinth and CurseForge in
+place of that version's loader jars, through `publishModrinth<Version>Multiloader`
+and `publishCurseforge<Version>Multiloader`. Platform dependencies apply to every
+loader in the file, so only publish merged jars when the mod's Modrinth and
+CurseForge dependencies hold on all of them. Maven publications keep the
+per-loader jars.
 
 `printMultiloaderGraph` and `writeMultiloaderGraph` report whether each version
 is eligible, planned, validated, and publishable.

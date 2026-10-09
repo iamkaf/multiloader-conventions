@@ -34,12 +34,12 @@ internal object ReleaseChangelogSelector {
 
         val extracted = extractSelectedChangelog(
             file.readText(Charsets.UTF_8),
-            publication.project.version.toString(),
+            publication.version,
             publication.gameVersions,
         )
         if (extracted.isNullOrBlank()) {
             throw IllegalStateException(
-                "[Publishing] Failed to extract changelog ${releaseVersionForChangelog(publication.project.version.toString())} from $file",
+                "[Publishing] Failed to extract changelog ${releaseVersionForChangelog(publication.version)} from $file",
             )
         }
         return extracted

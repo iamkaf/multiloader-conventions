@@ -20,7 +20,7 @@ internal object ModrinthReleaseBuilder {
         return linkedMapOf(
             "project_id" to projectId,
             "file_parts" to listOf(file.name),
-            "version_number" to publication.project.version.toString(),
+            "version_number" to publication.version,
             "name" to PublishingDisplay.publicationDisplayName(file, publication),
             "changelog" to changelog,
             "dependencies" to dependencies,

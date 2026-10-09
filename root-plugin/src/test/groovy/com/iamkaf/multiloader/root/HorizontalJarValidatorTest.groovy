@@ -86,6 +86,39 @@ class HorizontalJarValidatorTest extends Specification {
         validate(fixture.merged, fixture.sources, HorizontalMergeTier.UNSTABLE_RELOCATED)
     }
 
+    def "unsafe validation rejects a mixin config that loads another loader's copy until the merge repairs it"() {
+        given: 'Forgix suffixed the subpackage mixin class but left the Fabric and NeoForge entries pointing at Forge\'s copy'
+        def fixture = unsafeFixture()
+        def entries = new LinkedHashMap<String, byte[]>(fixture.mergedEntries)
+        ['fabric', 'forge', 'neoforge'].each { loader ->
+            entries["common.mixins_${loader}.json".toString()] =
+                bytes("""{"package":"com.example.mixin","mixins":["CommonMixin_${loader}"],"client":["client.ScreenMixin"]}""")
+        }
+        entries['com/example/mixin/client/ScreenMixin.class'] = bytes('forge-screen-mixin')
+        entries['com/example/mixin/client/ScreenMixin_fabric.class'] = bytes('fabric-screen-mixin')
+        entries['com/example/mixin/client/ScreenMixin_neoforge.class'] = bytes('neoforge-screen-mixin')
+        def merged = jar('unsafe-misreferenced.jar', entries)
+
+        when:
+        validate(merged, fixture.sources, HorizontalMergeTier.UNSTABLE_RELOCATED)
+
+        then:
+        def error = thrown(GradleException)
+        error.message.contains("common.mixins_fabric.json loads another loader's com.example.mixin.client.ScreenMixin")
+        error.message.contains("common.mixins_neoforge.json loads another loader's com.example.mixin.client.ScreenMixin")
+        !error.message.contains('common.mixins_forge.json')
+
+        when:
+        def rewrites = HorizontalMixinConfigs.INSTANCE.repair(merged, ['fabric', 'forge', 'neoforge'])
+
+        then:
+        rewrites == [
+            'common.mixins_fabric.json: client.ScreenMixin -> client.ScreenMixin_fabric',
+            'common.mixins_neoforge.json: client.ScreenMixin -> client.ScreenMixin_neoforge',
+        ]
+        validate(merged, fixture.sources, HorizontalMergeTier.UNSTABLE_RELOCATED)
+    }
+
     def "policy requires an acknowledgement for each unsafe version"() {
         expect:
         HorizontalMergePolicy.INSTANCE.requireSupported('26.1.2', [] as Set) == HorizontalMergeTier.STABLE
@@ -184,7 +217,7 @@ class HorizontalJarValidatorTest extends Specification {
             'assets/examplemod/lang/en_us_forge.json': commonAsset,
             'assets/examplemod/lang/en_us_neoforge.json': commonAsset,
         ] as LinkedHashMap<String, byte[]>
-        [merged: jar('unsafe-merged.jar', merged), sources: stable.sources]
+        [merged: jar('unsafe-merged.jar', merged), mergedEntries: merged, sources: stable.sources]
     }
 
     private File jar(String name, Map<String, byte[]> entries) {

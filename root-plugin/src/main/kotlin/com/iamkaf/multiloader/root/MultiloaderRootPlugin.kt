@@ -38,18 +38,21 @@ class MultiloaderRootPlugin : Plugin<Project> {
     }
 
     private fun applyStonecutterRootPlugin(project: Project, artifacts: MultiloaderArtifactsExtension) {
-        project.pluginManager.apply("com.iamkaf.multiloader.publishing")
-        project.pluginManager.apply("com.iamkaf.multiloader.translations")
-        StonecutterRootDefaults.configure(project)
-        VersionMetadataTasks.register(project)
-        applyCoordinates(project)
-
         val modId = requiredProperty(project, "mod.id")
         val versionDirs = RootVersionMatrix.versionDirectories(project)
         val targetScope = MultiloaderTargetScope.fromProject(
             project,
             RootVersionMatrix.enabledLoadersByVersion(versionDirs),
         )
+        // Before the publishing plugin: both act in projectsEvaluated, and a published merged jar
+        // must replace its loader publications before they are planned.
+        HorizontalMergeTasks.register(project, artifacts, versionDirs, targetScope)
+
+        project.pluginManager.apply("com.iamkaf.multiloader.publishing")
+        project.pluginManager.apply("com.iamkaf.multiloader.translations")
+        StonecutterRootDefaults.configure(project)
+        VersionMetadataTasks.register(project)
+        applyCoordinates(project)
 
         project.extensions.configure(MultiloaderTranslationsExtension::class.java) {
             projectSlug.set(project.providers.gradleProperty("mod.id"))
@@ -59,8 +62,6 @@ class MultiloaderRootPlugin : Plugin<Project> {
         project.extensions.configure(MultiloaderPublishingExtension::class.java) {
             RootPublicationDefaults.configure(project, this, versionDirs, targetScope)
         }
-
-        HorizontalMergeTasks.register(project, artifacts, versionDirs, targetScope)
 
         BuildGraphReporter.registerTasks(project)
     }

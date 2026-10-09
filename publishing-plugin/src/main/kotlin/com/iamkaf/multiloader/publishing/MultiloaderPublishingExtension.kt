@@ -245,6 +245,9 @@ open class MultiloaderPublishingExtension @Inject constructor(objects: ObjectFac
             objects.listProperty(String::class.java).convention(emptyList())
         private val displayNameProperty: Property<String> = objects.property(String::class.java)
 
+        /** The released version; defaults to the publication project's version. */
+        private val versionProperty: Property<String> = objects.property(String::class.java)
+
         override fun getName(): String = publicationName
 
         fun getEnabled(): Property<Boolean> = enabledProperty
@@ -264,6 +267,8 @@ open class MultiloaderPublishingExtension @Inject constructor(objects: ObjectFac
         fun getJavaVersions(): ListProperty<String> = javaVersionsProperty
 
         fun getDisplayName(): Property<String> = displayNameProperty
+
+        fun getVersion(): Property<String> = versionProperty
 
         fun project(path: String) = projectPathProperty.set(path)
 

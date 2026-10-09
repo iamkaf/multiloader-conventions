@@ -90,6 +90,10 @@ abstract class ForgixHorizontalMergeTask @Inject constructor(
             mainClass.set(FORGIX_MAIN_CLASS)
             args(arguments)
         }.assertNormalExitValue()
+
+        HorizontalMixinConfigs.repair(output, loaders).forEach { rewrite ->
+            logger.lifecycle("[Horizontal Merge] Repaired mixin config entry $rewrite")
+        }
     }
 
     private fun inputFor(loader: String): RegularFile =

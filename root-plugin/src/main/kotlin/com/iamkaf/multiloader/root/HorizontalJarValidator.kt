@@ -105,7 +105,7 @@ object HorizontalJarValidator {
         }
         mergedMixins.forEach { config ->
             requireEntry(merged, config, "Fabric mixin config", problems)
-            validateMixinConfig(merged, config, problems)
+            validateMixinConfig(merged, config, "fabric", problems)
         }
 
         val sourceAccessWidener = sourceMetadata?.get("accessWidener")?.toString()?.takeIf { it.isNotBlank() }
@@ -167,13 +167,14 @@ object HorizontalJarValidator {
         }
         mergedMixins.forEach { config ->
             requireEntry(merged, config, "$loader mixin config", problems)
-            validateMixinConfig(merged, config, problems)
+            validateMixinConfig(merged, config, loader, problems)
         }
     }
 
     private fun validateMixinConfig(
         merged: Map<String, ByteArray>,
         configPath: String,
+        loader: String,
         problems: MutableList<String>,
     ) {
         val config = parseJsonObject(merged, configPath, problems) ?: return
@@ -181,12 +182,11 @@ object HorizontalJarValidator {
         listOf("mixins", "client", "server").forEach { key ->
             val mixins = config[key] as? Collection<*> ?: return@forEach
             mixins.mapNotNull { it?.toString()?.takeIf(String::isNotBlank) }.forEach { relativeName ->
-                val className = when {
-                    mixinPackage.isBlank() -> relativeName
-                    relativeName.startsWith("$mixinPackage.") -> relativeName
-                    else -> "$mixinPackage.$relativeName"
-                }
+                val className = HorizontalMixinConfigs.qualify(mixinPackage, relativeName)
                 requireClass(merged, className, "Mixin from $configPath", problems)
+                HorizontalMixinConfigs.loaderCopy(merged.keys, loader, className)?.let { copy ->
+                    problems += "Mixin from $configPath loads another loader's $className instead of $copy"
+                }
             }
         }
         config["plugin"]?.toString()?.takeIf { it.isNotBlank() }?.let { pluginClass ->

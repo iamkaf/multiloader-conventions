@@ -1,5 +1,6 @@
 package com.iamkaf.multiloader.root
 
+import com.iamkaf.multiloader.publishing.MultiloaderPublishingExtension
 import com.iamkaf.multiloader.support.MultiloaderTargetScope
 import com.iamkaf.multiloader.support.PublicationArtifactStrategy
 import com.iamkaf.multiloader.support.VersionPolicy
@@ -65,9 +66,39 @@ object HorizontalMergeTasks {
                 val validateTask = registerValidationTask(project, plan, taskSuffix, mergeTask)
                 mergeAll.configure { dependsOn(mergeTask) }
                 validateAll.configure { dependsOn(validateTask) }
+                if (horizontal.publish.get()) {
+                    publishInPlaceOfLoaderJars(project, plan, mergeTask.name, validateTask.name)
+                }
             }
         }
     }
+
+    /**
+     * Swaps the version's loader publications for one publication of the merged jar.
+     * Runs before the publishing plugin plans publications, which also happens in projectsEvaluated.
+     */
+    private fun publishInPlaceOfLoaderJars(
+        project: Project,
+        plan: HorizontalMergePlan,
+        mergeTaskName: String,
+        validateTaskName: String,
+    ) {
+        val publications = project.extensions.getByType(MultiloaderPublishingExtension::class.java).getPublications()
+        plan.loaders.forEach { loader ->
+            publications.findByName("${plan.minecraftVersion}-$loader")?.getEnabled()?.set(false)
+        }
+        publications.maybeCreate(horizontalPublicationName(plan.minecraftVersion)).apply {
+            getProjectPath().set(project.path)
+            getArtifactTask().set(mergeTaskName)
+            getBuildTasks().add(validateTaskName)
+            getLoaders().set(plan.loaders)
+            getGameVersions().set(listOf(plan.minecraftVersion))
+            plan.javaVersion?.let { getJavaVersions().set(listOf(it)) }
+            getVersion().set(plan.projectVersion)
+        }
+    }
+
+    fun horizontalPublicationName(minecraftVersion: String): String = "$minecraftVersion-multiloader"
 
     private fun planVersion(
         root: Project,
@@ -128,7 +159,16 @@ object HorizontalMergeTasks {
         val output = root.layout.buildDirectory.file(
             HorizontalArtifactNaming.relativePath(minecraftVersion, modId, projectVersion),
         )
-        return HorizontalMergePlan(minecraftVersion, projectVersion, modId, configuredLoaders, tier, archives, output)
+        return HorizontalMergePlan(
+            minecraftVersion,
+            projectVersion,
+            properties.getProperty("project.java"),
+            modId,
+            configuredLoaders,
+            tier,
+            archives,
+            output,
+        )
     }
 
     private fun resolveArchive(
@@ -293,6 +333,7 @@ object HorizontalMergeTasks {
 private data class HorizontalMergePlan(
     val minecraftVersion: String,
     val projectVersion: String,
+    val javaVersion: String?,
     val modId: String,
     val loaders: List<String>,
     val tier: HorizontalMergeTier,
