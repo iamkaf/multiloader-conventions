@@ -19,8 +19,10 @@ class ModrinthPublishingClient(private val token: String) {
         .build()
 
     fun resolveProjectId(idOrSlug: String): String {
+        // Authenticated so draft projects, which are hidden from anonymous reads, still resolve.
         val request = HttpRequest.newBuilder(API.resolve("project/$idOrSlug"))
             .header("User-Agent", USER_AGENT)
+            .header("Authorization", token)
             .GET()
             .build()
 
