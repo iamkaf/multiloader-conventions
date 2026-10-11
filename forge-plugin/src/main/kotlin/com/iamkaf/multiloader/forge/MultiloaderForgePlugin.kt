@@ -123,7 +123,7 @@ class MultiloaderForgePlugin : Plugin<Project> {
         val useUnobfuscatedMinecraft = context.useUnobfuscatedMinecraft(minecraftVersion)
         val identity = ProjectIdentity.from(context, MultiloaderProjectRole.FORGE)
         val teaKitRuntime = VersionPolicy.forgeTeaKitRuntimeStrategy(minecraftVersion, useLegacyForgePlugin)
-        val accessTransformerFile = project.rootProject.file("common/src/main/resources/META-INF/accesstransformer.cfg")
+        val accessTransformerFile = StonecutterSourceLayout.accessTransformerFile(project, minecraftVersion)
         val mixinConfigs = context.mixinConfigs(identity.loader!!)
         val commonProject = project.project(":common:$minecraftVersion")
 

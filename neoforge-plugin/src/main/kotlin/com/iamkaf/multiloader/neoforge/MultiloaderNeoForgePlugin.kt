@@ -73,7 +73,7 @@ class MultiloaderNeoForgePlugin : Plugin<Project> {
 
         val catalog = context.catalogFor(minecraftVersion)
         val identity = ProjectIdentity.from(context, MultiloaderProjectRole.NEOFORGE)
-        val accessTransformerFile = project.rootProject.file("common/src/main/resources/META-INF/accesstransformer.cfg")
+        val accessTransformerFile = StonecutterSourceLayout.accessTransformerFile(project, minecraftVersion)
         val commonProject = project.project(":common:$minecraftVersion")
 
         identity.applyCoordinates(project)

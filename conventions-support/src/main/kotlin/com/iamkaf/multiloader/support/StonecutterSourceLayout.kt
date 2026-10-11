@@ -13,6 +13,17 @@ object StonecutterSourceLayout {
     const val STAGE_JAVA_TASK = "stageMergedJavaSources"
     const val STAGE_RESOURCES_TASK = "stageMergedResources"
 
+    /**
+     * The access transformer for [minecraftVersion]. A line's own file under `versions/<mc>/common` replaces the shared
+     * one, as it does in the merged resources, for lines that validate entries against classes they don't have.
+     */
+    @JvmStatic
+    fun accessTransformerFile(project: Project, minecraftVersion: String): File {
+        val path = "common/src/main/resources/META-INF/accesstransformer.cfg"
+        val versionFile = project.rootProject.file("versions/$minecraftVersion/$path")
+        return if (versionFile.exists()) versionFile else project.rootProject.file(path)
+    }
+
     @JvmStatic
     fun configureCommon(project: Project, minecraftVersion: String, usesStonecutter: Boolean) {
         val versionDir = project.rootProject.file("versions/$minecraftVersion")
