@@ -79,6 +79,7 @@ publish.modrinth.id=demo
 publish.dry-run=true
 """
         file('src/main/resources/plugin.yml').text = "name: Demo\nversion: '\${version}'\n"
+        file('src/main/java/com/example/Demo.java').text = 'package com.example;\n\npublic final class Demo {}\n'
         file('changelog.md').text = "# Changelog\n\n## 1.2.3\n\n### Added\n\n- First release.\n\n## Types of changes\n"
 
         when:

@@ -323,6 +323,7 @@ tasks.named<org.gradle.jvm.tasks.Jar>("jar") {
         def metadata = new File(dir, "src/main/resources/${metadataPath}")
         metadata.parentFile.mkdirs()
         metadata.text = metadataContents
+        createModClass(dir)
     }
 
     private void createNestedLoaderProject(String path, String archiveBaseName, String metadataContents, String metadataPath, String minecraftVersion, String javaVersion) {
@@ -346,5 +347,12 @@ tasks.named<org.gradle.jvm.tasks.Jar>("jar") {
         def metadata = new File(dir, "src/main/resources/${metadataPath}")
         metadata.parentFile.mkdirs()
         metadata.text = metadataContents
+        createModClass(dir)
+    }
+
+    private static void createModClass(File dir) {
+        def source = new File(dir, 'src/main/java/com/example/TestMod.java')
+        source.parentFile.mkdirs()
+        source.text = 'package com.example;\n\npublic final class TestMod {}\n'
     }
 }

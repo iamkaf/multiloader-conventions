@@ -55,6 +55,12 @@ object MultiloaderPublishRules {
                     "[Publishing] File marked as quilt, but no quilt.mod.json or fabric.mod.json file was found",
                 )
             }
+
+            // Metadata alone can pass the checks above: a jar built from a wiped class directory still has its mods.toml.
+            val hasClasses = Files.walk(fs.getPath("/")).use { paths -> paths.anyMatch { it.toString().endsWith(".class") } }
+            if (!hasClasses) {
+                throw IllegalStateException("[Publishing] ${jarFile.name} contains no classes")
+            }
         }
     }
 
