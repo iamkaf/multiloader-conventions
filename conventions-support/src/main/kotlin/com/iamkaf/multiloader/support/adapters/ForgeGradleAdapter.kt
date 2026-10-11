@@ -6,6 +6,7 @@ import org.gradle.api.Project
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.JavaExec
+import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.jvm.toolchain.JavaToolchainService
 import java.io.File
@@ -99,6 +100,23 @@ object ForgeGradleAdapter {
         if (minecraftVersion == "1.16.5") {
             configureLegacyForge1165RunTask(project, forgeArtifactVersion)
         }
+        mergeOutputDirectories(project)
+    }
+
+    /**
+     * ForgeGradle dev runs load each output directory as its own mod file, so classes and resources must share one.
+     * Gradle can't tell those two tasks' files apart there: after a cache-restored compile, the next processResources
+     * run deletes the classes as its own stale outputs. A compile that really runs leaves them alone.
+     */
+    private fun mergeOutputDirectories(project: Project) {
+        project.extensions.getByType(SourceSetContainer::class.java).configureEach {
+            val dir = project.layout.buildDirectory.dir("sourcesSets/$name")
+            output.setResourcesDir(dir.get().asFile)
+            java.destinationDirectory.set(dir)
+        }
+        project.tasks.withType(JavaCompile::class.java).configureEach {
+            outputs.cacheIf("it has an output directory of its own") { false }
+        }
     }
 
     private fun configureLegacyForge1165ClientRun(project: Project, run: Any, forgeArtifactVersion: String?) {
@@ -179,14 +197,6 @@ object ForgeGradleAdapter {
 
     private fun hasGroovyProperty(target: Any, property: String): Boolean =
         (GroovyGradleDsl.invoke(target, "hasProperty", property) as? Boolean) == true
-
-    fun configureOutputDirectories(project: Project) {
-        project.extensions.getByType(SourceSetContainer::class.java).configureEach {
-            val dir = project.layout.buildDirectory.dir("sourcesSets/$name")
-            output.setResourcesDir(dir.get().asFile)
-            java.destinationDirectory.set(dir)
-        }
-    }
 
     fun artifactVersion(minecraftVersion: String, forgeVersion: String): String =
         if (forgeVersion.startsWith("$minecraftVersion-")) forgeVersion else "$minecraftVersion-$forgeVersion"

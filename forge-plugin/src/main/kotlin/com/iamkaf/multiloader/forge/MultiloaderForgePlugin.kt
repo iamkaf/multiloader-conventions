@@ -99,8 +99,6 @@ class MultiloaderForgePlugin : Plugin<Project> {
             }
             addStrictJopt(project)
         }
-
-        ForgeGradleAdapter.configureOutputDirectories(project)
     }
 
     private fun applyStonecutterForgePlugin(project: Project) {
@@ -197,7 +195,6 @@ class MultiloaderForgePlugin : Plugin<Project> {
             strategy = teaKitRuntime,
         )
 
-        ForgeGradleAdapter.configureOutputDirectories(project)
         JavaProjectWiring.configureResourceExpansion(
             project,
             context.expandProperties(minecraftVersion, identity.loader!!, catalog),
