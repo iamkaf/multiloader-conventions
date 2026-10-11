@@ -146,9 +146,10 @@ class VersionPolicyTest extends Specification {
         where:
         version   | format | minMax
         '1.18.2'  | '8'    | ''
-        '1.20.4'  | '15'   | ''
-        '1.21.11' | '81'   | ',\n    "min_format": 81,\n    "max_format": 81'
-        '26.2'    | '8'    | ''
+        '1.20.4'  | '22'   | ''
+        '1.21.8'  | '64'   | ''
+        '1.21.11' | '75'   | ',\n    "min_format": 75,\n    "max_format": 75'
+        '26.2'    | '88'   | ',\n    "min_format": 88,\n    "max_format": 88'
     }
 
     @Unroll

@@ -194,16 +194,24 @@ object VersionPolicy {
     fun catalogCoordinate(minecraftVersion: String): String =
         "com.iamkaf.platform:mc-$minecraftVersion:$minecraftVersion-SNAPSHOT"
 
-    fun resourcePackFormat(version: String): String =
-        when {
-            version.startsWith("1.21") -> "81"
-            version.startsWith("1.20") -> "15"
-            else -> "8"
-        }
+    /** Client resource pack format major by first release using it, newest first, from each release's SharedConstants. */
+    private val resourcePackFormats = listOf(
+        "26.3" to 97, "26.2" to 88, "26.1" to 84, "1.21.11" to 75, "1.21.9" to 69, "1.21.7" to 64,
+        "1.21.6" to 63, "1.21.5" to 55, "1.21.4" to 46, "1.21.2" to 42, "1.21" to 34, "1.20.5" to 32,
+        "1.20.3" to 22, "1.20.2" to 18, "1.20" to 15, "1.19.4" to 13, "1.19.3" to 12, "1.19" to 9,
+        "1.18" to 8, "1.17" to 7,
+    )
 
+    fun resourcePackFormat(version: String): String =
+        requireNotNull(resourcePackFormats.firstOrNull { (since, _) -> isMinecraftVersionAtLeast(version, since) }) {
+            "No resource pack format known for Minecraft $version"
+        }.second.toString()
+
+    /** From 1.21.9 a pack whose format is newer than 64 must also declare min_format and max_format. */
     fun resourcePackMinMaxSnippet(version: String): String =
-        if (version.startsWith("1.21")) {
-            ",\n    \"min_format\": 81,\n    \"max_format\": 81"
+        if (isMinecraftVersionAtLeast(version, "1.21.9")) {
+            val format = resourcePackFormat(version)
+            ",\n    \"min_format\": $format,\n    \"max_format\": $format"
         } else {
             ""
         }
