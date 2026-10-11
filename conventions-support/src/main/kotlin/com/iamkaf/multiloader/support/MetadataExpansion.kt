@@ -42,6 +42,7 @@ object MetadataExpansion {
             "forge_version" to context.versionOrNull(catalog, "forge"),
             "forge_loader_version_range" to context.optionalProperty("mod.forge-loader-range"),
             "amber_version" to context.versionOrNull(catalog, "amber"),
+            "amber_version_range" to belowNextMajor(loader, context.versionOrNull(catalog, "amber")),
             "konfig_version" to context.versionOrNull(catalog, "konfig"),
             "parchment_minecraft" to context.versionOrNull(catalog, "parchment-minecraft"),
             "parchment_version" to context.versionOrNull(catalog, "parchment"),
@@ -120,6 +121,19 @@ object MetadataExpansion {
             "mod.minecraft-range '$configuredRange' must be a Maven range such as [1.21.1, 1.22) or a floor such as >=1.21.1"
         }
         return "[$floor, ${VersionPolicy.nextMinecraftUpperBound(floor)})"
+    }
+
+    /**
+     * A dependency range from [version] up to, not including, its next major, the first release allowed to break
+     * its API. Lines that never get another release keep loading until then and refuse the next major.
+     */
+    fun belowNextMajor(loader: String, version: String?): String? {
+        if (version == null) return null
+        val major = requireNotNull(version.substringBefore('.').toIntOrNull()) {
+            "'$version' must start with a numeric major version"
+        }
+        val ceiling = "${major + 1}.0.0"
+        return if (loader == LoaderId.FABRIC.id) ">=$version <$ceiling" else "[$version,$ceiling)"
     }
 
     private fun fabricLoaderVersion(
