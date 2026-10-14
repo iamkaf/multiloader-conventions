@@ -11,8 +11,13 @@ pluginManagement {
         }
     }
     plugins {
-        id("org.gradle.kotlin.kotlin-dsl") version "6.5.7"
+        id("org.gradle.kotlin.kotlin-dsl") version "6.7.3"
     }
+}
+
+plugins {
+    // Provisions the Java 25 daemon that Amber Loom needs
+    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 
 dependencyResolutionManagement {

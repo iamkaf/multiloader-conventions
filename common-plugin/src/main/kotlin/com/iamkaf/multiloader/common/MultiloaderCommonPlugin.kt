@@ -15,6 +15,7 @@ import com.iamkaf.multiloader.support.VersionPolicy
 import com.iamkaf.multiloader.support.adapters.FabricLoomAdapter
 import com.iamkaf.multiloader.support.adapters.LegacyForgeAdapter
 import com.iamkaf.multiloader.support.adapters.NeoForgeModDevAdapter
+import com.iamkaf.multiloader.support.adapters.AmberToolchain
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import java.io.File
@@ -53,7 +54,7 @@ class MultiloaderCommonPlugin : Plugin<Project> {
         val usesStonecutter = project.tasks.findByName("stonecutterGenerate") != null
 
         when (toolchainStrategy) {
-            CommonToolchainStrategy.FABRIC_LOOM -> project.pluginManager.apply("fabric-loom")
+            CommonToolchainStrategy.FABRIC_LOOM -> project.pluginManager.apply(AmberToolchain.LOOM_REMAP)
             CommonToolchainStrategy.LEGACY_FORGE -> project.pluginManager.apply("net.neoforged.moddev.legacyforge")
             CommonToolchainStrategy.NEOFORM -> project.pluginManager.apply("net.neoforged.moddev")
         }

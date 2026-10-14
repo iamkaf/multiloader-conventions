@@ -42,26 +42,29 @@ val generateBuildToolsVersionResource = tasks.register("generateBuildToolsVersio
     val outputFile = generatedBuildToolsResources.map {
         it.file("com/iamkaf/multiloader/support/build-tools.properties")
     }
+    fun requiredVersion(alias: String): String =
+        buildToolsCatalog.findVersion(alias)
+            .orElseThrow { GradleException("Missing build-tools catalog version '$alias'") }
+            .requiredVersion
+
+    val versions = linkedMapOf(
+        "foojayResolverConventionPlugin" to requiredVersion("foojay-resolver-convention-plugin"),
+        "stonecutterPlugin" to requiredVersion("stonecutter"),
+        "neoforgeModDevPlugin" to requiredVersion("neoforge-moddev"),
+        "neoforgeLegacyForgePlugin" to requiredVersion("neoforge-moddev"),
+        "forgeGradlePlugin" to requiredVersion("forgegradle"),
+        "amberLoom" to requiredVersion("amber-loom"),
+        "amberMavenizer" to requiredVersion("amber-mavenizer"),
+        "amberNeoformRuntime" to requiredVersion("amber-neoform-runtime"),
+    )
+    inputs.property("versions", versions)
     outputs.file(outputFile)
 
     doLast {
-        fun requiredVersion(alias: String): String =
-            buildToolsCatalog.findVersion(alias)
-                .orElseThrow { GradleException("Missing build-tools catalog version '$alias'") }
-                .requiredVersion
-
         val file = outputFile.get().asFile
         file.parentFile.mkdirs()
         file.writeText(
-            listOf(
-                "foojayResolverConventionPlugin=${requiredVersion("foojay-resolver-convention-plugin")}",
-                "stonecutterPlugin=${requiredVersion("stonecutter")}",
-                "fabricLoomPlugin=${requiredVersion("fabric-loom-plugin")}",
-                "neoforgeModDevPlugin=${requiredVersion("neoforge-moddev")}",
-                "neoforgeLegacyForgePlugin=${requiredVersion("neoforge-moddev")}",
-                "forgeGradlePlugin=${requiredVersion("forgegradle")}",
-                "",
-            ).joinToString(System.lineSeparator()),
+            (versions.map { (name, version) -> "$name=$version" } + "").joinToString(System.lineSeparator()),
         )
     }
 }
