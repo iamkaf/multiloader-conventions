@@ -1,0 +1,41 @@
+name: Publish Maven Artifacts
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: Full commit SHA to publish. Leave blank to use the selected ref.
+        required: false
+        type: string
+      versions:
+        description: Comma-separated Minecraft versions from versions/<version>. Leave blank to publish all.
+        required: false
+        type: string
+      loaders:
+        description: Comma-separated loaders. Leave blank to publish every loader.
+        required: false
+        type: string
+      common:
+        description: Publish the Common artifact of each version.
+        required: false
+        type: boolean
+        default: true
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    uses: iamkaf/multiloader-conventions/.github/workflows/publish-maven.yml@REPLACE_WITH_COMMIT_SHA
+    with:
+      commit: ${{ inputs.commit }}
+      versions: ${{ inputs.versions }}
+      loaders: ${{ inputs.loaders }}
+      common: ${{ inputs.common }}
+    secrets:
+      MAVEN_PUBLISH_USERNAME: ${{ secrets.MAVEN_PUBLISH_USERNAME }}
+      MAVEN_PUBLISH_PASSWORD: ${{ secrets.MAVEN_PUBLISH_PASSWORD }}
