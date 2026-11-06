@@ -29,6 +29,11 @@ internal object PublishingTaskRegistrar {
             dependsOn(publishCurseforgeAll, publishModrinthAll)
         }
 
+        val writeManifest = project.tasks.register("writeReleaseManifest") {
+            group = "publishing"
+            description = "Writes build/release/release-manifest.json for the enabled artifacts."
+        }
+
         project.tasks.register("publishingPublish") {
             group = "publishing"
             description = "Compatibility aggregate for publishMod."
@@ -72,6 +77,7 @@ internal object PublishingTaskRegistrar {
         }
 
         project.gradle.projectsEvaluated {
+            val plannedSpecs = mutableListOf<PublicationSpec>()
             PublicationPlanner.configuredPublications(project, extension).forEach { publicationConfig ->
                 registerPublicationTaskShell(publicationConfig.name)
                 val taskSuffix = PublicationPlanner.taskSuffix(publicationConfig.name)
@@ -88,8 +94,35 @@ internal object PublishingTaskRegistrar {
 
                 val spec = PublicationPlanner.plan(project, publicationConfig)
                 val assembleTask = configureAssembleTask(project, extension, publicationConfig, spec)
+                plannedSpecs.add(spec)
+                writeManifest.configure { dependsOn(assembleTask) }
                 configureCurseForgeTask(project, extension, spec, assembleTask)
                 configureModrinthTask(project, extension, spec, assembleTask)
+            }
+            configureManifestTask(project, extension, writeManifest, plannedSpecs)
+        }
+    }
+
+    private fun configureManifestTask(
+        project: Project,
+        extension: MultiloaderPublishingExtension,
+        writeManifest: TaskProvider<Task>,
+        specs: List<PublicationSpec>,
+    ) {
+        val output = project.layout.buildDirectory.file("release/release-manifest.json")
+        writeManifest.configure {
+            outputs.file(output)
+            doFirst {
+                if (specs.isEmpty()) {
+                    throw IllegalStateException("[Publishing] No enabled publications to put in the release manifest")
+                }
+            }
+            doLast {
+                val manifest = ReleaseManifestPlanner.plan(project, extension, specs)
+                val file = output.get().asFile
+                file.parentFile.mkdirs()
+                file.writeText(ReleaseManifestWriter.toJson(manifest))
+                project.logger.lifecycle("[Publishing] Wrote ${project.relativePath(file)} (${specs.size} files)")
             }
         }
     }

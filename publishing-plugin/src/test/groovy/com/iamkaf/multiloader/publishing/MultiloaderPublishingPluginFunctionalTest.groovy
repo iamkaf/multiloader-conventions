@@ -246,6 +246,46 @@ dependencies.curseforge.required=amber-lib,konfig
         result.output.contains('"type": "requiredDependency"')
     }
 
+    def "writeReleaseManifest describes the staged jars with per-line dependencies"() {
+        given:
+        new File(testProjectDir, 'gradle.properties').text = '''
+mod.name=Test Mod
+mod.id=testmod
+publish.release-type=release
+publish.modrinth.id=test-mod
+environments.client=required
+environments.server=required
+'''.stripIndent()
+        def versionProperties = new File(testProjectDir, 'versions/26.2/gradle.properties')
+        versionProperties.parentFile.mkdirs()
+        versionProperties.text = '''
+project.minecraft=26.2
+project.java=25
+project.enabled-loaders=fabric,neoforge
+publish.game-versions=26.2
+dependencies.modrinth.required=amber
+dependencies.curseforge.required=amber-lib
+'''.stripIndent()
+
+        when:
+        def result = GradleRunner.create()
+            .withProjectDir(testProjectDir)
+            .withPluginClasspath()
+            .withArguments('writeReleaseManifest', '-Pmultiloader.stonecutter.active=26.2', '-Ppublish.commit=' + ('c' * 40), '--stacktrace')
+            .build()
+        def json = new groovy.json.JsonSlurper().parse(new File(testProjectDir, 'build/release/release-manifest.json'))
+
+        then:
+        result.task(':writeReleaseManifest').outcome == TaskOutcome.SUCCESS
+        json.commit == 'c' * 40
+        json.modrinthId == 'test-mod'
+        json.curseforgeId == null
+        json.files*.path.sort() == ['testmod-fabric-1.2.3.jar', 'testmod-neoforge-1.2.3.jar']
+        json.files.every { it.minecraft == '26.2' && it.java == 25 && it.environment == 'both' && it.sha256.size() == 64 }
+        json.files[0].dependencies.modrinth == [[slug: 'amber', type: 'required']]
+        json.files[0].dependencies.curseforge == [[slug: 'amber-lib', type: 'requiredDependency']]
+    }
+
     def "explicit publications support matrix artifacts with per-project game and java versions"() {
         given:
         new File(testProjectDir, 'settings.gradle.kts').text = '''
