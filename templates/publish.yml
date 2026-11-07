@@ -1,5 +1,8 @@
 name: Publish Maven Artifacts
 
+# The run name carries the build id, so the build host finds exactly the run it dispatched.
+run-name: Publish Maven artifacts ${{ inputs.build-id }}
+
 on:
   workflow_dispatch:
     inputs:
@@ -20,6 +23,10 @@ on:
         required: false
         type: boolean
         default: true
+      build-id:
+        description: Identifier the build host knows this run by. Leave blank by hand.
+        required: false
+        type: string
 
 concurrency:
   group: publish-${{ github.ref }}
