@@ -49,7 +49,7 @@ jobs:
       LOADERS: ${{ inputs.loaders }}
       BUILD_ID: ${{ inputs.build-id }}
       WORKDIR: ${{ inputs.working-directory }}
-      HANDOFF_URL: https://builds.kaf.sh
+      HANDOFF_URL: https://builds.iamkaf.workers.dev
     steps:
       - name: Validate inputs
         shell: bash
