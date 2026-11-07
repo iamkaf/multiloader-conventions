@@ -133,7 +133,6 @@ jobs:
       - uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
         with:
           cache-read-only: true
-          build-root-directory: ${{ inputs.working-directory }}
 
       - name: Read build graph
         if: inputs.kind == 'graph'
@@ -144,7 +143,8 @@ jobs:
           args=()
           [ -z "$VERSIONS" ] || args+=("-Pmultiloader.target.versions=$VERSIONS")
           [ -z "$LOADERS" ] || args+=("-Pmultiloader.target.loaders=$LOADERS")
-          ./gradlew "${args[@]}" writeMultiloaderGraph --console=plain --max-workers=2
+          # A restored cache can hold an older snapshot of some plugin modules; resolve them fresh.
+          ./gradlew "${args[@]}" writeMultiloaderGraph --refresh-dependencies --console=plain --max-workers=2
           test -s build/reports/multiloader/graph.json
 
       - name: Build release jars and manifest
@@ -162,6 +162,8 @@ jobs:
             args=()
             [ "$versions" = - ] || args+=("-Pmultiloader.target.versions=$versions")
             [ -z "$LOADERS" ] || args+=("-Pmultiloader.target.loaders=$LOADERS")
+            # The first batch resolves snapshot plugin modules fresh, as the graph build does.
+            [ "$n" -gt 1 ] || args+=(--refresh-dependencies)
             JAVA_HOME="${!home_var}" ./gradlew "${args[@]}" writeReleaseManifest --console=plain --max-workers=2 < /dev/null
             cp build/release/release-manifest.json "$RUNNER_TEMP/manifests/$n.json"
             echo "::endgroup::"
