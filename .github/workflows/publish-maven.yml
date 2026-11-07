@@ -121,9 +121,6 @@ jobs:
       - uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
         with:
           cache-read-only: true
-          build-root-directory: ${{ inputs.working-directory }}
-
-      - uses: taiki-e/install-action@just
 
       - name: Publish ${{ matrix.version }} to Kaf Maven
         shell: bash
@@ -137,12 +134,6 @@ jobs:
           set -euo pipefail
           chmod +x gradlew
 
-          # The default selection keeps using the repository's own recipe.
-          if [ -z "$LOADERS" ] && [ "$COMMON" = true ]; then
-            just publish-version "$VERSION"
-            exit 0
-          fi
-
           enabled=$(sed -nE 's/^project\.enabled-loaders=(.*)$/\1/p' "versions/$VERSION/gradle.properties" | head -n1 | tr ',' '\n' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' | sed '/^$/d')
           tasks=()
           [ "$COMMON" != true ] || tasks+=(":common:$VERSION:publishAllPublicationsToKafMavenRepository")
@@ -155,4 +146,5 @@ jobs:
             echo "Nothing to publish for $VERSION" >&2
             exit 1
           fi
-          ./gradlew --configure-on-demand "${tasks[@]}" --console=plain
+          # A restored cache can hold an older snapshot of some plugin modules; resolve them fresh.
+          ./gradlew --configure-on-demand "${tasks[@]}" --refresh-dependencies --console=plain
