@@ -25,10 +25,6 @@ on:
         description: Identifier the build host knows this build by.
         type: string
         required: true
-      handoff-url:
-        description: Base URL of the build host.
-        type: string
-        default: https://builds.kaf.sh
 
 permissions:
   contents: read
@@ -45,7 +41,7 @@ jobs:
       VERSIONS: ${{ inputs.versions }}
       LOADERS: ${{ inputs.loaders }}
       BUILD_ID: ${{ inputs.build-id }}
-      HANDOFF_URL: ${{ inputs.handoff-url }}
+      HANDOFF_URL: https://builds.kaf.sh
     steps:
       - name: Validate inputs
         shell: bash
@@ -56,7 +52,6 @@ jobs:
           [[ "$BUILD_ID" =~ ^[A-Za-z0-9_-]{1,100}$ ]] || { echo "build-id has unexpected characters" >&2; exit 1; }
           [[ "$VERSIONS" =~ ^[A-Za-z0-9._,-]*$ ]] || { echo "versions has unexpected characters" >&2; exit 1; }
           [[ "$LOADERS" =~ ^[a-z,]*$ ]] || { echo "loaders has unexpected characters" >&2; exit 1; }
-          [[ "$HANDOFF_URL" =~ ^https://[A-Za-z0-9.-]+(:[0-9]+)?$ ]] || { echo "handoff-url must be an https origin" >&2; exit 1; }
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -157,22 +152,34 @@ jobs:
           set -euo pipefail
           base="$HANDOFF_URL/v1/builds/$BUILD_ID"
 
-          # Tokens are short-lived, so each request asks for a fresh one.
+          # Tokens are short-lived, so each request asks for a fresh one. The host accepts an
+          # identical post twice, so a request that failed in transit is simply sent again.
           send() {
-            local method="$1" url="$2" type="$3" file="$4" token status
-            token=$(curl -sS --fail-with-body \
-              -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-              "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=builds.kaf.sh" | jq -r .value)
-            status=$(curl -sS -o "$RUNNER_TEMP/response" -w '%{http_code}' -X "$method" \
-              -H "Authorization: Bearer $token" \
-              -H "Content-Type: $type" \
-              -H "Content-Length: $(stat -c %s "$file")" \
-              --data-binary "@$file" "$url")
-            if [[ ! "$status" =~ ^2 ]]; then
+            local method="$1" url="$2" type="$3" file="$4" token status attempt
+            for attempt in 1 2 3; do
+              token=$(curl -sS --fail-with-body \
+                -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+                "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=builds.kaf.sh" | jq -r .value) || token=
+              status=000
+              if [ -n "$token" ]; then
+                status=$(curl -sS -o "$RUNNER_TEMP/response" -w '%{http_code}' -X "$method" \
+                  -H "Authorization: Bearer $token" \
+                  -H "Content-Type: $type" \
+                  -H "Content-Length: $(stat -c %s "$file")" \
+                  --data-binary "@$file" "$url") || status=000
+              fi
+              if [[ "$status" =~ ^2 ]]; then
+                return 0
+              fi
+              if [[ "$status" =~ ^(000|408|429|5[0-9][0-9])$ ]] && [ "$attempt" -lt 3 ]; then
+                echo "$method $url answered HTTP $status, trying again" >&2
+                sleep $((attempt * 10))
+                continue
+              fi
               echo "$method $url failed with HTTP $status" >&2
-              cat "$RUNNER_TEMP/response" >&2
+              cat "$RUNNER_TEMP/response" >&2 || true
               exit 1
-            fi
+            done
           }
 
           if [ "$KIND" = graph ]; then
