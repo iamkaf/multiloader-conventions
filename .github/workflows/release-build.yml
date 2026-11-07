@@ -25,6 +25,10 @@ on:
         description: Identifier the build host knows this build by.
         type: string
         required: true
+      working-directory:
+        description: Directory of the Gradle build, for repositories that keep it below the root.
+        type: string
+        default: .
 
 permissions:
   contents: read
@@ -35,16 +39,21 @@ jobs:
     name: ${{ inputs.kind == 'graph' && 'Read build graph' || 'Build release jars' }}
     runs-on: ubuntu-latest
     timeout-minutes: 180
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
     env:
       KIND: ${{ inputs.kind }}
       COMMIT: ${{ inputs.commit }}
       VERSIONS: ${{ inputs.versions }}
       LOADERS: ${{ inputs.loaders }}
       BUILD_ID: ${{ inputs.build-id }}
+      WORKDIR: ${{ inputs.working-directory }}
       HANDOFF_URL: https://builds.kaf.sh
     steps:
       - name: Validate inputs
         shell: bash
+        working-directory: ${{ github.workspace }}
         run: |
           set -euo pipefail
           [[ "$KIND" == graph || "$KIND" == release ]] || { echo "kind must be graph or release" >&2; exit 1; }
@@ -52,6 +61,7 @@ jobs:
           [[ "$BUILD_ID" =~ ^[A-Za-z0-9_-]{1,100}$ ]] || { echo "build-id has unexpected characters" >&2; exit 1; }
           [[ "$VERSIONS" =~ ^[A-Za-z0-9._,-]*$ ]] || { echo "versions has unexpected characters" >&2; exit 1; }
           [[ "$LOADERS" =~ ^[a-z,]*$ ]] || { echo "loaders has unexpected characters" >&2; exit 1; }
+          [[ "$WORKDIR" =~ ^[A-Za-z0-9._/-]+$ && "$WORKDIR" != /* && "$WORKDIR" != *..* ]] || { echo "working-directory must stay inside the repository" >&2; exit 1; }
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -65,6 +75,21 @@ jobs:
           set -euo pipefail
           if [ "$KIND" = graph ]; then
             echo "javas=25" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # A server plugin has no versions/ folder: one jar builds from the root properties.
+          if [ ! -d versions ]; then
+            java=$(sed -nE 's/^project\.build-java=([0-9]+).*/\1/p' gradle.properties | head -n1)
+            [ -n "$java" ] || java=$(sed -nE 's/^project\.java=([0-9]+).*/\1/p' gradle.properties | head -n1)
+            [ -n "$java" ] || { echo "No Java version in gradle.properties" >&2; exit 1; }
+            [ "$java" -ge 21 ] || java=21
+            echo "$java -" > "$RUNNER_TEMP/batches"
+            {
+              echo "javas<<JAVAS"
+              echo "$java"
+              echo "JAVAS"
+            } >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -108,6 +133,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
         with:
           cache-read-only: true
+          build-root-directory: ${{ inputs.working-directory }}
 
       - name: Read build graph
         if: inputs.kind == 'graph'
@@ -133,7 +159,8 @@ jobs:
             n=$((n + 1))
             echo "::group::Minecraft $versions (Java $java)"
             home_var="JAVA_HOME_${java}_X64"
-            args=("-Pmultiloader.target.versions=$versions")
+            args=()
+            [ "$versions" = - ] || args+=("-Pmultiloader.target.versions=$versions")
             [ -z "$LOADERS" ] || args+=("-Pmultiloader.target.loaders=$LOADERS")
             JAVA_HOME="${!home_var}" ./gradlew "${args[@]}" writeReleaseManifest --console=plain --max-workers=2 < /dev/null
             cp build/release/release-manifest.json "$RUNNER_TEMP/manifests/$n.json"
