@@ -122,6 +122,26 @@ jobs:
         with:
           cache-read-only: true
 
+      - name: Resolve snapshots fresh
+        shell: bash
+        working-directory: ${{ github.workspace }}
+        # Snapshot dependencies (this plugin's 3.0-SNAPSHOT modules, the platform catalogs) are
+        # checked against the repository on every build, so a restored cache never mixes an older
+        # snapshot with a newer one. Fixed versions, Minecraft, and loader caches stay cached.
+        # In init.d, so nested Gradle builds pick it up too.
+        run: |
+          set -euo pipefail
+          mkdir -p "${GRADLE_USER_HOME:-$HOME/.gradle}/init.d"
+          cat > "${GRADLE_USER_HOME:-$HOME/.gradle}/init.d/fresh-snapshots.init.gradle.kts" <<'EOF'
+          beforeSettings {
+              buildscript.configurations.configureEach { resolutionStrategy.cacheChangingModulesFor(0, "seconds") }
+          }
+          allprojects {
+              buildscript.configurations.configureEach { resolutionStrategy.cacheChangingModulesFor(0, "seconds") }
+              configurations.configureEach { resolutionStrategy.cacheChangingModulesFor(0, "seconds") }
+          }
+          EOF
+
       - name: Publish ${{ matrix.version }} to Kaf Maven
         shell: bash
         env:
@@ -146,5 +166,4 @@ jobs:
             echo "Nothing to publish for $VERSION" >&2
             exit 1
           fi
-          # A restored cache can hold an older snapshot of some plugin modules; resolve them fresh.
-          ./gradlew --configure-on-demand "${tasks[@]}" --refresh-dependencies --console=plain
+          ./gradlew --configure-on-demand "${tasks[@]}" --console=plain
