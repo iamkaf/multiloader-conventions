@@ -10,15 +10,10 @@ java {
     }
 }
 
-repositories {
-    maven { url = uri("https://maven.firstdarkdev.xyz/releases") }
-}
-
 dependencies {
     implementation(localGroovy())
     implementation(project(":conventions-support"))
     implementation("org.apache.maven:maven-artifact:3.9.9")
-    implementation("me.hypherionmc.modutils:CurseUpload4j:1.0.13")
 
     testImplementation(localGroovy())
     testImplementation(gradleTestKit())
@@ -36,7 +31,7 @@ gradlePlugin {
             id = "com.iamkaf.multiloader.publishing"
             implementationClass = "com.iamkaf.multiloader.publishing.MultiloaderPublishingPlugin"
             displayName = "Multiloader Publishing Plugin"
-            description = "Aggregates multiloader artifacts and publishes them to Modrinth and CurseForge."
+            description = "Stages multiloader release artifacts and writes their release manifest."
         }
     }
 }

@@ -98,7 +98,7 @@ object HorizontalMergeTasks {
         }
     }
 
-    fun horizontalPublicationName(minecraftVersion: String): String = "$minecraftVersion-multiloader"
+    private fun horizontalPublicationName(minecraftVersion: String): String = "$minecraftVersion-multiloader"
 
     private fun planVersion(
         root: Project,

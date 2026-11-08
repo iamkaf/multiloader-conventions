@@ -43,7 +43,6 @@ jei-api = "16.0.0.2"
 # Gradle Plugins
 fabric-loom-plugin = "1.7-SNAPSHOT"
 neoforge-moddev-plugin = "2.0.140"
-modpublisher-plugin = "2.1.6"
 forgegradle-plugin = "[6.0.47,6.2)"
 mixin-plugin = "0.7-SNAPSHOT"
 
@@ -106,6 +105,5 @@ jei-neoforge = { group = "mezz.jei", name = "jei-1.20.2-neoforge", version.ref =
 [plugins]
 fabric-loom = { id = "fabric-loom", version.ref = "fabric-loom-plugin" }
 neoforge-moddev = { id = "net.neoforged.moddev", version.ref = "neoforge-moddev-plugin" }
-modpublisher = { id = "com.hypherionmc.modutils.modpublisher", version.ref = "modpublisher-plugin" }
 forgegradle = { id = "net.minecraftforge.gradle", version.ref = "forgegradle-plugin" }
 mixin = { id = "org.spongepowered.mixin", version.ref = "mixin-plugin" }

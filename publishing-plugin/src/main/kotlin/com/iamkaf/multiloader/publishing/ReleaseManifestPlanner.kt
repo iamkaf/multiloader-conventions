@@ -5,7 +5,7 @@ import java.io.File
 import java.util.Locale
 import java.util.Properties
 
-/** Turns the planned publications into the manifest, using the same rules the upload tasks use. */
+/** Turns the planned publications into the release manifest. */
 internal object ReleaseManifestPlanner {
     fun plan(
         project: Project,
@@ -60,10 +60,7 @@ internal object ReleaseManifestPlanner {
         )
     }
 
-    /**
-     * Required dependencies come from the file's own Minecraft line, because they differ per line.
-     * The upload tasks read the same property for the one line they are run for.
-     */
+    /** Required dependencies come from the file's own Minecraft line, because they differ per line. */
     private fun dependencies(
         configured: MultiloaderPublishingExtension.Publish.Dependencies,
         requiredForLine: String?,

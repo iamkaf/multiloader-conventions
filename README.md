@@ -204,8 +204,8 @@ compile or runtime classpaths.
 | `com.iamkaf.multiloader.forge` | Forge project | Forge toolchain selection, dependencies, runs, and source sharing |
 | `com.iamkaf.multiloader.neoforge` | NeoForge project | NeoForge toolchain selection, dependencies, runs, and datagen |
 | `com.iamkaf.multiloader.translations` | root project | Remote translation downloads |
-| `com.iamkaf.multiloader.paper` | Paper plugin root project | Paper API compilation, `plugin.yml` expansion, pinned `runServer`, and Modrinth publishing |
-| `com.iamkaf.multiloader.publishing` | root project | Modrinth and CurseForge release planning and uploads |
+| `com.iamkaf.multiloader.paper` | Paper plugin root project | Paper API compilation, `plugin.yml` expansion, pinned `runServer`, and the release manifest |
+| `com.iamkaf.multiloader.publishing` | root project | Release jar staging and the release manifest |
 
 `com.iamkaf.multiloader.core` supplies shared plugin infrastructure and is not
 normally applied by consumers.
@@ -289,25 +289,24 @@ SHA-256 differs from the catalog, and runs it in `run/<minecraft>/` with that li
 The Paper plugin also applies the publishing plugin with one `paper` publication. That
 publication is the plugin jar, tagged for the `paper`, `purpur`, `folia`, and `spigot` loaders.
 It lists every `plugin.minecraft-versions` line unless `publish.game-versions` overrides
-the list. Set `publish.modrinth.id`, keep a `changelog.md`, and run `./gradlew
-publishModrinth` with `MODRINTH_TOKEN`. Use `-Ppublish.dry-run=true` to print the payload
-without uploading it. A jar without `plugin.yml` or `paper-plugin.yml` is refused. `writeMultiloaderGraph` writes the same
+the list. A jar without `plugin.yml` or `paper-plugin.yml` is refused. `writeMultiloaderGraph` writes the same
 `graph.json` as mod repositories, so release tooling can plan a plugin release like a mod's.
 
 ## Publishing
 
 The publishing plugin plans releases from the active loader/version graph and
-provides these aggregate tasks:
+provides these tasks:
 
 | Task | Purpose |
 | --- | --- |
-| `publishMod` | Publish to every configured destination |
-| `publishCurseforge` | Publish only to CurseForge |
-| `publishModrinth` | Publish only to Modrinth |
-| `publishingRelease` | Plan or execute the configured release flow |
+| `publishingAssemble` | Copy every enabled release jar to `build/publishing/artifacts` |
+| `writeReleaseManifest` | Stage the jars and describe them in `build/release/release-manifest.json` |
 
-Targeted loader, version, and destination tasks are generated for partial
-retries. Set `publish.dry-run=true` while validating release configuration.
+Each publication also gets its own `publishingAssemble<Publication>` task. The
+manifest carries the project ids, release type, game versions, loaders, Java
+level, environment, and platform dependencies of every staged jar. Modrinth and
+CurseForge uploads read it outside Gradle; Maven publications stay on the
+standard `publish…PublicationToKafMavenRepository` tasks.
 
 ## Horizontal multiloader jars
 
@@ -351,9 +350,9 @@ Validation checks the merged ZIP, loader metadata, referenced mixins and
 classes, entrypoints, access wideners or transformers, assets, data, and shared
 resources.
 
-Set `publish.set(true)` to upload each merged jar to Modrinth and CurseForge in
-place of that version's loader jars, through `publishModrinth<Version>Multiloader`
-and `publishCurseforge<Version>Multiloader`. Platform dependencies apply to every
+Set `publish.set(true)` to release each merged jar to Modrinth and CurseForge in
+place of that version's loader jars: the release manifest lists the merged jar
+instead of the loader jars. Platform dependencies apply to every
 loader in the file, so only publish merged jars when the mod's Modrinth and
 CurseForge dependencies hold on all of them. Maven publications keep the
 per-loader jars.
@@ -386,7 +385,7 @@ Publish catalog changes to Maven local before checking a consumer:
 The individual sample checks are:
 
 ```bash
-./gradlew -p samples/minimal validateConventionProperties validateSampleWiring build publishingRelease
+./gradlew -p samples/minimal validateConventionProperties validateSampleWiring build writeReleaseManifest
 ./gradlew -p samples/datagen validateConventionProperties validateSampleWiring :fabric:runDatagen verifyDatagenOutput
 ```
 

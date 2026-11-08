@@ -115,17 +115,4 @@ object MultiloaderPublishRules {
 
         return out
     }
-
-    @JvmStatic
-    fun curseNormalizeLoaders(loaders: List<String>?): List<String> {
-        val out = mutableListOf<String>()
-        loaders.orEmpty().forEach { loaderValue ->
-            when {
-                loaderValue.equals("modloader", ignoreCase = true) -> out.add("risugami's modloader")
-                loaderValue.equals("flint", ignoreCase = true) -> out.add("flint loader")
-                else -> out.add(loaderValue)
-            }
-        }
-        return out
-    }
 }

@@ -49,7 +49,7 @@ separate:
 | Common-project tool plugin family | versioned | `common` | MC line, catalog | Centralized now: Fabric Loom on the old Fabric-only era, `legacyforge` on the LegacyForge window, `moddev` when NeoForm is available. |
 | Forge tool plugin family/version | versioned | `forge` | MC line, catalog | Centralized for `1.16.5` and `1.17+`. Other pre-`1.17` Forge lines stay consumer-local unless explicitly promoted. |
 | NeoForge tool plugin family/version | stable | `neoforge` | MC line, catalog | Centralized in the plugin. |
-| Publishing payload assembly | stable | `publishing` | loader outputs, changelog, IDs | Already centralized. |
+| Release manifest assembly | stable | `publishing` | loader outputs, IDs | Already centralized. |
 | Publishing tag normalization | versioned | `publishing` | MC version, Java version, loader set | Current implementation is shared, but CurseForge/Modrinth quirks should be treated as versioned strategy points. |
 | Placeholder or prototype publish metadata policy | local | consumer properties | repo intent | Not a plugin concern. |
 | Rare one-off loader dependency hacks | local | consumer loader build | mod-specific needs | Keep local until repeated. |
@@ -138,7 +138,7 @@ add it here instead of scattering version checks across consumers.
 
 Current state:
 
-- shared dry-run/live publish flow lives in `publishing`
+- release manifest planning lives in `publishing`
 - game-version, loader, dependency, and Java-tag normalization are centralized
 
 Reason:
@@ -158,7 +158,7 @@ Current sample fixture matrix:
 - `1.21.11`
   - minimal full-stack build
   - Fabric datagen
-  - dry-run publish
+  - release manifest
 
 Older and legacy runtime strategy points are currently proven through real
 consumers rather than dedicated samples. When a legacy quirk graduates into

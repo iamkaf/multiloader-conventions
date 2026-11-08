@@ -70,33 +70,33 @@ tasks.register("printCompileOnly") {
         failure.output.contains('Minecraft 26.3 is not listed in plugin.minecraft-versions')
     }
 
-    def "publishes the plugin jar to Modrinth for every server and listed line"() {
+    def "puts the plugin jar in the release manifest for every server and listed line"() {
         given:
         writeProject(sha256(SERVER_JAR))
         file('gradle.properties') << """
 plugin.minecraft-versions=1.21.11,26.3
+mod.id=demo
 publish.modrinth.id=demo
-publish.dry-run=true
 """
         file('src/main/resources/plugin.yml').text = "name: Demo\nversion: '\${version}'\n"
         file('src/main/java/com/example/Demo.java').text = 'package com.example;\n\npublic final class Demo {}\n'
-        file('changelog.md').text = "# Changelog\n\n## 1.2.3\n\n### Added\n\n- First release.\n\n## Types of changes\n"
 
         when:
-        def result = runner('publishModrinth').build()
+        def result = runner('writeReleaseManifest', '-Ppublish.commit=' + ('c' * 40)).build()
+        def manifest = new groovy.json.JsonSlurper().parse(file('build/release/release-manifest.json'))
 
         then:
-        result.task(':publishModrinthPaper').outcome == TaskOutcome.SUCCESS
-        def payload = result.output.replaceAll(/\s/, '')
-        payload.contains('"loaders":["paper","purpur","folia","spigot"]')
-        payload.contains('"game_versions":["1.21.11","26.3"]')
-        payload.contains('"name":"demo-1.2.3"')
+        result.task(':writeReleaseManifest').outcome == TaskOutcome.SUCCESS
+        manifest.files.size() == 1
+        manifest.files[0].loaders == ['paper', 'purpur', 'folia', 'spigot']
+        manifest.files[0].gameVersions.modrinth == ['1.21.11', '26.3']
+        manifest.files[0].displayName == 'demo-1.2.3'
     }
 
     def "writes a publishing graph with one paper loader covering every listed line"() {
         given:
         writeProject(sha256(SERVER_JAR))
-        file('gradle.properties') << "plugin.minecraft-versions=1.21.11,26.3\npublish.modrinth.id=demo\n"
+        file('gradle.properties') << "plugin.minecraft-versions=1.21.11,26.3\n"
 
         when:
         runner('writeMultiloaderGraph').build()
@@ -108,17 +108,14 @@ publish.dry-run=true
         graph.versions[0].gameVersions == ['1.21.11', '26.3']
         graph.versions[0].loaders[0].name == 'paper'
         graph.versions[0].loaders[0].artifactPath == 'build/libs/demo-1.2.3.jar'
-        // CurseForge has no project id here, so only Modrinth is offered.
-        graph.versions[0].loaders[0].platformPublishTasks == [modrinth: ':publishModrinthPaper']
     }
 
-    def "refuses to publish a jar without plugin.yml"() {
+    def "refuses to stage a jar without plugin.yml"() {
         given:
         writeProject(sha256(SERVER_JAR))
-        file('gradle.properties') << "publish.modrinth.id=demo\npublish.dry-run=true\n"
 
         when:
-        def failure = runner('publishModrinth').buildAndFail()
+        def failure = runner('publishingAssemble').buildAndFail()
 
         then:
         failure.output.contains('no plugin.yml or paper-plugin.yml file was found')

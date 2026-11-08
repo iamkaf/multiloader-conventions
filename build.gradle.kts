@@ -67,7 +67,7 @@ tasks.register("checkAll") {
 
 tasks.register<Exec>("checkMinimalSample") {
     group = "verification"
-    description = "Builds the minimal sample, validates the extracted loader wiring, and dry-runs publishing."
+    description = "Builds the minimal sample, validates the extracted loader wiring, and writes its release manifest."
     workingDir = rootDir
     commandLine(
         "./gradlew",
@@ -78,7 +78,7 @@ tasks.register<Exec>("checkMinimalSample") {
         "validateConventionProperties",
         "validateSampleWiring",
         "build",
-        "publishingRelease",
+        "writeReleaseManifest",
     )
 }
 

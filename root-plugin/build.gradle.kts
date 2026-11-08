@@ -10,12 +10,6 @@ java {
     }
 }
 
-repositories {
-    maven {
-        url = uri("https://maven.firstdarkdev.xyz/releases")
-    }
-}
-
 dependencies {
     implementation(localGroovy())
     implementation(project(":conventions-support"))

@@ -98,7 +98,6 @@ object BuildGraphReporter {
         ).filterValues { it != null }
 
         val horizontal = horizontalGraph(project, minecraftVersion, enabledLoaders, props)
-        val mergedJarPublished = horizontal["publishable"] == true
         return linkedMapOf(
             "name" to minecraftVersion,
             "minecraft" to minecraftVersion,
@@ -112,7 +111,7 @@ object BuildGraphReporter {
             "horizontal" to horizontal,
             "common" to commonGraph(project, minecraftVersion),
             "loaders" to knownLoaders.map { loader ->
-                loaderGraph(project, minecraftVersion, props, loader, loader in enabledLoaders, teaKitNodes, mergedJarPublished)
+                loaderGraph(project, minecraftVersion, props, loader, loader in enabledLoaders, teaKitNodes)
             },
         )
     }
@@ -201,11 +200,8 @@ object BuildGraphReporter {
             } else {
                 null
             },
-            "platformPublishTasks" to if (published) {
-                minecraftVersion?.let { platformPublishTasks(project, HorizontalMergeTasks.horizontalPublicationName(it)) }.orEmpty()
-            } else {
-                emptyMap()
-            },
+            // Release uploads happen outside Gradle; the key stays for graph readers that expect it.
+            "platformPublishTasks" to emptyMap<String, String>(),
         )
     }
 
@@ -228,19 +224,12 @@ object BuildGraphReporter {
         loader: String,
         enabled: Boolean,
         teaKitNodes: List<TeaKitNode>,
-        mergedJarPublished: Boolean,
     ): Map<String, Any?> {
         val loaderPath = if (minecraftVersion == null) ":$loader" else ":$loader:$minecraftVersion"
         val loaderProject = project.findProject(loaderPath)
         val artifactTask = artifactTaskName(loader, minecraftVersion)
         val artifactTaskPath = taskPath(loaderProject, artifactTask) ?: taskPath(loaderProject, "jar")
         val artifactPath = if (artifactTaskPath == null) null else artifactPath(project, loaderProject, loader, minecraftVersion, props)
-        // The merged jar carries this loader to the platforms instead.
-        val platformPublishTasks = if (mergedJarPublished) {
-            emptyMap()
-        } else {
-            platformPublishTasks(project, if (minecraftVersion == null) loader else "$minecraftVersion-$loader")
-        }
 
         return linkedMapOf(
             "name" to loader,
@@ -253,20 +242,12 @@ object BuildGraphReporter {
             "artifactTask" to artifactTaskPath,
             "artifactPath" to artifactPath,
             "mavenPublishTasks" to publishTasks(loaderProject, "publish", "PublicationTo"),
-            "platformPublishTasks" to platformPublishTasks,
+            "platformPublishTasks" to emptyMap<String, String>(),
             "scenarioNodes" to teaKitNodes
                 .filter { node -> node.loader == loader && (minecraftVersion == null || node.minecraft == minecraftVersion) }
                 .map { it.name }
                 .sorted(),
         )
-    }
-
-    private fun platformPublishTasks(project: Project, publicationName: String): Map<String, String> {
-        val suffix = RootTaskNames.taskSuffix(publicationName)
-        return listOfNotNull(
-            taskPath(project, "publishModrinth$suffix")?.let { "modrinth" to it },
-            taskPath(project, "publishCurseforge$suffix")?.let { "curseforge" to it },
-        ).toMap(linkedMapOf())
     }
 
     private fun taskPath(project: Project?, taskName: String?): String? {

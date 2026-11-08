@@ -75,7 +75,6 @@ patchouli-neoforge = "2CsnFLom"
 # Gradle Plugins
 fabric-loom-plugin = "1.17-SNAPSHOT"
 neoforge-moddev-plugin = "2.0.147"
-modpublisher-plugin = "2.1.6"
 forgegradle-plugin = "7.0.28"
 mixin-plugin = "0.7-SNAPSHOT"
 
@@ -174,6 +173,5 @@ patchouli-neoforge = { group = "maven.modrinth", name = "patchouli", version.ref
 [plugins]
 fabric-loom = { id = "net.fabricmc.fabric-loom", version.ref = "fabric-loom-plugin" }
 neoforge-moddev = { id = "net.neoforged.moddev", version.ref = "neoforge-moddev-plugin" }
-modpublisher = { id = "com.hypherionmc.modutils.modpublisher", version.ref = "modpublisher-plugin" }
 forgegradle = { id = "net.minecraftforge.gradle", version.ref = "forgegradle-plugin" }
 mixin = { id = "org.spongepowered.mixin", version.ref = "mixin-plugin" }

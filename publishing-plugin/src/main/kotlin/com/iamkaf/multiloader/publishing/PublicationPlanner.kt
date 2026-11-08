@@ -151,9 +151,6 @@ internal object PublicationPlanner {
 
     fun projectProperty(project: Project, name: String): String? = optionalProperty(project, name)
 
-    fun booleanProperty(project: Project, name: String, defaultValue: Boolean): Boolean =
-        optionalProperty(project, name)?.toBooleanStrictOrNull() ?: defaultValue
-
     fun requiredCsv(project: Project, name: String): List<String> =
         optionalProperty(project, name)?.let(::csv).orEmpty()
 

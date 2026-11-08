@@ -31,6 +31,6 @@ tasks.register("validateSampleWiring") {
         check(fabricProject.tasks.findByName("runClient") != null) { "Fabric runClient task is missing" }
         check(forgeProject.tasks.findByName("runClient") != null) { "Forge runClient task is missing" }
         check(neoForgeProject.tasks.findByName("runClient") != null) { "NeoForge runClient task is missing" }
-        check(project.tasks.findByName("publishingRelease") != null) { "publishingRelease task is missing" }
+        check(project.tasks.findByName("writeReleaseManifest") != null) { "writeReleaseManifest task is missing" }
     }
 }

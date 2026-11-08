@@ -58,7 +58,6 @@ project.version=9.9.9
 project.plugins=3.0-SNAPSHOT
 mod.id=graphmod
 mod.name=Graph Mod
-publish.dry-run=true
 publish.modrinth.id=graph-mod
 publish.curseforge.id=123456
 environments.client=required
@@ -143,19 +142,14 @@ tasks = [":forge:26.2:runClient"]
             ':fabric:26.1.2:publishMavenJavaPublicationToKafMavenRepository',
             ':fabric:26.1.2:publishMavenJavaPublicationToMavenLocal',
         ]
-        fabric2612.platformPublishTasks.modrinth == ':publishModrinth2612Fabric'
-        fabric2612.platformPublishTasks.curseforge == ':publishCurseforge2612Fabric'
         fabric2612.scenarioNodes == ['26.1.2-fabric']
 
         !forge2612.enabled
         forge2612.projectPath == ':forge:26.1.2'
         !forge2612.projectExists
-        forge2612.platformPublishTasks.isEmpty()
 
         forge262.enabled
         forge262.projectPath == ':forge:26.2'
-        forge262.platformPublishTasks.modrinth == ':publishModrinth262Forge'
-        forge262.platformPublishTasks.curseforge == ':publishCurseforge262Forge'
         forge262.scenarioNodes == ['26.2-forge']
     }
 
@@ -202,17 +196,11 @@ tasks.register("verifyHorizontalWiring") {
         horizontal.validateTask == ':validateHorizontalJar262'
         horizontal.artifactPath == 'build/libs/horizontal/26.2/graphmod-multiloader-9.9.9+26.2.jar'
         !horizontal.publishable
-        horizontal.platformPublishTasks == [:]
         horizontal.nonPublishableReason.contains('horizontalMerge.publish')
         !graph.versions.find { it.name == '26.1.2' }.horizontal.enabled
-
-        and: 'existing raw publication tasks remain present'
-        graph.versions.find { it.name == '26.2' }.loaders.every { loader ->
-            !loader.enabled || loader.platformPublishTasks.keySet() == ['modrinth', 'curseforge'] as Set
-        }
     }
 
-    def "a published horizontal merge uploads the merged jar in place of the loader jars"() {
+    def "a published horizontal merge releases the merged jar in place of the loader jars"() {
         given:
         new File(testProjectDir, 'build.gradle.kts') << '''
 
@@ -232,23 +220,18 @@ multiloaderArtifacts {
         def runner = GradleRunner.create().withProjectDir(testProjectDir).withPluginClasspath()
         def graph = extractGraph(runner.withArguments('printMultiloaderGraph', '--stacktrace').build().output)
         def version = graph.versions.find { it.name == '26.2' }
-        def upload = runner.withArguments('publishModrinth262Multiloader', '--dry-run', '--stacktrace').build()
+        def release = runner.withArguments('writeReleaseManifest', '--dry-run', '--stacktrace').build()
 
         then:
         version.horizontal.publishable
         version.horizontal.nonPublishableReason == null
-        version.horizontal.platformPublishTasks == [
-            modrinth: ':publishModrinth262Multiloader',
-            curseforge: ':publishCurseforge262Multiloader',
-        ]
-        version.loaders.every { it.platformPublishTasks.isEmpty() }
         version.loaders.find { it.name == 'fabric' }.mavenPublishTasks.any { it.endsWith('ToMavenLocal') }
-        upload.output.contains(':validateHorizontalJar262 SKIPPED')
-        upload.output.contains(':publishingAssemble262Multiloader SKIPPED')
+        release.output.contains(':validateHorizontalJar262 SKIPPED')
+        release.output.contains(':publishingAssemble262Multiloader SKIPPED')
+        !release.output.contains(':publishingAssemble262Fabric ')
 
-        and: 'versions without a merged jar keep their loader uploads'
-        graph.versions.find { it.name == '26.1.2' }.loaders
-            .find { it.name == 'fabric' }.platformPublishTasks.modrinth == ':publishModrinth2612Fabric'
+        and: 'versions without a merged jar keep their loader jars'
+        release.output.contains(':publishingAssemble2612Fabric SKIPPED')
     }
 
     def "horizontal merge tasks do not exist by default"() {
@@ -299,7 +282,7 @@ tasks.register("genSourcesWithCfr") {
         result.task(':writeMultiloaderGraph').outcome == TaskOutcome.SUCCESS
     }
 
-    def "target scope limits root publish task registration"() {
+    def "target scope limits root release task registration"() {
         when:
         def result = GradleRunner.create()
             .withProjectDir(testProjectDir)
@@ -314,12 +297,9 @@ tasks.register("genSourcesWithCfr") {
             .build()
 
         then:
-        result.output.contains('publishModrinth262Forge')
-        result.output.contains('publishCurseforge262Forge')
-        !result.output.contains('publishModrinth262Fabric')
-        !result.output.contains('publishCurseforge262Fabric')
-        !result.output.contains('publishModrinth2612')
-        !result.output.contains('publishCurseforge2612')
+        result.output.contains('publishingAssemble262Forge')
+        !result.output.contains('publishingAssemble262Fabric')
+        !result.output.contains('publishingAssemble2612')
     }
 
     def "root plugin exposes multiloader stonecutter extension"() {

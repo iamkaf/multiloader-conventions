@@ -91,7 +91,7 @@ class MultiloaderPaperPlugin : Plugin<Project> {
     /**
      * Writes the same `graph.json` contract as mod repositories, so release tooling can plan plugin releases. The one
      * jar is a single `paper` loader on a version named after the floor line, and `gameVersions` lists every line
-     * the upload covers. A platform task is listed only when its project id is configured.
+     * the upload covers.
      */
     private fun registerGraph(project: Project, floor: String, gameVersions: List<String>) {
         val graphFile = project.layout.buildDirectory.file("reports/multiloader/graph.json")
@@ -101,10 +101,6 @@ class MultiloaderPaperPlugin : Plugin<Project> {
             description = "Writes this plugin's publishing graph as JSON."
             outputs.file(graphFile)
             doLast {
-                val platformTasks = linkedMapOf(
-                    "modrinth" to ":publishModrinthPaper".takeIf { project.hasProperty("publish.modrinth.id") },
-                    "curseforge" to ":publishCurseforgePaper".takeIf { project.hasProperty("publish.curseforge.id") },
-                ).filterValues { it != null }
                 val graph = linkedMapOf(
                     "schemaVersion" to 2,
                     "project" to linkedMapOf(
@@ -125,7 +121,7 @@ class MultiloaderPaperPlugin : Plugin<Project> {
                                     "enabled" to true,
                                     "artifactPath" to project.relativePath(jar.get().archiveFile.get().asFile),
                                     "mavenPublishTasks" to emptyList<String>(),
-                                    "platformPublishTasks" to platformTasks,
+                                    "platformPublishTasks" to emptyMap<String, String>(),
                                 ),
                             ),
                             // Plugins depend on no Kaf library releases.

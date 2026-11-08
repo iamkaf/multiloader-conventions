@@ -11,7 +11,6 @@ import javax.inject.Inject
 
 open class MultiloaderPublishingExtension @Inject constructor(objects: ObjectFactory) {
     private val configObject: PublishingConfig = objects.newInstance(PublishingConfig::class.java, objects)
-    private val metadataObject: PublishingMetadata = objects.newInstance(PublishingMetadata::class.java, objects)
     private val publishObject: Publish = objects.newInstance(Publish::class.java, objects)
     private val loadersObject: Loaders = objects.newInstance(Loaders::class.java, objects)
     private val publicationsObject: NamedDomainObjectContainer<Publication> =
@@ -20,8 +19,6 @@ open class MultiloaderPublishingExtension @Inject constructor(objects: ObjectFac
         }
 
     fun getConfig(): PublishingConfig = configObject
-
-    fun getMetadata(): PublishingMetadata = metadataObject
 
     fun getPublish(): Publish = publishObject
 
@@ -32,10 +29,6 @@ open class MultiloaderPublishingExtension @Inject constructor(objects: ObjectFac
     fun config(configure: Closure<*>) = configure(configObject, configure)
 
     fun config(configure: Action<in PublishingConfig>) = configure.execute(configObject)
-
-    fun metadata(configure: Closure<*>) = configure(metadataObject, configure)
-
-    fun metadata(configure: Action<in PublishingMetadata>) = configure.execute(metadataObject)
 
     fun publish(configure: Closure<*>) = configure(publishObject, configure)
 
@@ -59,39 +52,15 @@ open class MultiloaderPublishingExtension @Inject constructor(objects: ObjectFac
     }
 
     open class PublishingConfig @Inject constructor(objects: ObjectFactory) {
-        val dryRun: Property<Boolean> =
-            objects.property(Boolean::class.javaObjectType).convention(false)
         val releaseType: Property<String> =
             objects.property(String::class.java).convention("release")
-    }
-
-    open class PublishingMetadata @Inject constructor(objects: ObjectFactory) {
-        val displayName: Property<String> = objects.property(String::class.java)
-        val changelogText: Property<String> = objects.property(String::class.java)
-        val changelogFile: Property<String> = objects.property(String::class.java)
-
-        fun changelog(configure: Closure<*>) = configure(this, configure)
-
-        fun changelog(configure: Action<in PublishingMetadata>) = configure.execute(this)
-
-        fun fromText(text: String) {
-            changelogText.set(text)
-        }
-
-        fun fromFile(path: String) {
-            changelogFile.set(path)
-        }
     }
 
     open class Publish @Inject constructor(objects: ObjectFactory) {
         val disableEmptyJarCheck: Property<Boolean> =
             objects.property(Boolean::class.javaObjectType).convention(false)
-        val isManualRelease: Property<Boolean> =
-            objects.property(Boolean::class.javaObjectType).convention(false)
         private val modrinthObject: Modrinth = objects.newInstance(Modrinth::class.java, objects)
         private val curseforgeObject: CurseForge = objects.newInstance(CurseForge::class.java, objects)
-        val additionalFiles: ListProperty<AdditionalFile> =
-            objects.listProperty(AdditionalFile::class.java).convention(emptyList())
 
         fun getModrinth(): Modrinth = modrinthObject
 
@@ -105,24 +74,8 @@ open class MultiloaderPublishingExtension @Inject constructor(objects: ObjectFac
 
         fun curseforge(configure: Action<in CurseForge>) = configure.execute(curseforgeObject)
 
-        @JvmOverloads
-        fun additionalFile(path: String, configure: Closure<*>? = null) {
-            val file = AdditionalFile(path)
-            if (configure != null) {
-                configure(file, configure)
-            }
-            additionalFiles.add(file)
-        }
-
-        fun additionalFile(path: String, configure: Action<in AdditionalFile>) {
-            val file = AdditionalFile(path)
-            configure.execute(file)
-            additionalFiles.add(file)
-        }
-
         open class Modrinth @Inject constructor(objects: ObjectFactory) {
             val id: Property<String> = objects.property(String::class.java)
-            val token: Property<String> = objects.property(String::class.java)
             private val dependenciesObject: Dependencies = objects.newInstance(Dependencies::class.java, objects)
 
             fun getDependencies(): Dependencies = dependenciesObject
@@ -134,9 +87,7 @@ open class MultiloaderPublishingExtension @Inject constructor(objects: ObjectFac
 
         open class CurseForge @Inject constructor(objects: ObjectFactory) {
             val id: Property<String> = objects.property(String::class.java)
-            val token: Property<String> = objects.property(String::class.java)
             val environment: Property<String> = objects.property(String::class.java).convention("both")
-            val javaVersions: ListProperty<String> = objects.listProperty(String::class.java).convention(emptyList())
             private val dependenciesObject: Dependencies = objects.newInstance(Dependencies::class.java, objects)
 
             fun getDependencies(): Dependencies = dependenciesObject
@@ -171,31 +122,6 @@ open class MultiloaderPublishingExtension @Inject constructor(objects: ObjectFac
             fun incompatible(slug: String) = incompatibleProperty.add(slug)
 
             fun embedded(slug: String) = embeddedProperty.add(slug)
-        }
-
-        open class AdditionalFile(val path: String) {
-            private var displayNameValue: String? = null
-            private var changelogValue: String? = null
-
-            fun getDisplayName(): String? = displayNameValue
-
-            fun setDisplayName(value: String?) {
-                displayNameValue = value
-            }
-
-            fun displayName(value: String) {
-                displayNameValue = value
-            }
-
-            fun getChangelog(): String? = changelogValue
-
-            fun setChangelog(value: String?) {
-                changelogValue = value
-            }
-
-            fun changelog(value: String) {
-                changelogValue = value
-            }
         }
     }
 

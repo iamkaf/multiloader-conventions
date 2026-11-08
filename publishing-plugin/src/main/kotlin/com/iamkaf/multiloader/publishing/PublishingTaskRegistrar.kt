@@ -10,40 +10,12 @@ internal object PublishingTaskRegistrar {
 
         val assembleAll = project.tasks.register("publishingAssemble") {
             group = "publishing"
-            description = "Aggregate all enabled artifacts for release publishing."
-        }
-
-        val publishCurseforgeAll = project.tasks.register("publishCurseforge") {
-            group = "publishing"
-            description = "Upload all enabled artifacts to CurseForge."
-        }
-
-        val publishModrinthAll = project.tasks.register("publishModrinth") {
-            group = "publishing"
-            description = "Upload all enabled artifacts to Modrinth."
-        }
-
-        val publishAll = project.tasks.register("publishMod") {
-            group = "publishing"
-            description = "Upload all enabled artifacts to configured platforms."
-            dependsOn(publishCurseforgeAll, publishModrinthAll)
+            description = "Stage all enabled artifacts for the release manifest."
         }
 
         val writeManifest = project.tasks.register("writeReleaseManifest") {
             group = "publishing"
             description = "Writes build/release/release-manifest.json for the enabled artifacts."
-        }
-
-        project.tasks.register("publishingPublish") {
-            group = "publishing"
-            description = "Compatibility aggregate for publishMod."
-            dependsOn(publishAll)
-        }
-
-        project.tasks.register("publishingRelease") {
-            group = "publishing"
-            description = "Compatibility aggregate for publishMod."
-            dependsOn(publishAll)
         }
 
         fun registerPublicationTaskShell(publicationName: String) {
@@ -52,23 +24,9 @@ internal object PublishingTaskRegistrar {
 
             val assembleTask = project.tasks.register("publishingAssemble$taskSuffix") {
                 group = "publishing"
-                description = "Aggregate the $publicationName artifact for release publishing."
+                description = "Stage the $publicationName artifact for the release manifest."
             }
             assembleAll.configure { dependsOn(assembleTask) }
-
-            val curseTask = project.tasks.register("publishCurseforge$taskSuffix") {
-                group = "publishing"
-                description = "Upload the $publicationName artifact to CurseForge."
-                dependsOn(assembleTask)
-            }
-            publishCurseforgeAll.configure { dependsOn(curseTask) }
-
-            val modrinthTask = project.tasks.register("publishModrinth$taskSuffix") {
-                group = "publishing"
-                description = "Upload the $publicationName artifact to Modrinth."
-                dependsOn(assembleTask)
-            }
-            publishModrinthAll.configure { dependsOn(modrinthTask) }
         }
 
         listOf("fabric", "forge", "neoforge").forEach(::registerPublicationTaskShell)
@@ -96,8 +54,6 @@ internal object PublishingTaskRegistrar {
                 val assembleTask = configureAssembleTask(project, extension, publicationConfig, spec)
                 plannedSpecs.add(spec)
                 writeManifest.configure { dependsOn(assembleTask) }
-                configureCurseForgeTask(project, extension, spec, assembleTask)
-                configureModrinthTask(project, extension, spec, assembleTask)
             }
             configureManifestTask(project, extension, writeManifest, plannedSpecs)
         }
@@ -145,7 +101,7 @@ internal object PublishingTaskRegistrar {
             doFirst {
                 project.logger.lifecycle(
                     "[Publishing] Assemble starting for ${publicationConfig.name} " +
-                        "(dryRun=${extension.getConfig().dryRun.get()}, releaseType=${extension.getConfig().releaseType.get()}, " +
+                        "(releaseType=${extension.getConfig().releaseType.get()}, " +
                         "loaders=${spec.loaders}, gameVersions=${spec.gameVersions})",
                 )
             }
@@ -154,82 +110,6 @@ internal object PublishingTaskRegistrar {
                 ArtifactStager.stage(project, extension, spec)
             }
         }
-
-    private fun configureCurseForgeTask(
-        project: Project,
-        extension: MultiloaderPublishingExtension,
-        spec: PublicationSpec,
-        assembleTask: TaskProvider<Task>,
-    ) {
-        project.tasks.named("publishCurseforge${spec.taskSuffix}") {
-            dependsOn(assembleTask)
-            onlyIf { extension.getPublish().getCurseforge().id.isPresent }
-
-            doLast {
-                val isDryRun = extension.getConfig().dryRun.get()
-                if (!isDryRun && !extension.getPublish().getCurseforge().token.isPresent) {
-                    throw IllegalStateException("[Publishing] CurseForge publishing requires publish.curseforge.token unless dryRun=true")
-                }
-
-                val curseGameVersions = MultiloaderPublishRules.curseNormalizeGameVersions(spec.gameVersions)
-                project.logger.lifecycle("[Publishing] Destinations=[curseforge]")
-                project.logger.lifecycle("[Publishing] loaders=${spec.loaders}")
-                project.logger.lifecycle("[Publishing] gameVersions=${spec.gameVersions}")
-
-                CurseForgeReleasePublisher.publish(
-                    project = project,
-                    extension = extension,
-                    changelog = ReleaseChangelogSelector.resolve(project, extension, spec),
-                    dryRun = isDryRun,
-                    gameVersions = curseGameVersions,
-                    file = PublicationPlanner.stagedArtifactFile(project, spec),
-                    publication = spec,
-                )
-
-                if (isDryRun) {
-                    project.logger.lifecycle("[Publishing] dryRun=true -> skipping live publish")
-                }
-            }
-        }
-    }
-
-    private fun configureModrinthTask(
-        project: Project,
-        extension: MultiloaderPublishingExtension,
-        spec: PublicationSpec,
-        assembleTask: TaskProvider<Task>,
-    ) {
-        project.tasks.named("publishModrinth${spec.taskSuffix}") {
-            dependsOn(assembleTask)
-            onlyIf { extension.getPublish().getModrinth().id.isPresent }
-
-            doLast {
-                val isDryRun = extension.getConfig().dryRun.get()
-                if (!isDryRun && !extension.getPublish().getModrinth().token.isPresent) {
-                    throw IllegalStateException("[Publishing] Modrinth publishing requires publish.modrinth.token unless dryRun=true")
-                }
-
-                val modrinthGameVersions = MultiloaderPublishRules.modrinthNormalizeGameVersions(spec.gameVersions)
-                project.logger.lifecycle("[Publishing] Destinations=[modrinth]")
-                project.logger.lifecycle("[Publishing] loaders=${spec.loaders}")
-                project.logger.lifecycle("[Publishing] gameVersions=${spec.gameVersions}")
-
-                ModrinthReleasePublisher.publish(
-                    project = project,
-                    extension = extension,
-                    changelog = ReleaseChangelogSelector.resolve(project, extension, spec),
-                    dryRun = isDryRun,
-                    gameVersions = modrinthGameVersions,
-                    file = PublicationPlanner.stagedArtifactFile(project, spec),
-                    publication = spec,
-                )
-
-                if (isDryRun) {
-                    project.logger.lifecycle("[Publishing] dryRun=true -> skipping live publish")
-                }
-            }
-        }
-    }
 
     private fun configureUnconfiguredPublicationTasks(project: Project, taskSuffix: String, projectPath: String) {
         project.tasks.named("publishingAssemble$taskSuffix") {
@@ -243,12 +123,6 @@ internal object PublishingTaskRegistrar {
 
     private fun configureDisabledPublicationTasks(project: Project, taskSuffix: String) {
         project.tasks.named("publishingAssemble$taskSuffix") {
-            onlyIf { false }
-        }
-        project.tasks.named("publishCurseforge$taskSuffix") {
-            onlyIf { false }
-        }
-        project.tasks.named("publishModrinth$taskSuffix") {
             onlyIf { false }
         }
     }

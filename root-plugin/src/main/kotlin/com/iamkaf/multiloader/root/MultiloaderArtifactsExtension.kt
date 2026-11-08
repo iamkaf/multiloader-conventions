@@ -26,7 +26,7 @@ open class MultiloaderArtifactsExtension @Inject constructor(objects: ObjectFact
             objects.setProperty(String::class.java).convention(emptySet())
 
         /**
-         * Uploads each merged jar to Modrinth and CurseForge in place of that version's loader jars.
+         * Releases each merged jar to Modrinth and CurseForge in place of that version's loader jars.
          * Platform dependencies apply to every loader in the file, so only set this when they hold on all of them.
          * Kaf Maven keeps publishing the loader jars.
          */
