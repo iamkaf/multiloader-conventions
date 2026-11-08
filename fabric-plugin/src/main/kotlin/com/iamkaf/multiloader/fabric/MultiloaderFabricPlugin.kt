@@ -5,6 +5,7 @@ import com.iamkaf.multiloader.support.ConventionSupport
 import com.iamkaf.multiloader.support.ConsumerDslPolicy
 import com.iamkaf.multiloader.support.DatagenOutputPlanner
 import com.iamkaf.multiloader.support.FabricCompatibilityPolicy
+import com.iamkaf.multiloader.support.GraphOnlyBuild
 import com.iamkaf.multiloader.support.JavaProjectWiring
 import com.iamkaf.multiloader.support.LoaderDependencyPolicy
 import com.iamkaf.multiloader.support.LoaderId
@@ -17,6 +18,7 @@ import com.iamkaf.multiloader.support.VersionPolicy
 import com.iamkaf.multiloader.support.adapters.FabricLoomAdapter
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.jvm.tasks.Jar
 
 class MultiloaderFabricPlugin : Plugin<Project> {
     override fun apply(project: Project) {
@@ -86,6 +88,11 @@ class MultiloaderFabricPlugin : Plugin<Project> {
 
         val context = MultiloaderProjectContext.of(project)
         val minecraftVersion = context.requiredProperty("project.minecraft")
+        if (GraphOnlyBuild.requested(project)) {
+            configureStonecutterFabricGraphOnly(project, context, minecraftVersion)
+            return
+        }
+
         val catalog = context.catalogFor(minecraftVersion)
         val identity = ProjectIdentity.from(context, MultiloaderProjectRole.FABRIC)
         val useUnobfuscatedMinecraft = context.useUnobfuscatedMinecraft(minecraftVersion)
@@ -174,6 +181,19 @@ class MultiloaderFabricPlugin : Plugin<Project> {
         )
         JavaProjectWiring.configureJarManifest(project, identity)
         MavenPublicationWiring.configureJavaComponentPublication(project, context)
+    }
+
+    private fun configureStonecutterFabricGraphOnly(
+        project: Project,
+        context: MultiloaderProjectContext,
+        minecraftVersion: String,
+    ) {
+        GraphOnlyBuild.configureNode(project, context, MultiloaderProjectRole.FABRIC, listOf("runClient"))
+        // The graph reports Loom's remapJar as the release artifact on obfuscated lines.
+        val artifactTask = VersionPolicy.fabricPublicationArtifact(minecraftVersion).artifactTask
+        if (project.tasks.findByName(artifactTask) == null) {
+            project.tasks.register(artifactTask, Jar::class.java)
+        }
     }
 
     private fun configureFabricDatagen(

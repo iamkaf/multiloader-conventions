@@ -109,7 +109,7 @@ class MultiloaderForgePlugin : Plugin<Project> {
         val context = MultiloaderProjectContext.of(project)
         val minecraftVersion = context.requiredProperty("project.minecraft")
         if (GraphOnlyBuild.requested(project)) {
-            configureStonecutterForgeGraphOnly(project, context)
+            GraphOnlyBuild.configureNode(project, context, MultiloaderProjectRole.FORGE, listOf("runClient"))
             return
         }
 
@@ -202,30 +202,6 @@ class MultiloaderForgePlugin : Plugin<Project> {
             jsonPatterns = listOf("pack.mcmeta", "*.mixins.json"),
         )
         JavaProjectWiring.configureJarManifest(project, identity, mixinConfigs = mixinConfigs)
-        MavenPublicationWiring.configureJavaComponentPublication(project, context)
-    }
-
-    private fun configureStonecutterForgeGraphOnly(
-        project: Project,
-        context: MultiloaderProjectContext,
-    ) {
-        val identity = ProjectIdentity.from(context, MultiloaderProjectRole.FORGE)
-        identity.applyCoordinates(project)
-        JavaProjectWiring.configureArchiveName(project, identity.archiveName)
-
-        StonecutterSourceLayout.configureGraphOnly(project)
-        JavaProjectWiring.configureJavaBuild(project, identity.javaVersion)
-        JavaProjectWiring.configureArchiveAndResourceDefaults(project)
-
-        project.tasks.withType(Jar::class.java).configureEach {
-            exclude(".cache/**")
-        }
-
-        project.tasks.register("runClient") {
-            group = "minecraft"
-            description = "Placeholder Forge client run task for graph-only ${identity.minecraftVersion} builds."
-        }
-
         MavenPublicationWiring.configureJavaComponentPublication(project, context)
     }
 

@@ -4,6 +4,7 @@ import com.iamkaf.multiloader.support.CommonArtifacts
 import com.iamkaf.multiloader.support.CommonToolchainStrategy
 import com.iamkaf.multiloader.support.ConventionSupport
 import com.iamkaf.multiloader.support.ConsumerDslPolicy
+import com.iamkaf.multiloader.support.GraphOnlyBuild
 import com.iamkaf.multiloader.support.JavaProjectWiring
 import com.iamkaf.multiloader.support.LoaderDependencyPolicy
 import com.iamkaf.multiloader.support.MavenPublicationWiring
@@ -42,6 +43,11 @@ class MultiloaderCommonPlugin : Plugin<Project> {
             minecraftVersion,
             "common",
         )
+        if (GraphOnlyBuild.requested(project)) {
+            GraphOnlyBuild.configureNode(project, context, MultiloaderProjectRole.COMMON, emptyList())
+            return
+        }
+
         val catalog = context.catalogFor(minecraftVersion)
         val identity = ProjectIdentity.from(context, MultiloaderProjectRole.COMMON)
         val toolchainStrategy = VersionPolicy.commonToolchainStrategy(

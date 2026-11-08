@@ -4,6 +4,7 @@ import com.iamkaf.multiloader.platform.MultiloaderPlatformPlugin
 import com.iamkaf.multiloader.support.ClientRunEnvironmentPolicy
 import com.iamkaf.multiloader.support.ConventionSupport
 import com.iamkaf.multiloader.support.ConsumerDslPolicy
+import com.iamkaf.multiloader.support.GraphOnlyBuild
 import com.iamkaf.multiloader.support.JavaProjectWiring
 import com.iamkaf.multiloader.support.LoaderDependencyPolicy
 import com.iamkaf.multiloader.support.LoaderId
@@ -67,6 +68,11 @@ class MultiloaderNeoForgePlugin : Plugin<Project> {
 
         val context = MultiloaderProjectContext.of(project)
         val minecraftVersion = context.requiredProperty("project.minecraft")
+        if (GraphOnlyBuild.requested(project)) {
+            GraphOnlyBuild.configureNode(project, context, MultiloaderProjectRole.NEOFORGE, listOf("runClient"))
+            return
+        }
+
         val useNeoGradleUserdev =
             VersionPolicy.neoForgeToolchainStrategy(minecraftVersion) == NeoForgeToolchainStrategy.NEOGRADLE_USERDEV
         project.pluginManager.apply(if (useNeoGradleUserdev) "net.neoforged.gradle.userdev" else "net.neoforged.moddev")
