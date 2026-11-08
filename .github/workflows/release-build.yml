@@ -200,7 +200,8 @@ jobs:
           jq -r '.files[] | "\(.sha256)  \(.path | split("/") | last)"' "$RUNNER_TEMP/release-manifest.json" > "$RUNNER_TEMP/subjects.txt"
 
       # GitHub's public proof that these jars came from this commit and workflow. Anyone can check
-      # a downloaded jar with `gh attestation verify <jar> --repo <owner>/<repo>`. GitHub attests
+      # a downloaded jar with `gh attestation verify <jar> --repo <owner>/<repo>
+      # --signer-repo iamkaf/multiloader-conventions` (this reusable workflow signs). GitHub attests
       # private repositories only on Enterprise plans, so those skip it.
       - name: Attest release jars
         id: attest
