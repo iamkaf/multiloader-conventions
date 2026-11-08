@@ -30,9 +30,11 @@ on:
         type: string
         default: .
 
+# The caller's release.yml must grant the same: a called workflow gets no more than its caller.
 permissions:
   contents: read
   id-token: write
+  attestations: write
 
 jobs:
   build:
@@ -194,9 +196,24 @@ jobs:
           jq -e '(.files | length) > 0 and ([.files[].path] | length == (unique | length))' \
             "$RUNNER_TEMP/release-manifest.json" > /dev/null
           jq -e --arg commit "$COMMIT" '.commit == $commit' "$RUNNER_TEMP/release-manifest.json" > /dev/null
+          # The jars to attest, exactly as the manifest lists them, in `shasum -a 256` format.
+          jq -r '.files[] | "\(.sha256)  \(.path | split("/") | last)"' "$RUNNER_TEMP/release-manifest.json" > "$RUNNER_TEMP/subjects.txt"
+
+      # GitHub's public proof that these jars came from this commit and workflow. Anyone can check
+      # a downloaded jar with `gh attestation verify <jar> --repo <owner>/<repo>`. GitHub attests
+      # private repositories only on Enterprise plans, so those skip it.
+      - name: Attest release jars
+        id: attest
+        if: inputs.kind == 'release' && !github.event.repository.private
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-checksums: ${{ runner.temp }}/subjects.txt
 
       - name: Upload build result
         shell: bash
+        env:
+          # Empty when the attest step was skipped.
+          ATTESTATION_URL: ${{ steps.attest.outputs.attestation-url }}
         run: |
           set -euo pipefail
           base="$HANDOFF_URL/v1/builds/$BUILD_ID"
@@ -237,6 +254,10 @@ jobs:
           fi
 
           manifest="$RUNNER_TEMP/release-manifest.json"
+          if [ -n "$ATTESTATION_URL" ]; then
+            jq --arg url "$ATTESTATION_URL" '. + {attestation: $url}' "$manifest" > "$RUNNER_TEMP/attested.json"
+            manifest="$RUNNER_TEMP/attested.json"
+          fi
           send POST "$base/manifest" application/json "$manifest"
           while read -r path; do
             encoded=$(jq -rn --arg path "$path" '$path | @uri')

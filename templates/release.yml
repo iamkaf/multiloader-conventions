@@ -32,6 +32,8 @@ on:
 permissions:
   contents: read
   id-token: write
+  # release-build.yml attests the jars it builds.
+  attestations: write
 
 jobs:
   release:
