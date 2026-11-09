@@ -35,10 +35,6 @@ object SettingsRepositoryPolicy {
             url = URI.create("https://repo.spongepowered.org/repository/maven-public")
         }
         settings.pluginManagement.repositories.maven {
-            name = "FirstDark"
-            url = URI.create("https://maven.firstdarkdev.xyz/releases")
-        }
-        settings.pluginManagement.repositories.maven {
             name = "Kaf Maven"
             url = URI.create("https://maven.kaf.sh")
         }
@@ -72,10 +68,6 @@ object SettingsRepositoryPolicy {
 
             "https://repo.spongepowered.org/repository/maven-public" -> repository.content {
                 includeGroupByRegex("org\\.spongepowered(\\..*)?")
-            }
-
-            "https://maven.firstdarkdev.xyz/releases" -> repository.content {
-                includeGroupByRegex("me\\.hypherionmc(\\..*)?")
             }
         }
     }
