@@ -50,10 +50,12 @@ subprojects {
                         "https://z.kaf.sh/releases"
                     },
                 )
-                credentials {
-                    username = System.getenv("MAVEN_PUBLISH_USERNAME")
-                    password = System.getenv("MAVEN_PUBLISH_PASSWORD")
+                // A one-hour publish token from z.kaf.sh/token, which CI gets with its GitHub OIDC token.
+                credentials(HttpHeaderCredentials::class) {
+                    name = "Authorization"
+                    value = "Bearer ${System.getenv("KAF_MAVEN_TOKEN").orEmpty()}"
                 }
+                authentication { create<HttpHeaderAuthentication>("header") }
             }
         }
     }

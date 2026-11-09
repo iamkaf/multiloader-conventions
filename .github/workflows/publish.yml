@@ -29,6 +29,8 @@ on:
 
 permissions:
   contents: read
+  # Each publish trades GitHub's OIDC token for a Kaf Maven publish token.
+  id-token: write
 
 concurrency:
   group: publish-${{ github.ref }}
@@ -129,17 +131,24 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@017a9effdb900e5b5b2fddfb590a105619dca3c3 # v4.4.2
 
+      - name: Get a Kaf Maven publish token
+        shell: bash
+        # GitHub's OIDC token proves this run; z.kaf.sh trades it for a one-hour publish token.
+        run: |
+          set -euo pipefail
+          oidc=$(curl -sS --fail-with-body -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=maven.kaf.sh" | jq -r .value)
+          token=$(curl -sS --fail-with-body -X POST -H "Authorization: Bearer $oidc" https://z.kaf.sh/token | jq -r .token)
+          echo "::add-mask::$token"
+          echo "KAF_MAVEN_TOKEN=$token" >> "$GITHUB_ENV"
+
       - name: Publish build tool catalog to KafMaven
         if: needs.plan.outputs.build_tools_changed == 'true'
         env:
-          MAVEN_PUBLISH_USERNAME: ${{ secrets.MAVEN_PUBLISH_USERNAME }}
-          MAVEN_PUBLISH_PASSWORD: ${{ secrets.MAVEN_PUBLISH_PASSWORD }}
         run: >-
           ./gradlew -p catalogs --no-daemon --stacktrace
           :build-tools:publishAllPublicationsToKafMavenRepository
 
       - name: Publish to KafMaven
         env:
-          MAVEN_PUBLISH_USERNAME: ${{ secrets.MAVEN_PUBLISH_USERNAME }}
-          MAVEN_PUBLISH_PASSWORD: ${{ secrets.MAVEN_PUBLISH_PASSWORD }}
         run: ./gradlew --no-daemon --stacktrace publishAllPublicationsToKafMavenRepository

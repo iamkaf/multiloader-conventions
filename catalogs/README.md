@@ -116,15 +116,8 @@ What they do:
 - `publishAllToMavenLocal`
   - publishes every included catalog to `mavenLocal`
 
-Credentials:
-
-- `MAVEN_PUBLISH_USERNAME`
-- `MAVEN_PUBLISH_PASSWORD`
-
-or Gradle properties:
-
-- `maven.kaf.username`
-- `maven.kaf.password`
+Publishing to Kaf Maven runs only in CI: the workflow trades its GitHub OIDC token for a one-hour
+publish token at `https://z.kaf.sh/token` and passes it in `KAF_MAVEN_TOKEN`.
 
 ## Notes
 

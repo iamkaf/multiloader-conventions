@@ -2,7 +2,9 @@ package com.iamkaf.multiloader.support
 
 import org.gradle.api.Project
 import org.gradle.api.artifacts.dsl.RepositoryHandler
+import org.gradle.api.credentials.HttpHeaderCredentials
 import org.gradle.api.publish.PublishingExtension
+import org.gradle.authentication.http.HttpHeaderAuthentication
 import java.net.URI
 
 object RepositoryPolicy {
@@ -75,10 +77,12 @@ object RepositoryPolicy {
                 if (version.endsWith("-SNAPSHOT")) "https://z.kaf.sh/snapshots"
                 else "https://z.kaf.sh/releases",
             )
-            credentials {
-                username = System.getenv("MAVEN_PUBLISH_USERNAME")
-                password = System.getenv("MAVEN_PUBLISH_PASSWORD")
+            // A one-hour publish token from z.kaf.sh/token, which CI gets with its GitHub OIDC token.
+            credentials(HttpHeaderCredentials::class.java) {
+                name = "Authorization"
+                value = "Bearer ${System.getenv("KAF_MAVEN_TOKEN").orEmpty()}"
             }
+            authentication { create("header", HttpHeaderAuthentication::class.java) }
         }
     }
 }
