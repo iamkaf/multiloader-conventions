@@ -117,7 +117,7 @@ What they do:
   - publishes every included catalog to `mavenLocal`
 
 Publishing to Kaf Maven runs only in CI: the workflow trades its GitHub OIDC token for a one-hour
-publish token at `https://z.kaf.sh/token` and passes it in `KAF_MAVEN_TOKEN`.
+publish token at `https://maven.iamkaf.workers.dev/token` and passes it in `KAF_MAVEN_TOKEN`.
 
 ## Notes
 

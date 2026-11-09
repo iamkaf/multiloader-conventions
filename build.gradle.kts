@@ -50,7 +50,7 @@ subprojects {
                         "https://z.kaf.sh/releases"
                     },
                 )
-                // A one-hour publish token from z.kaf.sh/token, which CI gets with its GitHub OIDC token.
+                // A one-hour publish token from the Maven Worker's /token, which CI gets with its GitHub OIDC token.
                 credentials(HttpHeaderCredentials::class) {
                     name = "Authorization"
                     value = "Bearer ${System.getenv("KAF_MAVEN_TOKEN").orEmpty()}"

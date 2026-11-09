@@ -77,7 +77,7 @@ object RepositoryPolicy {
                 if (version.endsWith("-SNAPSHOT")) "https://z.kaf.sh/snapshots"
                 else "https://z.kaf.sh/releases",
             )
-            // A one-hour publish token from z.kaf.sh/token, which CI gets with its GitHub OIDC token.
+            // A one-hour publish token from the Maven Worker's /token, which CI gets with its GitHub OIDC token.
             credentials(HttpHeaderCredentials::class.java) {
                 name = "Authorization"
                 value = "Bearer ${System.getenv("KAF_MAVEN_TOKEN").orEmpty()}"
