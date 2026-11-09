@@ -144,11 +144,9 @@ jobs:
 
       - name: Publish build tool catalog to KafMaven
         if: needs.plan.outputs.build_tools_changed == 'true'
-        env:
         run: >-
           ./gradlew -p catalogs --no-daemon --stacktrace
           :build-tools:publishAllPublicationsToKafMavenRepository
 
       - name: Publish to KafMaven
-        env:
         run: ./gradlew --no-daemon --stacktrace publishAllPublicationsToKafMavenRepository
