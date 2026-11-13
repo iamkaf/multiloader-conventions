@@ -50,6 +50,13 @@ object RepositoryPolicy {
             name = "Fuzs Mod Resources"
             url = project.uri("https://raw.githubusercontent.com/Fuzss/modresources/main/maven/")
         }
+        project.repositories.maven {
+            name = "Xaero's Maven"
+            url = project.uri("https://chocolateminecraft.com/maven/")
+            content {
+                includeGroup("xaero.pac")
+            }
+        }
     }
 
     fun configureWorkspaceRepositories(repositories: RepositoryHandler) {
