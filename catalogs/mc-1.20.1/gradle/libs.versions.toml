@@ -45,6 +45,9 @@ forgegradle-plugin = "[7.0.11,8.0)"
 mixin-plugin = "0.7-SNAPSHOT"
 neoforge-legacyforge-plugin = "2.0.140"
 
+# Open Parties and Claims
+opac = "0.33.0"
+
 [libraries]
 # Core Dependencies
 minecraft = { group = "com.mojang", name = "minecraft", version.ref = "minecraft" }
@@ -99,6 +102,8 @@ jei-forge = { group = "mezz.jei", name = "jei-1.20.1-forge", version.ref = "jei-
 jei-neoforge-api = { group = "mezz.jei", name = "jei-1.20.1-neoforge-api", version.ref = "jei-api" }
 jei-neoforge = { group = "mezz.jei", name = "jei-1.20.1-neoforge", version.ref = "jei-api" }
 patchouli-forge = { group = "maven.modrinth", name = "patchouli", version.ref = "patchouli-forge" }
+opac-common = { group = "xaero.pac", name = "open-parties-and-claims-common-1.20.1", version.ref = "opac" }
+opac-forge = { group = "xaero.pac", name = "open-parties-and-claims-forge-1.20.1", version.ref = "opac" }
 
 [plugins]
 fabric-loom = { id = "fabric-loom", version.ref = "fabric-loom-plugin" }

@@ -25,7 +25,7 @@ forge = "26.3-66.0.3"
 mixin = "0.8.5"
 mixinextras = "0.5.4"
 gson = "2.14.0"
-forge-config-api-port-fabric = "26.1.4"
+forge-config-api-port-fabric = "26.3.1"
 forge-config-api-port-forge = "26.1.4"
 
 # Amber
@@ -73,6 +73,9 @@ fabric-loom-plugin = "1.17-SNAPSHOT"
 neoforge-moddev-plugin = "2.0.147"
 forgegradle-plugin = "7.0.28"
 mixin-plugin = "0.7-SNAPSHOT"
+
+# Open Parties and Claims
+opac = "0.33.0"
 
 [libraries]
 # Core Dependencies
@@ -162,6 +165,8 @@ jei-forge-api = { group = "mezz.jei", name = "jei-26.1.2-forge-api", version.ref
 jei-forge = { group = "mezz.jei", name = "jei-26.1.2-forge", version.ref = "jei-api" }
 jei-neoforge-api = { group = "mezz.jei", name = "jei-26.1.2-neoforge-api", version.ref = "jei-api" }
 jei-neoforge = { group = "mezz.jei", name = "jei-26.1.2-neoforge", version.ref = "jei-api" }
+opac-common = { group = "xaero.pac", name = "open-parties-and-claims-common-26.3", version.ref = "opac" }
+opac-fabric = { group = "xaero.pac", name = "open-parties-and-claims-fabric-26.3", version.ref = "opac" }
 
 [plugins]
 fabric-loom = { id = "net.fabricmc.fabric-loom", version.ref = "fabric-loom-plugin" }
