@@ -21,7 +21,7 @@ java {
 
 dependencies {
     implementation(localGroovy())
-    implementation(buildTools.fabric.loom)
+    implementation(buildTools.amber.loom)
     implementation(buildTools.neoforge.moddev.plugin)
     implementation(buildTools.neoforge.legacyforge.plugin)
     implementation(project(":core-plugin"))

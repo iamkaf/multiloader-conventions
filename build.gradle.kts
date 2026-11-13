@@ -15,7 +15,17 @@ subprojects {
     group = rootProject.group
     version = rootProject.version
 
+    // Amber Loom targets Java 25. Builds that load it already run on a Java 25 daemon, so the plugins may depend on it
+    // while they stay compiled for Java 21.
+    plugins.withId("java") {
+        extensions.configure<JavaPluginExtension> { disableAutoTargetJvm() }
+    }
+
     repositories {
+        exclusiveContent {
+            forRepositories(mavenLocal(), maven("https://maven.kaf.sh"))
+            filter { includeGroup("com.iamkaf.amber.toolchain") }
+        }
         gradlePluginPortal()
         mavenCentral()
         maven {

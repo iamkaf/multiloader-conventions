@@ -16,6 +16,7 @@ import com.iamkaf.multiloader.support.ProjectIdentity
 import com.iamkaf.multiloader.support.StonecutterSourceLayout
 import com.iamkaf.multiloader.support.VersionPolicy
 import com.iamkaf.multiloader.support.adapters.FabricLoomAdapter
+import com.iamkaf.multiloader.support.adapters.AmberToolchain
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.jvm.tasks.Jar
@@ -40,9 +41,9 @@ class MultiloaderFabricPlugin : Plugin<Project> {
     private fun applyFlatFabricPlugin(project: Project, extension: MultiloaderFabricExtension) {
         project.pluginManager.apply(MultiloaderPlatformPlugin::class.java)
         val loomPluginId = if (ConventionSupport.isUnobfuscatedMinecraft(project)) {
-            "net.fabricmc.fabric-loom"
+            AmberToolchain.LOOM
         } else {
-            "fabric-loom"
+            AmberToolchain.LOOM_REMAP
         }
         project.pluginManager.apply(loomPluginId)
 
@@ -109,7 +110,7 @@ class MultiloaderFabricPlugin : Plugin<Project> {
         } else {
             project.rootProject.file("common/src/main/resources/${identity.modId}.accesswidener")
         }
-        val loomPluginId = if (useUnobfuscatedMinecraft) "net.fabricmc.fabric-loom" else "fabric-loom"
+        val loomPluginId = if (useUnobfuscatedMinecraft) AmberToolchain.LOOM else AmberToolchain.LOOM_REMAP
 
         project.pluginManager.apply(loomPluginId)
 

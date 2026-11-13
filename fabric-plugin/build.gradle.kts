@@ -18,7 +18,7 @@ java {
 
 dependencies {
     implementation(localGroovy())
-    implementation(buildTools.fabric.loom)
+    implementation(buildTools.amber.loom)
     implementation(project(":core-plugin"))
     implementation(project(":conventions-support"))
     implementation(project(":platform-plugin"))
