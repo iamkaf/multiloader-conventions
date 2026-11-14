@@ -19,7 +19,7 @@ neoforge = "26.1.2.109"
 c2me-neoforge = "0.4.0-alpha.0.91+26.1.2"
 
 # Forge
-forge = "26.1.2-64.0.9"
+forge = "26.1.2-64.1.6"
 
 # Libraries
 mixin = "0.8.5"
@@ -173,6 +173,11 @@ jei-neoforge = { group = "mezz.jei", name = "jei-26.1.2-neoforge", version.ref =
 patchouli-fabric = { group = "maven.modrinth", name = "patchouli", version.ref = "patchouli-fabric" }
 patchouli-neoforge = { group = "maven.modrinth", name = "patchouli", version.ref = "patchouli-neoforge" }
 opac-common = { group = "xaero.pac", name = "open-parties-and-claims-common-26.1.2", version.ref = "opac" }
+opac-fabric = { group = "xaero.pac", name = "open-parties-and-claims-fabric-26.1.2", version = "0.33.0" }
+opac-fcap-fabric = { group = "maven.modrinth", name = "forge-config-api-port", version = "jUe0ucoE" }
+opac-forge = { group = "xaero.pac", name = "open-parties-and-claims-forge-26.1.2", version = "0.33.0" }
+opac-fcap-forge = { group = "maven.modrinth", name = "forge-config-api-port", version = "i7zweACx" }
+opac-neoforge = { group = "xaero.pac", name = "open-parties-and-claims-neoforge-26.1.2", version = "0.33.0" }
 
 [plugins]
 fabric-loom = { id = "net.fabricmc.fabric-loom", version.ref = "fabric-loom-plugin" }

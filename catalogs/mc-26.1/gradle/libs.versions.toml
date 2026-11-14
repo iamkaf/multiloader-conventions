@@ -166,6 +166,8 @@ jei-neoforge = { group = "mezz.jei", name = "jei-26.1-neoforge", version.ref = "
 patchouli-fabric = { group = "maven.modrinth", name = "patchouli", version.ref = "patchouli-fabric" }
 patchouli-neoforge = { group = "maven.modrinth", name = "patchouli", version.ref = "patchouli-neoforge" }
 opac-common = { group = "xaero.pac", name = "open-parties-and-claims-common-26.1.2", version.ref = "opac" }
+opac-fabric = { group = "xaero.pac", name = "open-parties-and-claims-fabric-26.1.2", version = "0.33.0" }
+opac-fcap-fabric = { group = "maven.modrinth", name = "forge-config-api-port", version = "mwAOaKnn" }
 
 [plugins]
 fabric-loom = { id = "net.fabricmc.fabric-loom", version.ref = "fabric-loom-plugin" }

@@ -10,12 +10,12 @@ parchment = "2025.10.05"
 
 # Fabric
 fabric-loader = "0.19.3"
-fabric-api = "0.133.14+1.21.9"
+fabric-api = "0.134.1+1.21.9"
 modmenu = "16.0.0-rc.1"
 c2me-fabric = "0.3.5+alpha.0.44+1.21.9"
 
 # NeoForge
-neoforge = "21.9.1-beta"
+neoforge = "21.9.16-beta"
 c2me-neoforge = "0.3.5+alpha.0.76+1.21.9"
 
 # Forge
@@ -115,6 +115,9 @@ jei-forge = { group = "mezz.jei", name = "jei-1.21.9-forge", version.ref = "jei-
 jei-neoforge-api = { group = "mezz.jei", name = "jei-1.21.9-neoforge-api", version.ref = "jei-api" }
 jei-neoforge = { group = "mezz.jei", name = "jei-1.21.9-neoforge", version.ref = "jei-api" }
 opac-common = { group = "xaero.pac", name = "open-parties-and-claims-common-1.21.10", version.ref = "opac" }
+opac-fabric = { group = "maven.modrinth", name = "open-parties-and-claims", version = "lGYNdsWV" }
+opac-fcap-fabric = { group = "maven.modrinth", name = "forge-config-api-port", version = "3Zr2vML8" }
+opac-neoforge = { group = "maven.modrinth", name = "open-parties-and-claims", version = "dslVFZGZ" }
 
 [plugins]
 fabric-loom = { id = "fabric-loom", version.ref = "fabric-loom-plugin" }

@@ -15,7 +15,7 @@ modmenu = "14.0.1"
 c2me-fabric = "0.3.4+alpha.0.21+1.21.5"
 
 # NeoForge
-neoforge = "21.5.50-beta"
+neoforge = "21.5.101"
 c2me-neoforge = "0.3.4+alpha.0.64+1.21.5"
 
 # Forge
@@ -114,6 +114,11 @@ jei-forge = { group = "mezz.jei", name = "jei-1.21.5-forge", version.ref = "jei-
 jei-neoforge-api = { group = "mezz.jei", name = "jei-1.21.5-neoforge-api", version.ref = "jei-api" }
 jei-neoforge = { group = "mezz.jei", name = "jei-1.21.5-neoforge", version.ref = "jei-api" }
 opac-common = { group = "xaero.pac", name = "open-parties-and-claims-common-1.21.5", version.ref = "opac" }
+opac-fabric = { group = "xaero.pac", name = "open-parties-and-claims-fabric-1.21.5", version = "0.31.6" }
+opac-fcap-fabric = { group = "maven.modrinth", name = "forge-config-api-port", version = "fWnEuNPu" }
+opac-forge = { group = "xaero.pac", name = "open-parties-and-claims-forge-1.21.5", version = "0.31.6" }
+opac-fcap-forge = { group = "maven.modrinth", name = "forge-config-api-port", version = "UQTsO2qw" }
+opac-neoforge = { group = "xaero.pac", name = "open-parties-and-claims-neoforge-1.21.5", version = "0.31.6" }
 
 [plugins]
 fabric-loom = { id = "fabric-loom", version.ref = "fabric-loom-plugin" }

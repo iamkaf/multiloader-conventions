@@ -100,6 +100,9 @@ jei-forge = { group = "mezz.jei", name = "jei-1.18.2-forge", version.ref = "jei-
 jei-neoforge-api = { group = "mezz.jei", name = "jei-1.18.2-neoforge-api", version.ref = "jei-api" }
 jei-neoforge = { group = "mezz.jei", name = "jei-1.18.2-neoforge", version.ref = "jei-api" }
 opac-common = { group = "xaero.pac", name = "open-parties-and-claims-common-1.18.2", version.ref = "opac" }
+opac-fabric = { group = "xaero.pac", name = "open-parties-and-claims-fabric-1.18.2", version = "0.33.0" }
+opac-fcap-fabric = { group = "maven.modrinth", name = "forge-config-api-port", version = "XGKEYlsw" }
+opac-forge = { group = "xaero.pac", name = "open-parties-and-claims-forge-1.18.2", version = "0.33.0" }
 
 [plugins]
 fabric-loom = { id = "fabric-loom", version.ref = "fabric-loom-plugin" }
